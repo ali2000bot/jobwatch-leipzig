@@ -105,7 +105,7 @@ def fetch_search(
     if arbeitszeit:
         params["arbeitszeit"] = arbeitszeit  # z.B. "ho"
 
-    try:
+try:
     r = requests.get(
         SEARCH_URL,
         headers=headers(api_key),
