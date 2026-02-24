@@ -152,7 +152,8 @@ with st.sidebar:
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=True)
     ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 800, 200, 50)
 
-    was = st.text_area("Suchtext", value=build_default_query(), height=120)
+    queries = build_queries()
+    selected = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
     aktualitaet = st.slider("Nur Jobs der letzten X Tage", 0, 100, 30, 5)
     size = st.selectbox("Treffer pro Seite", [25, 50, 100], index=1)
 
