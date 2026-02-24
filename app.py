@@ -17,6 +17,71 @@ API_KEY_DEFAULT = "jobboerse-jobsuche"
 STATE_DIR = ".jobwatch_state"
 SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
 
+# ---- Profil-Optimierung (Keywords/Scoring) ----
+FOCUS_KEYWORDS = [
+    # Thermoanalyse / Thermophysik
+    "thermoanalyse",
+    "thermophysik",
+    "thermal analysis",
+    "thermophysical",
+    "dsc",
+    "tga",
+    "lfa",
+    "dilatometrie",
+    "dilatometer",
+    "sta",
+    "dma",
+    "tma",
+    "wärmeleitfähigkeit",
+    "thermal conductivity",
+    "diffusivität",
+    "diffusivity",
+    "kalorimetrie",
+    "calorimetry",
+    "cp",
+    "wärmekapazität",
+    "heat capacity",
+    "materialcharakterisierung",
+    "material characterization",
+    "analytik",
+    "instrumentierung",
+    "messgerät",
+    "labor",
+    "werkstoff",
+    "werkstoffe",
+    "polymer",
+    "keramik",
+    "metall",
+    "f&e",
+]
+
+LEADERSHIP_KEYWORDS = [
+    "laborleiter",
+    "teamleiter",
+    "gruppenleiter",
+    "abteilungsleiter",
+    "leiter",
+    "head",
+    "lead",
+    "director",
+    "manager",
+    "principal",
+]
+
+NEGATIVE_KEYWORDS = [
+    "insurance",
+    "versicherung",
+    "assistant",
+    "assistenz",
+    "sekretariat",
+    "office",
+    "backoffice",
+    "reception",
+    "empfang",
+    "vorstandsassistenz",
+    "management assistant",
+]
+
 
 def ensure_state_dir() -> None:
     os.makedirs(STATE_DIR, exist_ok=True)
@@ -37,7 +102,6 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
 
 
 def headers(api_key: str) -> Dict[str, str]:
-    # Header wie Jobsuche-App (hilft oft bei Stabilität)
     return {
         "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077) Streamlit",
         "Host": "rest.arbeitsagentur.de",
@@ -48,11 +112,9 @@ def headers(api_key: str) -> Dict[str, str]:
 
 
 def extract_items(data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    # v4/app/jobs liefert häufig "stellenangebote"
     if isinstance(data.get("stellenangebote"), list):
         return data["stellenangebote"]
 
-    # manchmal verschachtelt
     emb = data.get("_embedded") or {}
     if isinstance(emb, dict):
         if isinstance(emb.get("stellenangebote"), list):
@@ -60,7 +122,6 @@ def extract_items(data: Dict[str, Any]) -> List[Dict[str, Any]]:
         if isinstance(emb.get("jobs"), list):
             return emb["jobs"]
 
-    # weitere mögliche Form
     if isinstance(data.get("jobs"), list):
         return data["jobs"]
 
@@ -100,26 +161,66 @@ def details_url(it: Dict[str, Any]) -> Optional[str]:
 
 
 def looks_leadership(it: Dict[str, Any]) -> bool:
-    # Markierung von Führung/Leitung, ohne die Suche zu verengen
     text = " ".join(
         [
             str(item_title(it)),
             str(it.get("kurzbeschreibung", "")),
-            str(it.get("stellenbeschreibung", "")),
         ]
     ).lower()
-    keywords = [
-        "teamleiter",
-        "laborleiter",
-        "leiter",
-        "head",
-        "lead",
-        "manager",
-        "vorstand",
-        "principal",
-        "director",
+    return any(k in text for k in LEADERSHIP_KEYWORDS)
+
+
+def relevance_score(it: Dict[str, Any]) -> int:
+    """
+    Höher = besser passend zu Thermoanalyse/Thermophysik/Analytik + (Team/Labor)leitung.
+    Nutzt Titel + Kurzbeschreibung aus Suchtreffer.
+    """
+    text = " ".join(
+        [
+            str(item_title(it)),
+            str(it.get("kurzbeschreibung", "")),
+            str(it.get("arbeitgeber", "")),
+            str(it.get("arbeitgeberName", "")),
+        ]
+    ).lower()
+
+    score = 0
+
+    for k in FOCUS_KEYWORDS:
+        if k in text:
+            score += 10
+
+    for k in LEADERSHIP_KEYWORDS:
+        if k in text:
+            score += 6
+
+    for k in ["forschung", "entwicklung", "r&d", "research", "development"]:
+        if k in text:
+            score += 4
+
+    for k in NEGATIVE_KEYWORDS:
+        if k in text:
+            score -= 12
+
+    return score
+
+
+def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
+    """
+    Harte Ausschlüsse für typische Off-Topic Rollen.
+    """
+    text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
+    hard = [
+        "vorstandsassistenz",
+        "management assistant",
+        "assistant",
+        "assistenz",
+        "sekretariat",
+        "office manager",
+        "insurance",
+        "versicherung",
     ]
-    return any(k in text for k in keywords)
+    return any(h in text for h in hard)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -133,7 +234,6 @@ def fetch_search(
     page: int = 1,
     arbeitszeit: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
-    # WICHTIG: Keine zusätzlichen Filter wie angebotsart/pav, um nicht alles wegzufiltern
     params: Dict[str, Any] = {
         "page": str(page),
         "size": str(size),
@@ -144,7 +244,7 @@ def fetch_search(
     if was and was.strip():
         params["was"] = was
     if arbeitszeit:
-        params["arbeitszeit"] = arbeitszeit  # z.B. "ho"
+        params["arbeitszeit"] = arbeitszeit
 
     try:
         r = requests.get(
@@ -185,8 +285,7 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
 
 
 def build_queries() -> Dict[str, str]:
-    # Entschärfte, breite Suchprofile (liefert deutlich mehr Treffer).
-    # Führung wird NICHT in den Suchstring gepackt, sondern später als ⭐ markiert.
+    # Breite Suchprofile; Relevanz wird danach gescored/markiert/gefiltert.
     q_rd = "Forschung Entwicklung R&D Thermoanalyse Thermophysik Analytik"
     q_pm = "Projektmanagement Project Manager Program Manager"
     q_sales = "Vertrieb Sales Business Development Key Account Manager"
@@ -214,6 +313,11 @@ with st.sidebar:
     st.divider()
     api_key = st.text_input("X-API-Key", value=API_KEY_DEFAULT)
 
+    st.subheader("Profil-Filter")
+    only_focus = st.checkbox("Nur profilrelevante Treffer anzeigen", value=True)
+    hide_irrelevant = st.checkbox("Assistenzen/Office/Insurance ausblenden", value=True)
+
+    st.divider()
     debug = st.checkbox("Debug anzeigen", value=False)
 
 col1, col2 = st.columns([2, 1], gap="large")
@@ -281,6 +385,14 @@ with col1:
             seen.add(jid)
             items_now.append(it)
 
+    # Profil-Filter anwenden
+    if hide_irrelevant:
+        items_now = [it for it in items_now if not is_probably_irrelevant(it)]
+
+    if only_focus:
+        # Mindestscore: 8 ist ein guter Start (anpassbar)
+        items_now = [it for it in items_now if relevance_score(it) >= 8]
+
     # Debug-Ausgabe
     if debug:
         st.info("Debug ist aktiv.")
@@ -297,8 +409,8 @@ with col1:
 
     if len(items_now) == 0 and not errs:
         st.warning(
-            "0 Treffer. Tipp: Setze 'Nur Jobs der letzten X Tage' höher (z.B. 90–365), "
-            "oder wähle nur ein Profil (z.B. nur R&D) und teste erneut."
+            "0 Treffer nach Profil-Filter. Tipp: Deaktiviere 'Nur profilrelevante Treffer anzeigen' "
+            "oder erhöhe 'Nur Jobs der letzten X Tage' (z.B. 90–365)."
         )
 
     # Snapshot-Vergleich
@@ -318,9 +430,9 @@ with col1:
     def sort_key(it: Dict[str, Any]):
         jid = item_id(it)
         is_new = 0 if jid in new_ids else 1
-        # Führung/Leitung oben
         lead_rank = 0 if looks_leadership(it) else 1
-        return (is_new, lead_rank, item_title(it).lower())
+        score = relevance_score(it)
+        return (is_new, lead_rank, -score, item_title(it).lower())
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
@@ -328,6 +440,7 @@ with col1:
     for it in sorted(items_now, key=sort_key):
         jid = item_id(it)
         is_new = jid in new_ids
+        score = relevance_score(it)
 
         lead = "⭐ " if looks_leadership(it) else ""
         label = f"{'🟢 NEU  ' if is_new else ''}{lead}{item_title(it)}"
@@ -336,6 +449,7 @@ with col1:
             [
                 str(x)
                 for x in [
+                    f"Score: {score}",
                     it.get("_profile", ""),
                     it.get("_bucket", ""),
                     item_company(it),
