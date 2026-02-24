@@ -5,10 +5,10 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
+import pydeck as pdk
 import requests
 import streamlit as st
 import urllib3
-import pydeck as pdk
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -133,6 +133,7 @@ def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]
                     return float(lat), float(lon)
             except Exception:
                 pass
+
     coords2 = it.get("koordinaten")
     if isinstance(coords2, dict):
         lat = coords2.get("lat")
@@ -142,6 +143,7 @@ def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]
                 return float(lat), float(lon)
         except Exception:
             pass
+
     return None
 
 
@@ -328,7 +330,7 @@ with st.sidebar:
     st.divider()
     st.header("Sucheinstellungen")
     wo = st.text_input("Ort (BA-Suche)", value="Leipzig")
-    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 50], index=0)
+    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 50], index=1)
 
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=True)
     ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 800, 200, 50)
@@ -400,7 +402,6 @@ with col2:
         st.success("Snapshot gelöscht. Seite neu laden.")
 
 with col1:
-    # --- scoring helpers depend on editable keywords ---
     def looks_leadership(it: Dict[str, Any]) -> bool:
         text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
         return any(k in text for k in LEADERSHIP_KEYWORDS)
@@ -477,27 +478,11 @@ with col1:
             seen.add(jid)
             items_now.append(it)
 
-    # Profil-Filter anwenden
+    # Profil-Filter
     if hide_irrelevant:
         items_now = [it for it in items_now if not is_probably_irrelevant(it)]
     if only_focus:
         items_now = [it for it in items_now if relevance_score(it) >= min_score]
-
-    if debug:
-        st.info("Debug ist aktiv.")
-        test_items, test_err = fetch_search(api_key, wo, int(umkreis), "", 365, 25, page=1, arbeitszeit=None)
-        st.write(f"Debug-Test ohne Suchtext (365 Tage, {umkreis} km): **{len(test_items)} Treffer**")
-        if test_err:
-            st.code(test_err)
-        if test_items:
-            st.write("Erste Treffer (Debug):")
-            for t in test_items[:3]:
-                st.write("-", item_title(t))
-
-    if len(items_now) == 0 and not errs:
-        st.warning(
-            "0 Treffer nach Profil-Filter. Tipp: Mindest-Score reduzieren oder 'Nur profilrelevante Treffer' deaktivieren."
-        )
 
     # Snapshot-Vergleich
     prev_items = snap.get("items", [])
@@ -508,7 +493,7 @@ with col1:
     # ---------- SORTIERUNG: Entfernung aufsteigend ----------
     def sort_key(it: Dict[str, Any]):
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-        dist_rank = dist if dist is not None else 999999.0  # fehlende Koordinaten nach unten
+        dist_rank = dist if dist is not None else 999999.0
         is_new = 0 if item_id(it) in new_ids else 1
         score = relevance_score(it)
         return (dist_rank, is_new, -score, item_title(it).lower())
@@ -523,66 +508,73 @@ with col1:
         st.session_state["save_snapshot_requested"] = False
         st.success("Snapshot gespeichert.")
 
-    # ---------- MAP (Übersicht) ----------
-# Wir zeigen bis zu 50 nächstgelegene Treffer mit Koordinaten + deinen Wohnort.
+    if debug:
+        st.info("Debug ist aktiv.")
+        test_items, test_err = fetch_search(api_key, wo, int(umkreis), "", 365, 25, page=1, arbeitszeit=None)
+        st.write(f"Debug-Test ohne Suchtext (365 Tage, {umkreis} km): **{len(test_items)} Treffer**")
+        if test_err:
+            st.code(test_err)
+        if test_items:
+            st.write("Erste Treffer (Debug):")
+            for t in test_items[:3]:
+                st.write("-", item_title(t))
 
-map_rows = []
-for it in items_now_sorted[:500]:
-    ll = extract_latlon_from_item(it)
-    if not ll:
-        continue
-    lat, lon = ll
-    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-    map_rows.append(
-        {
-            "lat": float(lat),
-            "lon": float(lon),
-            "title": item_title(it),
-            "company": item_company(it),
-            "dist_km": float(dist) if dist is not None else 999999.0,
+    # ---------- GROSSE KARTE (pydeck) ----------
+    map_rows = []
+    for it in items_now_sorted[:500]:
+        ll = extract_latlon_from_item(it)
+        if not ll:
+            continue
+        lat, lon = ll
+        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        map_rows.append(
+            {
+                "lat": float(lat),
+                "lon": float(lon),
+                "title": item_title(it),
+                "company": item_company(it),
+                "dist_km": float(dist) if dist is not None else 999999.0,
+            }
+        )
+
+    st.caption(f"📍 Treffer mit Koordinaten: {len(map_rows)} von {len(items_now_sorted)}")
+
+    home_df = pd.DataFrame(
+        [{"lat": float(home_lat), "lon": float(home_lon), "title": "Wohnort", "company": "", "dist_km": 0.0}]
+    )
+
+    if len(map_rows) > 0:
+        st.write("### Karte (Wohnort + nächste Treffer)")
+        df_map = pd.DataFrame(map_rows).sort_values("dist_km").head(50)
+        df_all = pd.concat([home_df, df_map], ignore_index=True)
+
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=df_all,
+            get_position="[lon, lat]",
+            get_radius=350,
+            pickable=True,
+            auto_highlight=True,
+        )
+
+        view_state = pdk.ViewState(
+            latitude=float(home_lat),
+            longitude=float(home_lon),
+            zoom=8.6,
+            pitch=0,
+        )
+
+        tooltip = {
+            "html": "<b>{title}</b><br/>{company}<br/>Dist: {dist_km} km",
+            "style": {"backgroundColor": "white", "color": "black"},
         }
-    )
 
-# Debug/Info: wie viele haben Koordinaten?
-st.caption(f"📍 Treffer mit Koordinaten: {len(map_rows)} von {len(items_now_sorted)}")
+        st.pydeck_chart(
+            pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip=tooltip),
+            use_container_width=True,
+        )
+        st.caption("Hinweis: Karte zeigt bis zu 50 nächstgelegene Treffer mit Koordinaten (plus Wohnort).")
 
-# Immer einen Wohnort-Punkt auf der Karte
-home_df = pd.DataFrame([{"lat": float(home_lat), "lon": float(home_lon), "title": "Wohnort", "company": "", "dist_km": 0.0}])
-
-if len(map_rows) == 0:
-    st.warning(
-        "Für die aktuellen Treffer sind keine Koordinaten im BA-Response enthalten – daher kann keine Karte angezeigt werden. "
-        "Tipp: Deaktiviere ggf. Filter oder teste andere Treffer. (Die Entfernung wird dann ebenfalls '—' sein.)"
-    )
-else:
-    st.write("### Karte (Wohnort + nächste Treffer)")
-
-    df_map = pd.DataFrame(map_rows).sort_values("dist_km").head(50)
-    df_all = pd.concat([home_df, df_map], ignore_index=True)
-
-    layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=df_all,
-        get_position="[lon, lat]",
-        get_radius=250,
-        pickable=True,
-        auto_highlight=True,
-    )
-
-    view_state = pdk.ViewState(
-        latitude=float(home_lat),
-        longitude=float(home_lon),
-        zoom=8.5,
-        pitch=0,
-    )
-
-    tooltip = {
-        "html": "<b>{title}</b><br/>{company}<br/>Dist: {dist_km} km",
-        "style": {"backgroundColor": "white", "color": "black"},
-    }
-
-    st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip=tooltip), use_container_width=True)
-    st.caption("Hinweis: Anzeige basiert auf Koordinaten aus dem BA-Suchergebnis (falls vorhanden).")
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
 
@@ -593,8 +585,8 @@ else:
 
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         t_min = travel_time_minutes(dist, float(speed_kmh))
-
         badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
+
         lead = "⭐ " if looks_leadership(it) else ""
         label = f"{'🟢 NEU  ' if is_new else ''}{lead}{item_title(it)}"
 
@@ -609,10 +601,8 @@ else:
         )
 
         with st.expander(label):
-            # Abstand-Badge + Meta schöner darstellen
             st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
 
-            # immer Web-Link anbieten
             web_url = jobsuche_web_url(it)
             if web_url:
                 try:
@@ -620,17 +610,37 @@ else:
                 except Exception:
                     st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
 
-            # kleine Karte pro Treffer (Wohnort + Job), wenn Koordinaten existieren
+            # Mini-Karte pro Treffer (Wohnort + Jobpunkt)
             ll = extract_latlon_from_item(it)
             if ll:
                 lat, lon = ll
                 df_pair = pd.DataFrame(
                     [
-                        {"lat": float(home_lat), "lon": float(home_lon)},
-                        {"lat": float(lat), "lon": float(lon)},
+                        {"lat": float(home_lat), "lon": float(home_lon), "name": "Wohnort"},
+                        {"lat": float(lat), "lon": float(lon), "name": "Job"},
                     ]
                 )
-                st.map(df_pair)
+                st.pydeck_chart(
+                    pdk.Deck(
+                        layers=[
+                            pdk.Layer(
+                                "ScatterplotLayer",
+                                data=df_pair,
+                                get_position="[lon, lat]",
+                                get_radius=450,
+                                pickable=True,
+                            )
+                        ],
+                        initial_view_state=pdk.ViewState(
+                            latitude=float(home_lat),
+                            longitude=float(home_lon),
+                            zoom=9.0,
+                            pitch=0,
+                        ),
+                        tooltip={"html": "<b>{name}</b>"},
+                    ),
+                    use_container_width=True,
+                )
 
             api_url = details_url_api(it)
             if not api_url:
