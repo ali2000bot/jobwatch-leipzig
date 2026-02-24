@@ -108,8 +108,9 @@ def fetch_search(
         "umkreis": str(umkreis_km),
         "aktualitaet": str(aktualitaet_tage),
         "wo": wo,
-        "was": was,
     }
+    if was and was.strip():
+        params["was"] = was
     if arbeitszeit:
         params["arbeitszeit"] = arbeitszeit  # z.B. "ho"
 
