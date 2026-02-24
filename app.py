@@ -33,11 +33,13 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
 
 
 def headers(api_key: str) -> Dict[str, str]:
-    # API-Key + ein unkritischer User-Agent
+    # wie im offiziellen Beispiel (Jobsuche-App User-Agent + Host) :contentReference[oaicite:2]{index=2}
     return {
+        "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077) Streamlit",
+        "Host": "rest.arbeitsagentur.de",
         "X-API-Key": api_key,
         "Accept": "application/json",
-        "User-Agent": "JobWatch-Leipzig/1.0",
+        "Connection": "keep-alive",
     }
 
 
@@ -103,7 +105,16 @@ def fetch_search(
     if arbeitszeit:
         params["arbeitszeit"] = arbeitszeit  # z.B. "ho"
 
-    r = requests.get(SEARCH_URL, headers=headers(api_key), params=params, timeout=25)
+    try:
+    r = requests.get(
+        SEARCH_URL,
+        headers=headers(api_key),
+        params=params,
+        timeout=25,
+        verify=False,  # wie im Beispiel :contentReference[oaicite:3]{index=3}
+    )
+except Exception as e:
+    return [], f"Request-Fehler: {type(e).__name__}: {e}"
     if r.status_code != 200:
         return [], f"Suche HTTP {r.status_code}: {r.text[:400]}"
     data = r.json()
@@ -190,6 +201,13 @@ with col1:
         it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
 
     items_now = items_local + items_ho
+
+    if len(items_now) == 0 and not (err1 or err2):
+    st.warning(
+        "0 Treffer. Tipp: Suchtext ist evtl. zu streng. "
+        "Teste z.B. nur 'Thermoanalyse' oder nur 'Projektmanagement' "
+        "und setze 'aktualitaet' höher (z.B. 60)."
+    )
 
     prev_items = snap.get("items", [])
     prev_ids: Set[str] = {item_id(x) for x in prev_items if item_id(x)}
