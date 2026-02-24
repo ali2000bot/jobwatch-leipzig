@@ -7,7 +7,6 @@ import requests
 import streamlit as st
 import urllib3
 
-# In vielen Cloud-/Proxy-Umgebungen ist verify=False nötig.
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service"
@@ -17,71 +16,28 @@ API_KEY_DEFAULT = "jobboerse-jobsuche"
 STATE_DIR = ".jobwatch_state"
 SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
 
-# ---- Profil-Optimierung (Keywords/Scoring) ----
-FOCUS_KEYWORDS = [
-    "thermoanalyse",
-    "thermophysik",
-    "thermal analysis",
-    "thermophysical",
-    "dsc",
-    "tga",
-    "lfa",
-    "dilatometrie",
-    "dilatometer",
-    "sta",
-    "dma",
-    "tma",
-    "wärmeleitfähigkeit",
-    "thermal conductivity",
-    "diffusivität",
-    "diffusivity",
-    "kalorimetrie",
-    "calorimetry",
-    "cp",
-    "wärmekapazität",
-    "heat capacity",
-    "materialcharakterisierung",
-    "material characterization",
-    "analytik",
-    "instrumentierung",
-    "messgerät",
-    "labor",
-    "werkstoff",
-    "werkstoffe",
-    "polymer",
-    "keramik",
-    "metall",
-    "f&e",
-    "verfahrenstechnik",
-    "physics",
-    "physik",
+# ---- Standard-Keywords ----
+DEFAULT_FOCUS_KEYWORDS = [
+    "thermoanalyse", "thermophysik", "thermal analysis", "thermophysical",
+    "dsc", "tga", "lfa", "dilatometrie", "dilatometer", "sta", "dma", "tma",
+    "wärmeleitfähigkeit", "thermal conductivity", "diffusivität", "diffusivity",
+    "kalorimetrie", "calorimetry", "cp", "wärmekapazität", "heat capacity",
+    "materialcharakterisierung", "material characterization",
+    "analytik", "instrumentierung", "messgerät", "labor",
+    "werkstoff", "werkstoffe", "polymer", "keramik", "metall",
+    "f&e", "verfahrenstechnik", "physik", "physics",
 ]
 
-LEADERSHIP_KEYWORDS = [
-    "laborleiter",
-    "teamleiter",
-    "gruppenleiter",
-    "abteilungsleiter",
-    "leiter",
-    "head",
-    "lead",
-    "director",
-    "manager",
-    "principal",
+DEFAULT_LEADERSHIP_KEYWORDS = [
+    "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter",
+    "leiter", "head", "lead", "director", "manager", "principal",
 ]
 
-NEGATIVE_KEYWORDS = [
-    "insurance",
-    "versicherung",
-    "assistant",
-    "assistenz",
-    "sekretariat",
-    "office",
-    "backoffice",
-    "reception",
-    "empfang",
-    "vorstandsassistenz",
-    "management assistant",
+DEFAULT_NEGATIVE_KEYWORDS = [
+    "insurance", "versicherung",
+    "assistant", "assistenz", "sekretariat",
+    "office", "backoffice", "reception", "empfang",
+    "vorstandsassistenz", "management assistant",
 ]
 
 
@@ -180,66 +136,32 @@ def details_url_api(it: Dict[str, Any]) -> Optional[str]:
 
 
 def jobsuche_web_url(it: Dict[str, Any]) -> Optional[str]:
-    # Fallback-Link zur BA-Webseite (funktioniert auch ohne API-Detail-URL)
     ref = item_id(it)
     if not ref:
         return None
     return f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{ref}"
 
 
-def looks_leadership(it: Dict[str, Any]) -> bool:
-    text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
-    return any(k in text for k in LEADERSHIP_KEYWORDS)
+def short_field(it: Dict[str, Any], *keys: str) -> str:
+    for k in keys:
+        v = it.get(k)
+        if v is None:
+            continue
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return ""
 
 
-def relevance_score(it: Dict[str, Any]) -> int:
-    """
-    Höher = besser passend zu Thermoanalyse/Thermophysik/Analytik + (Team/Labor)leitung.
-    Nutzt Titel + Kurzbeschreibung aus Suchtreffer.
-    """
-    text = " ".join(
-        [
-            str(item_title(it)),
-            str(it.get("kurzbeschreibung", "")),
-            str(it.get("arbeitgeber", "")),
-            str(it.get("arbeitgeberName", "")),
-        ]
-    ).lower()
-
-    score = 0
-
-    for k in FOCUS_KEYWORDS:
-        if k in text:
-            score += 10
-
-    for k in LEADERSHIP_KEYWORDS:
-        if k in text:
-            score += 6
-
-    for k in ["forschung", "entwicklung", "r&d", "research", "development"]:
-        if k in text:
-            score += 4
-
-    for k in NEGATIVE_KEYWORDS:
-        if k in text:
-            score -= 12
-
-    return score
+def parse_keywords(text: str) -> List[str]:
+    # erlaub: Komma, Zeilenumbrüche; entfernt Leerstrings
+    raw = []
+    for line in text.splitlines():
+        raw.extend([p.strip() for p in line.split(",")])
+    return [x for x in raw if x]
 
 
-def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
-    text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
-    hard = [
-        "vorstandsassistenz",
-        "management assistant",
-        "assistant",
-        "assistenz",
-        "sekretariat",
-        "office manager",
-        "insurance",
-        "versicherung",
-    ]
-    return any(h in text for h in hard)
+def keywords_to_text(words: List[str]) -> str:
+    return "\n".join(words)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -304,26 +226,23 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
 
 
 def build_queries() -> Dict[str, str]:
-    # Breite Suchprofile; Relevanz wird danach gescored/markiert/gefiltert.
     q_rd = "Forschung Entwicklung R&D Thermoanalyse Thermophysik Analytik"
     q_pm = "Projektmanagement Project Manager Program Manager"
     q_sales = "Vertrieb Sales Business Development Key Account Manager"
     return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
-def short_field(it: Dict[str, Any], *keys: str) -> str:
-    for k in keys:
-        v = it.get(k)
-        if v is None:
-            continue
-        if isinstance(v, str) and v.strip():
-            return v.strip()
-    return ""
-
-
 # ---------------- UI ----------------
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
+
+# Session defaults für Keyword-Editor
+if "kw_focus" not in st.session_state:
+    st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
+if "kw_lead" not in st.session_state:
+    st.session_state["kw_lead"] = keywords_to_text(DEFAULT_LEADERSHIP_KEYWORDS)
+if "kw_neg" not in st.session_state:
+    st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
 with st.sidebar:
     st.header("Sucheinstellungen")
@@ -345,9 +264,46 @@ with st.sidebar:
     st.subheader("Profil-Filter")
     only_focus = st.checkbox("Nur profilrelevante Treffer anzeigen", value=True)
     hide_irrelevant = st.checkbox("Assistenzen/Office/Insurance ausblenden", value=True)
+    min_score = st.slider("Mindest-Score", 0, 50, 8, 1)
 
     st.divider()
-    debug = st.checkbox("Debug anzeigen", value=False)
+    st.subheader("Keywords (sichtbar & editierbar)")
+    with st.expander("Fokus-Keywords (Thermoanalyse/Thermophysik/Analytik)", expanded=False):
+        st.session_state["kw_focus"] = st.text_area(
+            "Ein Begriff pro Zeile (oder Komma-getrennt)",
+            value=st.session_state["kw_focus"],
+            height=180,
+        )
+
+    with st.expander("Leitung/Führung-Keywords", expanded=False):
+        st.session_state["kw_lead"] = st.text_area(
+            "Ein Begriff pro Zeile (oder Komma-getrennt)",
+            value=st.session_state["kw_lead"],
+            height=120,
+        )
+
+    with st.expander("Negative Keywords (Abwertung/Filter)", expanded=False):
+        st.session_state["kw_neg"] = st.text_area(
+            "Ein Begriff pro Zeile (oder Komma-getrennt)",
+            value=st.session_state["kw_neg"],
+            height=120,
+        )
+
+    c_reset, c_dbg = st.columns(2)
+    with c_reset:
+        if st.button("↩︎ Keywords zurücksetzen"):
+            st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
+            st.session_state["kw_lead"] = keywords_to_text(DEFAULT_LEADERSHIP_KEYWORDS)
+            st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
+            st.rerun()
+
+    with c_dbg:
+        debug = st.checkbox("Debug anzeigen", value=False)
+
+# Live geparste Keywords
+FOCUS_KEYWORDS = parse_keywords(st.session_state["kw_focus"])
+LEADERSHIP_KEYWORDS = parse_keywords(st.session_state["kw_lead"])
+NEGATIVE_KEYWORDS = parse_keywords(st.session_state["kw_neg"])
 
 col1, col2 = st.columns([2, 1], gap="large")
 
@@ -366,7 +322,40 @@ with col2:
         st.success("Snapshot gelöscht. Seite neu laden.")
 
 with col1:
-    # --- Suche ausführen (mehrere Profile) + Merge ---
+    def looks_leadership(it: Dict[str, Any]) -> bool:
+        text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
+        return any(k in text for k in LEADERSHIP_KEYWORDS)
+
+    def relevance_score(it: Dict[str, Any]) -> int:
+        text = " ".join(
+            [
+                str(item_title(it)),
+                str(it.get("kurzbeschreibung", "")),
+                str(it.get("arbeitgeber", "")),
+                str(it.get("arbeitgeberName", "")),
+            ]
+        ).lower()
+
+        score = 0
+        for k in FOCUS_KEYWORDS:
+            if k in text:
+                score += 10
+        for k in LEADERSHIP_KEYWORDS:
+            if k in text:
+                score += 6
+        for k in ["forschung", "entwicklung", "r&d", "research", "development"]:
+            if k in text:
+                score += 4
+        for k in NEGATIVE_KEYWORDS:
+            if k in text:
+                score -= 12
+        return score
+
+    def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
+        text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
+        hard = ["vorstandsassistenz", "management assistant", "assistant", "assistenz", "sekretariat", "insurance", "versicherung"]
+        return any(h in text for h in hard)
+
     with st.spinner("Suche läuft…"):
         all_items: List[Dict[str, Any]] = []
         errs: List[str] = []
@@ -377,10 +366,7 @@ with col1:
             for name in selected:
                 q = queries[name]
 
-                # Vor-Ort
-                items_local, e1 = fetch_search(
-                    api_key, wo, int(umkreis), q, int(aktualitaet), int(size), arbeitszeit=None
-                )
+                items_local, e1 = fetch_search(api_key, wo, int(umkreis), q, int(aktualitaet), int(size), arbeitszeit=None)
                 if e1:
                     errs.append(f"{name} (vor Ort): {e1}")
                 for it in items_local:
@@ -388,11 +374,8 @@ with col1:
                     it["_bucket"] = f"Vor Ort ({umkreis} km)"
                 all_items.extend(items_local)
 
-                # Homeoffice
                 if include_ho:
-                    items_ho, e2 = fetch_search(
-                        api_key, wo, int(ho_umkreis), q, int(aktualitaet), int(size), arbeitszeit="ho"
-                    )
+                    items_ho, e2 = fetch_search(api_key, wo, int(ho_umkreis), q, int(aktualitaet), int(size), arbeitszeit="ho")
                     if e2:
                         errs.append(f"{name} (homeoffice): {e2}")
                     for it in items_ho:
@@ -405,7 +388,6 @@ with col1:
         for e in errs:
             st.code(e)
 
-    # Dedup nach ID
     items_now: List[Dict[str, Any]] = []
     seen: Set[str] = set()
     for it in all_items:
@@ -414,19 +396,14 @@ with col1:
             seen.add(jid)
             items_now.append(it)
 
-    # Profil-Filter anwenden
     if hide_irrelevant:
         items_now = [it for it in items_now if not is_probably_irrelevant(it)]
-
     if only_focus:
-        items_now = [it for it in items_now if relevance_score(it) >= 8]
+        items_now = [it for it in items_now if relevance_score(it) >= min_score]
 
-    # Debug-Ausgabe
     if debug:
         st.info("Debug ist aktiv.")
-        test_items, test_err = fetch_search(
-            api_key, wo, int(umkreis), "", 365, 25, page=1, arbeitszeit=None
-        )
+        test_items, test_err = fetch_search(api_key, wo, int(umkreis), "", 365, 25, page=1, arbeitszeit=None)
         st.write(f"Debug-Test ohne Suchtext (365 Tage, {umkreis} km): **{len(test_items)} Treffer**")
         if test_err:
             st.code(test_err)
@@ -437,11 +414,9 @@ with col1:
 
     if len(items_now) == 0 and not errs:
         st.warning(
-            "0 Treffer nach Profil-Filter. Tipp: Deaktiviere 'Nur profilrelevante Treffer anzeigen' "
-            "oder erhöhe 'Nur Jobs der letzten X Tage' (z.B. 90–365)."
+            "0 Treffer nach Profil-Filter. Tipp: Mindest-Score reduzieren oder 'Nur profilrelevante Treffer' deaktivieren."
         )
 
-    # Snapshot-Vergleich
     prev_items = snap.get("items", [])
     prev_ids: Set[str] = {item_id(x) for x in prev_items if item_id(x)}
     now_ids: Set[str] = {item_id(x) for x in items_now if item_id(x)}
@@ -490,7 +465,6 @@ with col1:
         with st.expander(label):
             st.caption(meta)
 
-            # Immer Web-Link anbieten
             web_url = jobsuche_web_url(it)
             if web_url:
                 try:
@@ -498,7 +472,6 @@ with col1:
                 except Exception:
                     st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
 
-            # Versuche API-Details zu laden, falls Link vorhanden
             api_url = details_url_api(it)
             if not api_url:
                 st.info("Keine API-Detail-URL im Suchtreffer vorhanden – zeige Basisinfos aus der Ergebnisliste.")
@@ -513,7 +486,6 @@ with col1:
                     "Veröffentlicht": short_field(it, "veroeffentlichungsdatum", "veroeffentlichtAm", "date"),
                     "Aktualisiert": short_field(it, "aktualisiertAm", "aktualisiert", "updated"),
                 }
-                # Nur nicht-leere Felder anzeigen
                 basis = {k: v for k, v in basis.items() if v}
                 st.write("**Basisdaten:**")
                 st.table([[k, v] for k, v in basis.items()])
@@ -528,7 +500,6 @@ with col1:
                 st.info("Keine Details erhalten.")
                 continue
 
-            # Kompakte, aussagekräftigere Darstellung
             st.write("**Kurzprofil**")
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Relevanz-Score", score)
@@ -542,7 +513,6 @@ with col1:
             st.write(f"- **Arbeitgeber:** {d_arbeitgeber}")
             st.write(f"- **Ort:** {d_ort}")
 
-            # Beschreibung: mehrere mögliche Felder
             desc = (
                 details.get("stellenbeschreibung")
                 or details.get("beschreibung")
