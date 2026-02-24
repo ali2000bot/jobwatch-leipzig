@@ -5,9 +5,9 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 import pandas as pd
-import pydeck as pdk
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -278,6 +278,33 @@ def distance_badge_html(dist_km: Optional[float], t_min: Optional[int], near_km:
     return f'<span style="background:{bg};color:white;padding:2px 8px;border-radius:999px;font-size:12px;">{txt}</span>'
 
 
+# ---------------- Map (NO WebGL) ----------------
+def bbox_from_points(points: List[Tuple[float, float]], pad_deg: float = 0.05) -> Tuple[float, float, float, float]:
+    lats = [p[0] for p in points]
+    lons = [p[1] for p in points]
+    min_lat, max_lat = min(lats), max(lats)
+    min_lon, max_lon = min(lons), max(lons)
+    return (min_lon - pad_deg, min_lat - pad_deg, max_lon + pad_deg, max_lat + pad_deg)
+
+
+def osm_embed_url(bbox: Tuple[float, float, float, float], marker: Optional[Tuple[float, float]] = None) -> str:
+    # https://www.openstreetmap.org/export/embed.html?bbox=...&layer=mapnik&marker=lat,lon
+    left, bottom, right, top = bbox
+    url = f"https://www.openstreetmap.org/export/embed.html?bbox={left}%2C{bottom}%2C{right}%2C{top}&layer=mapnik"
+    if marker:
+        url += f"&marker={marker[0]}%2C{marker[1]}"
+    return url
+
+
+def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float, dest_lon: float) -> str:
+    return (
+        "https://www.google.com/maps/dir/?api=1"
+        f"&origin={origin_lat}%2C{origin_lon}"
+        f"&destination={dest_lat}%2C{dest_lon}"
+        "&travelmode=driving"
+    )
+
+
 # ---------------- Keywords editor ----------------
 def parse_keywords(text: str) -> List[str]:
     raw: List[str] = []
@@ -292,7 +319,6 @@ def keywords_to_text(words: List[str]) -> str:
 
 # ---------------- Queries ----------------
 def build_queries() -> Dict[str, str]:
-    # Breite Suchprofile; Feinsteuerung passiert über Scoring/Filter.
     q_rd = "Forschung Entwicklung R&D Thermoanalyse Thermophysik Analytik"
     q_pm = "Projektmanagement Project Manager Program Manager"
     q_sales = "Vertrieb Sales Business Development Key Account Manager"
@@ -303,7 +329,6 @@ def build_queries() -> Dict[str, str]:
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
 
-# Session defaults für Keyword-Editor
 if "kw_focus" not in st.session_state:
     st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
 if "kw_lead" not in st.session_state:
@@ -380,7 +405,6 @@ with st.sidebar:
     with c_dbg:
         debug = st.checkbox("Debug anzeigen", value=False)
 
-# Live geparste Keywords
 FOCUS_KEYWORDS = parse_keywords(st.session_state["kw_focus"])
 LEADERSHIP_KEYWORDS = parse_keywords(st.session_state["kw_lead"])
 NEGATIVE_KEYWORDS = parse_keywords(st.session_state["kw_neg"])
@@ -436,7 +460,6 @@ with col1:
         hard = ["vorstandsassistenz", "management assistant", "assistant", "assistenz", "sekretariat", "insurance", "versicherung"]
         return any(h in text for h in hard)
 
-    # --- Search ---
     with st.spinner("Suche läuft…"):
         all_items: List[Dict[str, Any]] = []
         errs: List[str] = []
@@ -469,7 +492,6 @@ with col1:
         for e in errs:
             st.code(e)
 
-    # Dedup nach ID
     items_now: List[Dict[str, Any]] = []
     seen: Set[str] = set()
     for it in all_items:
@@ -478,19 +500,16 @@ with col1:
             seen.add(jid)
             items_now.append(it)
 
-    # Profil-Filter
     if hide_irrelevant:
         items_now = [it for it in items_now if not is_probably_irrelevant(it)]
     if only_focus:
         items_now = [it for it in items_now if relevance_score(it) >= min_score]
 
-    # Snapshot-Vergleich
     prev_items = snap.get("items", [])
     prev_ids: Set[str] = {item_id(x) for x in prev_items if item_id(x)}
     now_ids: Set[str] = {item_id(x) for x in items_now if item_id(x)}
     new_ids = now_ids - prev_ids
 
-    # ---------- SORTIERUNG: Entfernung aufsteigend ----------
     def sort_key(it: Dict[str, Any]):
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         dist_rank = dist if dist is not None else 999999.0
@@ -519,61 +538,23 @@ with col1:
             for t in test_items[:3]:
                 st.write("-", item_title(t))
 
-    # ---------- GROSSE KARTE (pydeck) ----------
-    map_rows = []
-    for it in items_now_sorted[:500]:
+    # --------- Übersichtskarte (iFrame, ohne WebGL) ----------
+    coords = []
+    for it in items_now_sorted[:200]:
         ll = extract_latlon_from_item(it)
-        if not ll:
-            continue
-        lat, lon = ll
-        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-        map_rows.append(
-            {
-                "lat": float(lat),
-                "lon": float(lon),
-                "title": item_title(it),
-                "company": item_company(it),
-                "dist_km": float(dist) if dist is not None else 999999.0,
-            }
-        )
+        if ll:
+            coords.append(ll)
 
-    st.caption(f"📍 Treffer mit Koordinaten: {len(map_rows)} von {len(items_now_sorted)}")
+    st.caption(f"🗺️ Koordinaten verfügbar: {len(coords)} von {len(items_now_sorted)}")
 
-    home_df = pd.DataFrame(
-        [{"lat": float(home_lat), "lon": float(home_lon), "title": "Wohnort", "company": "", "dist_km": 0.0}]
-    )
-
-    if len(map_rows) > 0:
-        st.write("### Karte (Wohnort + nächste Treffer)")
-        df_map = pd.DataFrame(map_rows).sort_values("dist_km").head(50)
-        df_all = pd.concat([home_df, df_map], ignore_index=True)
-
-        layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=df_all,
-            get_position="[lon, lat]",
-            get_radius=350,
-            pickable=True,
-            auto_highlight=True,
-        )
-
-        view_state = pdk.ViewState(
-            latitude=float(home_lat),
-            longitude=float(home_lon),
-            zoom=8.6,
-            pitch=0,
-        )
-
-        tooltip = {
-            "html": "<b>{title}</b><br/>{company}<br/>Dist: {dist_km} km",
-            "style": {"backgroundColor": "white", "color": "black"},
-        }
-
-        st.pydeck_chart(
-            pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip=tooltip),
-            use_container_width=True,
-        )
-        st.caption("Hinweis: Karte zeigt bis zu 50 nächstgelegene Treffer mit Koordinaten (plus Wohnort).")
+    if coords:
+        # bbox um Wohnort + nächste Treffer
+        pts = [(float(home_lat), float(home_lon))] + [(c[0], c[1]) for c in coords[:50]]
+        bbox = bbox_from_points(pts, pad_deg=0.08)
+        url = osm_embed_url(bbox, marker=(float(home_lat), float(home_lon)))
+        st.write("### Karte (OpenStreetMap)")
+        components.iframe(url, height=420, scrolling=True)
+        st.caption("Falls die Karte hier trotzdem leer bleibt: In Edge ist evtl. das Laden von externen iFrames eingeschränkt (Firmenpolicy).")
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
@@ -610,37 +591,21 @@ with col1:
                 except Exception:
                     st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
 
-            # Mini-Karte pro Treffer (Wohnort + Jobpunkt)
             ll = extract_latlon_from_item(it)
             if ll:
                 lat, lon = ll
-                df_pair = pd.DataFrame(
-                    [
-                        {"lat": float(home_lat), "lon": float(home_lon), "name": "Wohnort"},
-                        {"lat": float(lat), "lon": float(lon), "name": "Job"},
-                    ]
-                )
-                st.pydeck_chart(
-                    pdk.Deck(
-                        layers=[
-                            pdk.Layer(
-                                "ScatterplotLayer",
-                                data=df_pair,
-                                get_position="[lon, lat]",
-                                get_radius=450,
-                                pickable=True,
-                            )
-                        ],
-                        initial_view_state=pdk.ViewState(
-                            latitude=float(home_lat),
-                            longitude=float(home_lon),
-                            zoom=9.0,
-                            pitch=0,
-                        ),
-                        tooltip={"html": "<b>{name}</b>"},
-                    ),
-                    use_container_width=True,
-                )
+                # Mini-Karte als OSM-iFrame (ohne WebGL)
+                pts = [(float(home_lat), float(home_lon)), (float(lat), float(lon))]
+                bbox = bbox_from_points(pts, pad_deg=0.03)
+                mini_url = osm_embed_url(bbox, marker=(float(lat), float(lon)))
+                components.iframe(mini_url, height=260, scrolling=False)
+
+                # Routenlink
+                gdir = google_directions_url(float(home_lat), float(home_lon), float(lat), float(lon))
+                try:
+                    st.link_button("🚗 Route in Google Maps", gdir)
+                except Exception:
+                    st.markdown(f"[🚗 Route in Google Maps]({gdir})")
 
             api_url = details_url_api(it)
             if not api_url:
@@ -665,7 +630,7 @@ with col1:
             details, derr = fetch_details(api_key, api_url)
             if derr:
                 st.error(derr)
-                st.info("Falls Details über die API nicht abrufbar sind, nutze den Link oben zur BA-Webseite.")
+                st.info("Falls Details über die API nicht abrufbar sind, nutze den BA-Link oben zur BA-Webseite.")
                 continue
             if not details:
                 st.info("Keine Details erhalten.")
