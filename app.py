@@ -7,7 +7,7 @@ import requests
 import streamlit as st
 import urllib3
 
-# In vielen Umgebungen (inkl. Cloud/Proxies) ist verify=False nötig.
+# In vielen Cloud-/Proxy-Umgebungen ist verify=False nötig.
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service"
@@ -48,11 +48,22 @@ def headers(api_key: str) -> Dict[str, str]:
 
 
 def extract_items(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    # v4/app/jobs liefert häufig "stellenangebote"
     if isinstance(data.get("stellenangebote"), list):
         return data["stellenangebote"]
+
+    # manchmal verschachtelt
     emb = data.get("_embedded") or {}
-    if isinstance(emb.get("jobs"), list):
-        return emb["jobs"]
+    if isinstance(emb, dict):
+        if isinstance(emb.get("stellenangebote"), list):
+            return emb["stellenangebote"]
+        if isinstance(emb.get("jobs"), list):
+            return emb["jobs"]
+
+    # weitere mögliche Form
+    if isinstance(data.get("jobs"), list):
+        return data["jobs"]
+
     return []
 
 
@@ -72,7 +83,6 @@ def item_location(it: Dict[str, Any]) -> str:
     v = it.get("arbeitsort") or it.get("ort") or it.get("wo") or ""
     if isinstance(v, str):
         return v
-    # falls dict/list kommt, robust darstellen
     try:
         return json.dumps(v, ensure_ascii=False)
     except Exception:
@@ -100,18 +110,14 @@ def fetch_search(
     page: int = 1,
     arbeitszeit: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
-    params = {
+    # WICHTIG: Keine zusätzlichen Filter wie angebotsart/pav, um nicht alles wegzufiltern
+    params: Dict[str, Any] = {
         "page": str(page),
         "size": str(size),
         "umkreis": str(umkreis_km),
         "aktualitaet": str(aktualitaet_tage),
         "wo": wo,
     }
-    if was and was.strip():
-        params["was"] = was
-    if arbeitszeit:
-        params["arbeitszeit"] = arbeitszeit  # z.B. "ho"
-    
     if was and was.strip():
         params["was"] = was
     if arbeitszeit:
@@ -178,11 +184,13 @@ with st.sidebar:
     queries = build_queries()
     selected = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
 
-    aktualitaet = st.slider("Nur Jobs der letzten X Tage", 0, 100, 30, 5)
+    aktualitaet = st.slider("Nur Jobs der letzten X Tage", 0, 365, 60, 5)
     size = st.selectbox("Treffer pro Seite", [25, 50, 100], index=1)
 
     st.divider()
     api_key = st.text_input("X-API-Key", value=API_KEY_DEFAULT)
+
+    # --- Debug-Schalter (Punkt 2) ---
     debug = st.checkbox("Debug anzeigen", value=False)
 
 col1, col2 = st.columns([2, 1], gap="large")
@@ -202,7 +210,7 @@ with col2:
         st.success("Snapshot gelöscht. Seite neu laden.")
 
 with col1:
-    # --- Suche ausführen (MEHRERE Profile) + Merge ---
+    # --- Suche ausführen (mehrere Profile) + Merge ---
     with st.spinner("Suche läuft…"):
         all_items: List[Dict[str, Any]] = []
         errs: List[str] = []
@@ -250,9 +258,24 @@ with col1:
             seen.add(jid)
             items_now.append(it)
 
+    # --- Debug-Ausgabe (Punkt 3) ---
+    if debug:
+        st.info("Debug ist aktiv.")
+        test_items, test_err = fetch_search(
+            api_key, wo, int(umkreis), "", 365, 25, page=1, arbeitszeit=None
+        )
+        st.write(f"Debug-Test ohne Suchtext (365 Tage, {umkreis} km): **{len(test_items)} Treffer**")
+        if test_err:
+            st.code(test_err)
+        if test_items:
+            # zeige ein paar Titel zur Kontrolle
+            st.write("Erste Treffer (Debug):")
+            for t in test_items[:3]:
+                st.write("-", item_title(t))
+
     if len(items_now) == 0 and not errs:
         st.warning(
-            "0 Treffer. Tipp: Setze 'Nur Jobs der letzten X Tage' höher (z.B. 60–90) "
+            "0 Treffer. Tipp: Setze 'Nur Jobs der letzten X Tage' höher (z.B. 90–365), "
             "oder wähle nur ein Profil (z.B. nur R&D/Leitung) und teste erneut."
         )
 
