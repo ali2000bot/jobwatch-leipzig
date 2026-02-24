@@ -1,4 +1,4 @@
-import json
+mport json
 import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -99,6 +99,29 @@ def details_url(it: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def looks_leadership(it: Dict[str, Any]) -> bool:
+    # Markierung von Führung/Leitung, ohne die Suche zu verengen
+    text = " ".join(
+        [
+            str(item_title(it)),
+            str(it.get("kurzbeschreibung", "")),
+            str(it.get("stellenbeschreibung", "")),
+        ]
+    ).lower()
+    keywords = [
+        "teamleiter",
+        "laborleiter",
+        "leiter",
+        "head",
+        "lead",
+        "manager",
+        "vorstand",
+        "principal",
+        "director",
+    ]
+    return any(k in text for k in keywords)
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_search(
     api_key: str,
@@ -162,11 +185,12 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
 
 
 def build_queries() -> Dict[str, str]:
-    # kurze, fokussierte Suchprofile (mehr Treffer als ein riesiger String)
-    q_rd = "Thermoanalyse Thermophysik Analytik DSC TGA LFA Forschung Entwicklung R&D Teamleiter Laborleiter Leiter"
-    q_pm = "Projektmanagement Project Manager Program Manager Teamleiter Leiter Head Lead Manager"
-    q_sales = "Vertrieb Sales Business Development Key Account Manager Thermoanalyse Thermophysik"
-    return {"R&D/Leitung": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
+    # Entschärfte, breite Suchprofile (liefert deutlich mehr Treffer).
+    # Führung wird NICHT in den Suchstring gepackt, sondern später als ⭐ markiert.
+    q_rd = "Forschung Entwicklung R&D Thermoanalyse Thermophysik Analytik"
+    q_pm = "Projektmanagement Project Manager Program Manager"
+    q_sales = "Vertrieb Sales Business Development Key Account Manager"
+    return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
 # ---------------- UI ----------------
@@ -190,7 +214,6 @@ with st.sidebar:
     st.divider()
     api_key = st.text_input("X-API-Key", value=API_KEY_DEFAULT)
 
-    # --- Debug-Schalter (Punkt 2) ---
     debug = st.checkbox("Debug anzeigen", value=False)
 
 col1, col2 = st.columns([2, 1], gap="large")
@@ -258,7 +281,7 @@ with col1:
             seen.add(jid)
             items_now.append(it)
 
-    # --- Debug-Ausgabe (Punkt 3) ---
+    # Debug-Ausgabe
     if debug:
         st.info("Debug ist aktiv.")
         test_items, test_err = fetch_search(
@@ -268,7 +291,6 @@ with col1:
         if test_err:
             st.code(test_err)
         if test_items:
-            # zeige ein paar Titel zur Kontrolle
             st.write("Erste Treffer (Debug):")
             for t in test_items[:3]:
                 st.write("-", item_title(t))
@@ -276,7 +298,7 @@ with col1:
     if len(items_now) == 0 and not errs:
         st.warning(
             "0 Treffer. Tipp: Setze 'Nur Jobs der letzten X Tage' höher (z.B. 90–365), "
-            "oder wähle nur ein Profil (z.B. nur R&D/Leitung) und teste erneut."
+            "oder wähle nur ein Profil (z.B. nur R&D) und teste erneut."
         )
 
     # Snapshot-Vergleich
@@ -296,7 +318,9 @@ with col1:
     def sort_key(it: Dict[str, Any]):
         jid = item_id(it)
         is_new = 0 if jid in new_ids else 1
-        return (is_new, item_title(it).lower())
+        # Führung/Leitung oben
+        lead_rank = 0 if looks_leadership(it) else 1
+        return (is_new, lead_rank, item_title(it).lower())
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
@@ -304,7 +328,9 @@ with col1:
     for it in sorted(items_now, key=sort_key):
         jid = item_id(it)
         is_new = jid in new_ids
-        label = f"{'🟢 NEU  ' if is_new else ''}{item_title(it)}"
+
+        lead = "⭐ " if looks_leadership(it) else ""
+        label = f"{'🟢 NEU  ' if is_new else ''}{lead}{item_title(it)}"
 
         meta = " | ".join(
             [
