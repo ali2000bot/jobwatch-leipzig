@@ -100,13 +100,13 @@ def fetch_search(
     page: int = 1,
     arbeitszeit: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
-params = {
-    "page": str(page),
-    "size": str(size),
-    "umkreis": str(umkreis_km),
-    "aktualitaet": str(aktualitaet_tage),
-    "wo": wo,
-}
+    params = {
+        "page": str(page),
+        "size": str(size),
+        "umkreis": str(umkreis_km),
+        "aktualitaet": str(aktualitaet_tage),
+        "wo": wo,
+    }
     if was and was.strip():
         params["was"] = was
     if arbeitszeit:
