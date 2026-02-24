@@ -203,7 +203,7 @@ with col1:
     items_now = items_local + items_ho
 
     if len(items_now) == 0 and not (err1 or err2):
-    st.warning(
+        st.warning(
         "0 Treffer. Tipp: Suchtext ist evtl. zu streng. "
         "Teste z.B. nur 'Thermoanalyse' oder nur 'Projektmanagement' "
         "und setze 'aktualitaet' höher (z.B. 60)."
