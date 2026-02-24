@@ -179,28 +179,28 @@ with col2:
 
 with col1:
     with st.spinner("Suche läuft…"):
-    all_local = []
-    all_ho = []
-    errs = []
+        all_local = []
+        all_ho = []
+        errs = []
 
-    # selected & queries kommen aus der Sidebar (Punkt B)
-    for name in selected:
-        q = queries[name]
+        # selected & queries kommen aus der Sidebar (Punkt B)
+        for name in selected:
+            q = queries[name]
 
-        items_local, e1 = fetch_search(
+            items_local, e1 = fetch_search(
             api_key, wo, int(umkreis), q, int(aktualitaet), int(size), arbeitszeit=None
-        )
-        if e1:
-            errs.append(f"{name} (vor Ort): {e1}")
-        for it in items_local:
-            it["_profile"] = name
-            it["_bucket"] = f"Vor Ort ({umkreis} km)"
-        all_local.extend(items_local)
-
-        if include_ho:
-            items_ho, e2 = fetch_search(
-                api_key, wo, int(ho_umkreis), q, int(aktualitaet), int(size), arbeitszeit="ho"
             )
+            if e1:
+                errs.append(f"{name} (vor Ort): {e1}")
+            for it in items_local:
+                it["_profile"] = name
+                it["_bucket"] = f"Vor Ort ({umkreis} km)"
+            all_local.extend(items_local)
+
+            if include_ho:
+                items_ho, e2 = fetch_search(
+                api_key, wo, int(ho_umkreis), q, int(aktualitaet), int(size), arbeitszeit="ho"
+                )
             if e2:
                 errs.append(f"{name} (homeoffice): {e2}")
             for it in items_ho:
