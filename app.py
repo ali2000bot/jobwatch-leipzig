@@ -254,7 +254,7 @@ for it in (all_local + all_ho):
         jid = item_id(it)
         is_new = jid in new_ids
         label = f"{'🟢 NEU  ' if is_new else ''}{item_title(it)}"
-        meta = " | ".join([x for x in [it.get("_bucket", ""), item_company(it), item_location(it)] if x])
+        meta = " | ".join([x for x in [it.get("_profile",""), it.get("_bucket", ""), item_company(it), item_location(it)] if x])
 
         with st.expander(label):
             st.caption(meta)
