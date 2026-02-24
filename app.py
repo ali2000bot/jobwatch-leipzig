@@ -1,9 +1,10 @@
 import json
-import os
 import math
+import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import pandas as pd
 import requests
 import streamlit as st
 import urllib3
@@ -45,6 +46,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
 ]
 
 
+# ---------------- State ----------------
 def ensure_state_dir() -> None:
     os.makedirs(STATE_DIR, exist_ok=True)
 
@@ -63,6 +65,7 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
 
+# ---------------- BA API helpers ----------------
 def headers(api_key: str) -> Dict[str, str]:
     return {
         "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077) Streamlit",
@@ -76,17 +79,14 @@ def headers(api_key: str) -> Dict[str, str]:
 def extract_items(data: Dict[str, Any]) -> List[Dict[str, Any]]:
     if isinstance(data.get("stellenangebote"), list):
         return data["stellenangebote"]
-
     emb = data.get("_embedded") or {}
     if isinstance(emb, dict):
         if isinstance(emb.get("stellenangebote"), list):
             return emb["stellenangebote"]
         if isinstance(emb.get("jobs"), list):
             return emb["jobs"]
-
     if isinstance(data.get("jobs"), list):
         return data["jobs"]
-
     return []
 
 
@@ -104,20 +104,16 @@ def item_company(it: Dict[str, Any]) -> str:
 
 def pretty_location(it: Dict[str, Any]) -> str:
     loc = it.get("arbeitsort") or it.get("ort") or it.get("wo")
-
     if isinstance(loc, str):
         return loc
-
     if isinstance(loc, dict):
         ort = (loc.get("ort") or "").strip()
         region = (loc.get("region") or "").strip()
         land = (loc.get("land") or "").strip()
         parts = [p for p in [ort, region, land] if p]
         return ", ".join(parts) if parts else "—"
-
     if loc is None:
         return "—"
-
     try:
         return json.dumps(loc, ensure_ascii=False)
     except Exception:
@@ -125,10 +121,6 @@ def pretty_location(it: Dict[str, Any]) -> str:
 
 
 def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]]:
-    """
-    Versucht Koordinaten aus dem Suchtreffer zu ziehen.
-    Häufig: it["arbeitsort"]["koordinaten"]["lat"/"lon"].
-    """
     loc = it.get("arbeitsort") or {}
     if isinstance(loc, dict):
         coords = loc.get("koordinaten") or {}
@@ -140,8 +132,6 @@ def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]
                     return float(lat), float(lon)
             except Exception:
                 pass
-
-    # Fallback: manchmal direkt
     coords2 = it.get("koordinaten")
     if isinstance(coords2, dict):
         lat = coords2.get("lat")
@@ -151,29 +141,7 @@ def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]
                 return float(lat), float(lon)
         except Exception:
             pass
-
     return None
-
-
-def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    # Radius Erde in km
-    r = 6371.0088
-    phi1 = math.radians(lat1)
-    phi2 = math.radians(lat2)
-    dphi = math.radians(lat2 - lat1)
-    dlambda = math.radians(lon2 - lon1)
-
-    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
-    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return r * c
-
-
-def distance_from_home_km(it: Dict[str, Any], home_lat: float, home_lon: float) -> Optional[float]:
-    ll = extract_latlon_from_item(it)
-    if not ll:
-        return None
-    lat, lon = ll
-    return haversine_km(home_lat, home_lon, lat, lon)
 
 
 def details_url_api(it: Dict[str, Any]) -> Optional[str]:
@@ -201,17 +169,6 @@ def short_field(it: Dict[str, Any], *keys: str) -> str:
         if isinstance(v, str) and v.strip():
             return v.strip()
     return ""
-
-
-def parse_keywords(text: str) -> List[str]:
-    raw: List[str] = []
-    for line in text.splitlines():
-        raw.extend([p.strip() for p in line.split(",")])
-    return [x for x in raw if x]
-
-
-def keywords_to_text(words: List[str]) -> str:
-    return "\n".join(words)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -275,8 +232,64 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
         return None, "Details: Antwort war kein gültiges JSON."
 
 
+# ---------------- Distance + travel time ----------------
+def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    r = 6371.0088
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return r * c
+
+
+def distance_from_home_km(it: Dict[str, Any], home_lat: float, home_lon: float) -> Optional[float]:
+    ll = extract_latlon_from_item(it)
+    if not ll:
+        return None
+    lat, lon = ll
+    return haversine_km(home_lat, home_lon, lat, lon)
+
+
+def travel_time_minutes(distance_km: Optional[float], speed_kmh: float) -> Optional[int]:
+    if distance_km is None or speed_kmh <= 0:
+        return None
+    minutes = int(round((distance_km / speed_kmh) * 60))
+    return max(0, minutes)
+
+
+def distance_badge_html(dist_km: Optional[float], t_min: Optional[int], near_km: int, mid_km: int) -> str:
+    if dist_km is None:
+        return '<span style="background:#999;color:white;padding:2px 8px;border-radius:999px;font-size:12px;">Entf.: —</span>'
+
+    if dist_km <= near_km:
+        bg = "#2e7d32"  # grün
+    elif dist_km <= mid_km:
+        bg = "#f9a825"  # gelb
+    else:
+        bg = "#c62828"  # rot
+
+    t_part = f" · ~{t_min} min" if t_min is not None else ""
+    txt = f"{dist_km:.1f} km{t_part}"
+    return f'<span style="background:{bg};color:white;padding:2px 8px;border-radius:999px;font-size:12px;">{txt}</span>'
+
+
+# ---------------- Keywords editor ----------------
+def parse_keywords(text: str) -> List[str]:
+    raw: List[str] = []
+    for line in text.splitlines():
+        raw.extend([p.strip() for p in line.split(",")])
+    return [x for x in raw if x]
+
+
+def keywords_to_text(words: List[str]) -> str:
+    return "\n".join(words)
+
+
+# ---------------- Queries ----------------
 def build_queries() -> Dict[str, str]:
-    # Breite Suchprofile; Relevanz wird danach gescored/markiert/gefiltert.
+    # Breite Suchprofile; Feinsteuerung passiert über Scoring/Filter.
     q_rd = "Forschung Entwicklung R&D Thermoanalyse Thermophysik Analytik"
     q_pm = "Projektmanagement Project Manager Program Manager"
     q_sales = "Vertrieb Sales Business Development Key Account Manager"
@@ -297,15 +310,21 @@ if "kw_neg" not in st.session_state:
 
 with st.sidebar:
     st.header("Wohnort & Entfernung")
-    home_label = st.text_input("Wohnort (nur Anzeige)", value=DEFAULT_HOME_LABEL)
+    home_label = st.text_input("Wohnort (Anzeige)", value=DEFAULT_HOME_LABEL)
     c_home1, c_home2 = st.columns(2)
     with c_home1:
         home_lat = st.number_input("Breitengrad", value=float(DEFAULT_HOME_LAT), format="%.6f")
     with c_home2:
         home_lon = st.number_input("Längengrad", value=float(DEFAULT_HOME_LON), format="%.6f")
 
-    st.divider()
+    st.subheader("Farbmarkierung Entfernung")
+    near_km = st.slider("Grün bis (km)", 5, 80, 25, 5)
+    mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
 
+    st.subheader("Fahrzeit-Schätzung")
+    speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
+
+    st.divider()
     st.header("Sucheinstellungen")
     wo = st.text_input("Ort (BA-Suche)", value="Leipzig")
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 50], index=0)
@@ -327,30 +346,21 @@ with st.sidebar:
     hide_irrelevant = st.checkbox("Assistenzen/Office/Insurance ausblenden", value=True)
     min_score = st.slider("Mindest-Score", 0, 50, 8, 1)
 
-    st.subheader("Sortierung")
-    sort_mode = st.radio(
-        "Ergebnisse sortieren nach",
-        ["Relevanz (Empfohlen)", f"Entfernung ab {home_label}"],
-        index=0,
-    )
-
     st.divider()
     st.subheader("Keywords (sichtbar & editierbar)")
-    with st.expander("Fokus-Keywords (Thermoanalyse/Thermophysik/Analytik)", expanded=False):
+    with st.expander("Fokus-Keywords", expanded=False):
         st.session_state["kw_focus"] = st.text_area(
             "Ein Begriff pro Zeile (oder Komma-getrennt)",
             value=st.session_state["kw_focus"],
-            height=180,
+            height=160,
         )
-
     with st.expander("Leitung/Führung-Keywords", expanded=False):
         st.session_state["kw_lead"] = st.text_area(
             "Ein Begriff pro Zeile (oder Komma-getrennt)",
             value=st.session_state["kw_lead"],
             height=120,
         )
-
-    with st.expander("Negative Keywords (Abwertung/Filter)", expanded=False):
+    with st.expander("Negative Keywords", expanded=False):
         st.session_state["kw_neg"] = st.text_area(
             "Ein Begriff pro Zeile (oder Komma-getrennt)",
             value=st.session_state["kw_neg"],
@@ -364,7 +374,6 @@ with st.sidebar:
             st.session_state["kw_lead"] = keywords_to_text(DEFAULT_LEADERSHIP_KEYWORDS)
             st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
             st.rerun()
-
     with c_dbg:
         debug = st.checkbox("Debug anzeigen", value=False)
 
@@ -390,6 +399,7 @@ with col2:
         st.success("Snapshot gelöscht. Seite neu laden.")
 
 with col1:
+    # --- scoring helpers depend on editable keywords ---
     def looks_leadership(it: Dict[str, Any]) -> bool:
         text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
         return any(k in text for k in LEADERSHIP_KEYWORDS)
@@ -424,6 +434,7 @@ with col1:
         hard = ["vorstandsassistenz", "management assistant", "assistant", "assistenz", "sekretariat", "insurance", "versicherung"]
         return any(h in text for h in hard)
 
+    # --- Search ---
     with st.spinner("Suche läuft…"):
         all_items: List[Dict[str, Any]] = []
         errs: List[str] = []
@@ -456,6 +467,7 @@ with col1:
         for e in errs:
             st.code(e)
 
+    # Dedup nach ID
     items_now: List[Dict[str, Any]] = []
     seen: Set[str] = set()
     for it in all_items:
@@ -464,6 +476,7 @@ with col1:
             seen.add(jid)
             items_now.append(it)
 
+    # Profil-Filter anwenden
     if hide_irrelevant:
         items_now = [it for it in items_now if not is_probably_irrelevant(it)]
     if only_focus:
@@ -491,67 +504,98 @@ with col1:
     now_ids: Set[str] = {item_id(x) for x in items_now if item_id(x)}
     new_ids = now_ids - prev_ids
 
-    st.subheader(f"Treffer: {len(items_now)}")
+    # ---------- SORTIERUNG: Entfernung aufsteigend ----------
+    def sort_key(it: Dict[str, Any]):
+        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        dist_rank = dist if dist is not None else 999999.0  # fehlende Koordinaten nach unten
+        is_new = 0 if item_id(it) in new_ids else 1
+        score = relevance_score(it)
+        return (dist_rank, is_new, -score, item_title(it).lower())
+
+    items_now_sorted = sorted(items_now, key=sort_key)
+
+    st.subheader(f"Treffer: {len(items_now_sorted)}")
     st.caption(f"Neu seit Snapshot: {len(new_ids)}")
 
     if st.session_state.get("save_snapshot_requested"):
-        save_snapshot(items_now)
+        save_snapshot(items_now_sorted)
         st.session_state["save_snapshot_requested"] = False
         st.success("Snapshot gespeichert.")
 
-    def sort_key(it: Dict[str, Any]):
-        jid = item_id(it)
-        is_new = 0 if jid in new_ids else 1
-        score = relevance_score(it)
-        lead_rank = 0 if looks_leadership(it) else 1
-        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-        dist_rank = dist if dist is not None else 999999.0
+    # ---------- MAP (Übersicht) ----------
+    # Wir zeigen die nächsten 50 Treffer mit Koordinaten + deinen Wohnort.
+    map_rows = []
+    for it in items_now_sorted[:200]:
+        ll = extract_latlon_from_item(it)
+        if not ll:
+            continue
+        lat, lon = ll
+        map_rows.append(
+            {
+                "lat": lat,
+                "lon": lon,
+                "title": item_title(it),
+                "company": item_company(it),
+                "dist": distance_from_home_km(it, float(home_lat), float(home_lon)) or 0.0,
+            }
+        )
 
-        if sort_mode.startswith("Entfernung"):
-            # Primär: neu, dann Entfernung, dann Relevanz
-            return (is_new, dist_rank, -score, lead_rank, item_title(it).lower())
-
-        # Standard: neu, Führung, Relevanz, Entfernung
-        return (is_new, lead_rank, -score, dist_rank, item_title(it).lower())
+    if map_rows:
+        st.write("### Karte (Wohnort + Treffer)")
+        # Für st.map muss es lat/lon heißen
+        df_map = pd.DataFrame(map_rows).sort_values("dist").head(50)
+        df_home = pd.DataFrame([{"lat": float(home_lat), "lon": float(home_lon)}])
+        st.map(pd.concat([df_home, df_map[["lat", "lon"]]], ignore_index=True))
+        st.caption("Hinweis: Die Karte zeigt bis zu 50 nächstgelegene Treffer mit Koordinaten (plus Wohnort).")
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
 
-    for it in sorted(items_now, key=sort_key):
+    for it in items_now_sorted:
         jid = item_id(it)
         is_new = jid in new_ids
         score = relevance_score(it)
 
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-        dist_str = f"{dist:.1f} km ab {home_label}" if dist is not None else "Entfernung: —"
+        t_min = travel_time_minutes(dist, float(speed_kmh))
 
+        badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
         lead = "⭐ " if looks_leadership(it) else ""
         label = f"{'🟢 NEU  ' if is_new else ''}{lead}{item_title(it)}"
 
-        meta = " | ".join(
+        meta_text = " | ".join(
             [
-                str(x)
-                for x in [
-                    f"{dist_str}",
-                    f"Score: {score}",
-                    it.get("_profile", ""),
-                    it.get("_bucket", ""),
-                    item_company(it),
-                    pretty_location(it),
-                ]
-                if x is not None and str(x).strip() != ""
+                f"Score: {score}",
+                it.get("_profile", ""),
+                it.get("_bucket", ""),
+                item_company(it),
+                pretty_location(it),
             ]
         )
 
         with st.expander(label):
-            st.caption(meta)
+            # Abstand-Badge + Meta schöner darstellen
+            st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
 
+            # immer Web-Link anbieten
             web_url = jobsuche_web_url(it)
             if web_url:
                 try:
                     st.link_button("🔗 In BA Jobsuche öffnen", web_url)
                 except Exception:
                     st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
+
+            # kleine Karte pro Treffer (Wohnort + Job), wenn Koordinaten existieren
+            ll = extract_latlon_from_item(it)
+            if ll:
+                lat, lon = ll
+                df_pair = pd.DataFrame(
+                    [
+                        {"lat": float(home_lat), "lon": float(home_lon)},
+                        {"lat": float(lat), "lon": float(lon)},
+                    ]
+                )
+                st.map(df_pair)
 
             api_url = details_url_api(it)
             if not api_url:
@@ -561,15 +605,15 @@ with col1:
                     "Titel": item_title(it),
                     "Arbeitgeber": item_company(it),
                     "Ort": pretty_location(it),
-                    "Entfernung": dist_str,
+                    "Entfernung": f"{dist:.1f} km" if dist is not None else "—",
+                    "Fahrzeit (Schätzung)": f"~{t_min} min" if t_min is not None else "—",
                     "Profil": it.get("_profile", ""),
                     "Quelle": it.get("_bucket", ""),
                     "Kurzbeschreibung": short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext"),
                     "Veröffentlicht": short_field(it, "veroeffentlichungsdatum", "veroeffentlichtAm", "date"),
                     "Aktualisiert": short_field(it, "aktualisiertAm", "aktualisiert", "updated"),
                 }
-                basis = {k: v for k, v in basis.items() if v}
-                st.write("**Basisdaten:**")
+                basis = {k: v for k, v in basis.items() if v and str(v).strip()}
                 st.table([[k, v] for k, v in basis.items()])
                 continue
 
@@ -585,8 +629,8 @@ with col1:
             st.write("**Kurzprofil**")
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Relevanz-Score", score)
-            c2.write(f"**Entfernung:** {dist_str}")
-            c3.write(f"**Profil:** {it.get('_profile','—')}")
+            c2.write(f"**Entfernung:** {dist:.1f} km" if dist is not None else "**Entfernung:** —")
+            c3.write(f"**Fahrzeit:** ~{t_min} min" if t_min is not None else "**Fahrzeit:** —")
             c4.write(f"**RefNr:** {jid or '—'}")
 
             st.write("**Rahmendaten**")
