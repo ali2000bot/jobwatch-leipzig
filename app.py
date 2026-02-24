@@ -1,5 +1,6 @@
 import json
 import os
+import math
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -16,6 +17,11 @@ API_KEY_DEFAULT = "jobboerse-jobsuche"
 STATE_DIR = ".jobwatch_state"
 SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
 
+# Default Wohnort: 06242 Braunsbedra (WGS84, ca. Stadtzentrum)
+DEFAULT_HOME_LABEL = "06242 Braunsbedra"
+DEFAULT_HOME_LAT = 51.2861
+DEFAULT_HOME_LON = 11.8900
+
 # ---- Standard-Keywords ----
 DEFAULT_FOCUS_KEYWORDS = [
     "thermoanalyse", "thermophysik", "thermal analysis", "thermophysical",
@@ -27,12 +33,10 @@ DEFAULT_FOCUS_KEYWORDS = [
     "werkstoff", "werkstoffe", "polymer", "keramik", "metall",
     "f&e", "verfahrenstechnik", "physik", "physics",
 ]
-
 DEFAULT_LEADERSHIP_KEYWORDS = [
     "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter",
     "leiter", "head", "lead", "director", "manager", "principal",
 ]
-
 DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung",
     "assistant", "assistenz", "sekretariat",
@@ -108,13 +112,8 @@ def pretty_location(it: Dict[str, Any]) -> str:
         ort = (loc.get("ort") or "").strip()
         region = (loc.get("region") or "").strip()
         land = (loc.get("land") or "").strip()
-        entfernung = str(loc.get("entfernung") or "").strip()
-
         parts = [p for p in [ort, region, land] if p]
-        base = ", ".join(parts) if parts else "—"
-        if entfernung:
-            base += f" ({entfernung} km)"
-        return base
+        return ", ".join(parts) if parts else "—"
 
     if loc is None:
         return "—"
@@ -123,6 +122,58 @@ def pretty_location(it: Dict[str, Any]) -> str:
         return json.dumps(loc, ensure_ascii=False)
     except Exception:
         return str(loc)
+
+
+def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]]:
+    """
+    Versucht Koordinaten aus dem Suchtreffer zu ziehen.
+    Häufig: it["arbeitsort"]["koordinaten"]["lat"/"lon"].
+    """
+    loc = it.get("arbeitsort") or {}
+    if isinstance(loc, dict):
+        coords = loc.get("koordinaten") or {}
+        if isinstance(coords, dict):
+            lat = coords.get("lat")
+            lon = coords.get("lon")
+            try:
+                if lat is not None and lon is not None:
+                    return float(lat), float(lon)
+            except Exception:
+                pass
+
+    # Fallback: manchmal direkt
+    coords2 = it.get("koordinaten")
+    if isinstance(coords2, dict):
+        lat = coords2.get("lat")
+        lon = coords2.get("lon")
+        try:
+            if lat is not None and lon is not None:
+                return float(lat), float(lon)
+        except Exception:
+            pass
+
+    return None
+
+
+def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    # Radius Erde in km
+    r = 6371.0088
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+
+    a = math.sin(dphi / 2) ** 2 + math.cos(phi1) * math.cos(phi2) * math.sin(dlambda / 2) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return r * c
+
+
+def distance_from_home_km(it: Dict[str, Any], home_lat: float, home_lon: float) -> Optional[float]:
+    ll = extract_latlon_from_item(it)
+    if not ll:
+        return None
+    lat, lon = ll
+    return haversine_km(home_lat, home_lon, lat, lon)
 
 
 def details_url_api(it: Dict[str, Any]) -> Optional[str]:
@@ -153,8 +204,7 @@ def short_field(it: Dict[str, Any], *keys: str) -> str:
 
 
 def parse_keywords(text: str) -> List[str]:
-    # erlaub: Komma, Zeilenumbrüche; entfernt Leerstrings
-    raw = []
+    raw: List[str] = []
     for line in text.splitlines():
         raw.extend([p.strip() for p in line.split(",")])
     return [x for x in raw if x]
@@ -226,6 +276,7 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
 
 
 def build_queries() -> Dict[str, str]:
+    # Breite Suchprofile; Relevanz wird danach gescored/markiert/gefiltert.
     q_rd = "Forschung Entwicklung R&D Thermoanalyse Thermophysik Analytik"
     q_pm = "Projektmanagement Project Manager Program Manager"
     q_sales = "Vertrieb Sales Business Development Key Account Manager"
@@ -245,8 +296,18 @@ if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
 with st.sidebar:
+    st.header("Wohnort & Entfernung")
+    home_label = st.text_input("Wohnort (nur Anzeige)", value=DEFAULT_HOME_LABEL)
+    c_home1, c_home2 = st.columns(2)
+    with c_home1:
+        home_lat = st.number_input("Breitengrad", value=float(DEFAULT_HOME_LAT), format="%.6f")
+    with c_home2:
+        home_lon = st.number_input("Längengrad", value=float(DEFAULT_HOME_LON), format="%.6f")
+
+    st.divider()
+
     st.header("Sucheinstellungen")
-    wo = st.text_input("Ort", value="Leipzig")
+    wo = st.text_input("Ort (BA-Suche)", value="Leipzig")
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 50], index=0)
 
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=True)
@@ -265,6 +326,13 @@ with st.sidebar:
     only_focus = st.checkbox("Nur profilrelevante Treffer anzeigen", value=True)
     hide_irrelevant = st.checkbox("Assistenzen/Office/Insurance ausblenden", value=True)
     min_score = st.slider("Mindest-Score", 0, 50, 8, 1)
+
+    st.subheader("Sortierung")
+    sort_mode = st.radio(
+        "Ergebnisse sortieren nach",
+        ["Relevanz (Empfohlen)", f"Entfernung ab {home_label}"],
+        index=0,
+    )
 
     st.divider()
     st.subheader("Keywords (sichtbar & editierbar)")
@@ -417,6 +485,7 @@ with col1:
             "0 Treffer nach Profil-Filter. Tipp: Mindest-Score reduzieren oder 'Nur profilrelevante Treffer' deaktivieren."
         )
 
+    # Snapshot-Vergleich
     prev_items = snap.get("items", [])
     prev_ids: Set[str] = {item_id(x) for x in prev_items if item_id(x)}
     now_ids: Set[str] = {item_id(x) for x in items_now if item_id(x)}
@@ -433,9 +502,17 @@ with col1:
     def sort_key(it: Dict[str, Any]):
         jid = item_id(it)
         is_new = 0 if jid in new_ids else 1
-        lead_rank = 0 if looks_leadership(it) else 1
         score = relevance_score(it)
-        return (is_new, lead_rank, -score, item_title(it).lower())
+        lead_rank = 0 if looks_leadership(it) else 1
+        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        dist_rank = dist if dist is not None else 999999.0
+
+        if sort_mode.startswith("Entfernung"):
+            # Primär: neu, dann Entfernung, dann Relevanz
+            return (is_new, dist_rank, -score, lead_rank, item_title(it).lower())
+
+        # Standard: neu, Führung, Relevanz, Entfernung
+        return (is_new, lead_rank, -score, dist_rank, item_title(it).lower())
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
@@ -445,6 +522,9 @@ with col1:
         is_new = jid in new_ids
         score = relevance_score(it)
 
+        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        dist_str = f"{dist:.1f} km ab {home_label}" if dist is not None else "Entfernung: —"
+
         lead = "⭐ " if looks_leadership(it) else ""
         label = f"{'🟢 NEU  ' if is_new else ''}{lead}{item_title(it)}"
 
@@ -452,6 +532,7 @@ with col1:
             [
                 str(x)
                 for x in [
+                    f"{dist_str}",
                     f"Score: {score}",
                     it.get("_profile", ""),
                     it.get("_bucket", ""),
@@ -480,6 +561,7 @@ with col1:
                     "Titel": item_title(it),
                     "Arbeitgeber": item_company(it),
                     "Ort": pretty_location(it),
+                    "Entfernung": dist_str,
                     "Profil": it.get("_profile", ""),
                     "Quelle": it.get("_bucket", ""),
                     "Kurzbeschreibung": short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext"),
@@ -503,8 +585,8 @@ with col1:
             st.write("**Kurzprofil**")
             c1, c2, c3, c4 = st.columns(4)
             c1.metric("Relevanz-Score", score)
-            c2.write(f"**Profil:** {it.get('_profile','—')}")
-            c3.write(f"**Quelle:** {it.get('_bucket','—')}")
+            c2.write(f"**Entfernung:** {dist_str}")
+            c3.write(f"**Profil:** {it.get('_profile','—')}")
             c4.write(f"**RefNr:** {jid or '—'}")
 
             st.write("**Rahmendaten**")
