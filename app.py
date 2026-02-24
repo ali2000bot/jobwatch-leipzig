@@ -524,31 +524,65 @@ with col1:
         st.success("Snapshot gespeichert.")
 
     # ---------- MAP (Übersicht) ----------
-    # Wir zeigen die nächsten 50 Treffer mit Koordinaten + deinen Wohnort.
-    map_rows = []
-    for it in items_now_sorted[:200]:
-        ll = extract_latlon_from_item(it)
-        if not ll:
-            continue
-        lat, lon = ll
-        map_rows.append(
-            {
-                "lat": lat,
-                "lon": lon,
-                "title": item_title(it),
-                "company": item_company(it),
-                "dist": distance_from_home_km(it, float(home_lat), float(home_lon)) or 0.0,
-            }
-        )
+# Wir zeigen bis zu 50 nächstgelegene Treffer mit Koordinaten + deinen Wohnort.
 
-    if map_rows:
-        st.write("### Karte (Wohnort + Treffer)")
-        # Für st.map muss es lat/lon heißen
-        df_map = pd.DataFrame(map_rows).sort_values("dist").head(50)
-        df_home = pd.DataFrame([{"lat": float(home_lat), "lon": float(home_lon)}])
-        st.map(pd.concat([df_home, df_map[["lat", "lon"]]], ignore_index=True))
-        st.caption("Hinweis: Die Karte zeigt bis zu 50 nächstgelegene Treffer mit Koordinaten (plus Wohnort).")
+map_rows = []
+for it in items_now_sorted[:500]:
+    ll = extract_latlon_from_item(it)
+    if not ll:
+        continue
+    lat, lon = ll
+    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+    map_rows.append(
+        {
+            "lat": float(lat),
+            "lon": float(lon),
+            "title": item_title(it),
+            "company": item_company(it),
+            "dist_km": float(dist) if dist is not None else 999999.0,
+        }
+    )
 
+# Debug/Info: wie viele haben Koordinaten?
+st.caption(f"📍 Treffer mit Koordinaten: {len(map_rows)} von {len(items_now_sorted)}")
+
+# Immer einen Wohnort-Punkt auf der Karte
+home_df = pd.DataFrame([{"lat": float(home_lat), "lon": float(home_lon), "title": "Wohnort", "company": "", "dist_km": 0.0}])
+
+if len(map_rows) == 0:
+    st.warning(
+        "Für die aktuellen Treffer sind keine Koordinaten im BA-Response enthalten – daher kann keine Karte angezeigt werden. "
+        "Tipp: Deaktiviere ggf. Filter oder teste andere Treffer. (Die Entfernung wird dann ebenfalls '—' sein.)"
+    )
+else:
+    st.write("### Karte (Wohnort + nächste Treffer)")
+
+    df_map = pd.DataFrame(map_rows).sort_values("dist_km").head(50)
+    df_all = pd.concat([home_df, df_map], ignore_index=True)
+
+    layer = pdk.Layer(
+        "ScatterplotLayer",
+        data=df_all,
+        get_position="[lon, lat]",
+        get_radius=250,
+        pickable=True,
+        auto_highlight=True,
+    )
+
+    view_state = pdk.ViewState(
+        latitude=float(home_lat),
+        longitude=float(home_lon),
+        zoom=8.5,
+        pitch=0,
+    )
+
+    tooltip = {
+        "html": "<b>{title}</b><br/>{company}<br/>Dist: {dist_km} km",
+        "style": {"backgroundColor": "white", "color": "black"},
+    }
+
+    st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip=tooltip), use_container_width=True)
+    st.caption("Hinweis: Anzeige basiert auf Koordinaten aus dem BA-Suchergebnis (falls vorhanden).")
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
 
