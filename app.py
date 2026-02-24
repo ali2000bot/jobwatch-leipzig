@@ -179,25 +179,48 @@ with col2:
 
 with col1:
     with st.spinner("Suche läuft…"):
-        items_local, err1 = fetch_search(api_key, wo, int(umkreis), was, int(aktualitaet), int(size), arbeitszeit=None)
-        items_ho: List[Dict[str, Any]] = []
-        err2 = None
+    all_local = []
+    all_ho = []
+    errs = []
+
+    # selected & queries kommen aus der Sidebar (Punkt B)
+    for name in selected:
+        q = queries[name]
+
+        items_local, e1 = fetch_search(
+            api_key, wo, int(umkreis), q, int(aktualitaet), int(size), arbeitszeit=None
+        )
+        if e1:
+            errs.append(f"{name} (vor Ort): {e1}")
+        for it in items_local:
+            it["_profile"] = name
+            it["_bucket"] = f"Vor Ort ({umkreis} km)"
+        all_local.extend(items_local)
+
         if include_ho:
-            items_ho, err2 = fetch_search(api_key, wo, int(ho_umkreis), was, int(aktualitaet), int(size), arbeitszeit="ho")
+            items_ho, e2 = fetch_search(
+                api_key, wo, int(ho_umkreis), q, int(aktualitaet), int(size), arbeitszeit="ho"
+            )
+            if e2:
+                errs.append(f"{name} (homeoffice): {e2}")
+            for it in items_ho:
+                it["_profile"] = name
+                it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
+            all_ho.extend(items_ho)
 
-    if err1 or err2:
-        st.error("Fehler beim Abruf")
-        if err1:
-            st.code(err1)
-        if err2:
-            st.code(err2)
+if errs:
+    st.error("Fehler beim Abruf")
+    for e in errs:
+        st.code(e)
 
-    for it in items_local:
-        it["_bucket"] = f"Vor Ort ({umkreis} km)"
-    for it in items_ho:
-        it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
-
-    items_now = items_local + items_ho
+# Merge + dedup nach ID
+items_now = []
+seen = set()
+for it in (all_local + all_ho):
+    jid = item_id(it)
+    if jid and jid not in seen:
+        seen.add(jid)
+        items_now.append(it)
 
     if len(items_now) == 0 and not (err1 or err2):
         st.warning(
