@@ -133,20 +133,12 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
     return r.json(), None
 
 
-def build_default_query() -> str:
-    fach = [
-        "Thermophysik", "thermophysikalisch",
-        "Thermoanalyse", "Thermal Analysis",
-        "Analytik", "Materialcharakterisierung",
-        "Wärmeleitfähigkeit", "Kalorimetrie", "DSC", "TGA", "LFA",
-    ]
-    rollen = ["Teamleiter", "Laborleiter", "Abteilungsleiter", "Leiter", "Head", "Lead", "Manager"]
-    bereiche = [
-        "Forschung", "Entwicklung", "R&D", "Research", "Development",
-        "Projektmanagement", "Project Manager", "Program Manager",
-        "Vertrieb", "Sales",
-    ]
-    return " ".join(bereiche + fach + rollen)
+def build_queries() -> Dict[str, str]:
+    # kurze, fokussierte Suchprofile (mehr Treffer)
+    q_rd = "Thermoanalyse Thermophysik Analytik DSC TGA LFA Forschung Entwicklung R&D Teamleiter Laborleiter Leiter"
+    q_pm = "Projektmanagement Project Manager Program Manager Teamleiter Leiter Head Lead Manager"
+    q_sales = "Vertrieb Sales Business Development Key Account Manager Thermoanalyse Thermophysik"
+    return {"R&D/Leitung": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
