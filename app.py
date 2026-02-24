@@ -183,6 +183,7 @@ with st.sidebar:
 
     st.divider()
     api_key = st.text_input("X-API-Key", value=API_KEY_DEFAULT)
+    debug = st.checkbox("Debug anzeigen", value=False)
 
 col1, col2 = st.columns([2, 1], gap="large")
 
