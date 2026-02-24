@@ -19,7 +19,6 @@ SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
 
 # ---- Profil-Optimierung (Keywords/Scoring) ----
 FOCUS_KEYWORDS = [
-    # Thermoanalyse / Thermophysik
     "thermoanalyse",
     "thermophysik",
     "thermal analysis",
@@ -53,6 +52,9 @@ FOCUS_KEYWORDS = [
     "keramik",
     "metall",
     "f&e",
+    "verfahrenstechnik",
+    "physics",
+    "physik",
 ]
 
 LEADERSHIP_KEYWORDS = [
@@ -140,17 +142,34 @@ def item_company(it: Dict[str, Any]) -> str:
     return it.get("arbeitgeber") or it.get("arbeitgeberName") or it.get("unternehmen") or ""
 
 
-def item_location(it: Dict[str, Any]) -> str:
-    v = it.get("arbeitsort") or it.get("ort") or it.get("wo") or ""
-    if isinstance(v, str):
-        return v
+def pretty_location(it: Dict[str, Any]) -> str:
+    loc = it.get("arbeitsort") or it.get("ort") or it.get("wo")
+
+    if isinstance(loc, str):
+        return loc
+
+    if isinstance(loc, dict):
+        ort = (loc.get("ort") or "").strip()
+        region = (loc.get("region") or "").strip()
+        land = (loc.get("land") or "").strip()
+        entfernung = str(loc.get("entfernung") or "").strip()
+
+        parts = [p for p in [ort, region, land] if p]
+        base = ", ".join(parts) if parts else "—"
+        if entfernung:
+            base += f" ({entfernung} km)"
+        return base
+
+    if loc is None:
+        return "—"
+
     try:
-        return json.dumps(v, ensure_ascii=False)
+        return json.dumps(loc, ensure_ascii=False)
     except Exception:
-        return str(v)
+        return str(loc)
 
 
-def details_url(it: Dict[str, Any]) -> Optional[str]:
+def details_url_api(it: Dict[str, Any]) -> Optional[str]:
     links = it.get("_links") or {}
     for k in ["details", "jobdetails"]:
         v = links.get(k)
@@ -160,13 +179,16 @@ def details_url(it: Dict[str, Any]) -> Optional[str]:
     return None
 
 
+def jobsuche_web_url(it: Dict[str, Any]) -> Optional[str]:
+    # Fallback-Link zur BA-Webseite (funktioniert auch ohne API-Detail-URL)
+    ref = item_id(it)
+    if not ref:
+        return None
+    return f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{ref}"
+
+
 def looks_leadership(it: Dict[str, Any]) -> bool:
-    text = " ".join(
-        [
-            str(item_title(it)),
-            str(it.get("kurzbeschreibung", "")),
-        ]
-    ).lower()
+    text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
     return any(k in text for k in LEADERSHIP_KEYWORDS)
 
 
@@ -206,9 +228,6 @@ def relevance_score(it: Dict[str, Any]) -> int:
 
 
 def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
-    """
-    Harte Ausschlüsse für typische Off-Topic Rollen.
-    """
     text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
     hard = [
         "vorstandsassistenz",
@@ -290,6 +309,16 @@ def build_queries() -> Dict[str, str]:
     q_pm = "Projektmanagement Project Manager Program Manager"
     q_sales = "Vertrieb Sales Business Development Key Account Manager"
     return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
+
+
+def short_field(it: Dict[str, Any], *keys: str) -> str:
+    for k in keys:
+        v = it.get(k)
+        if v is None:
+            continue
+        if isinstance(v, str) and v.strip():
+            return v.strip()
+    return ""
 
 
 # ---------------- UI ----------------
@@ -390,7 +419,6 @@ with col1:
         items_now = [it for it in items_now if not is_probably_irrelevant(it)]
 
     if only_focus:
-        # Mindestscore: 8 ist ein guter Start (anpassbar)
         items_now = [it for it in items_now if relevance_score(it) >= 8]
 
     # Debug-Ausgabe
@@ -453,7 +481,7 @@ with col1:
                     it.get("_profile", ""),
                     it.get("_bucket", ""),
                     item_company(it),
-                    item_location(it),
+                    pretty_location(it),
                 ]
                 if x is not None and str(x).strip() != ""
             ]
@@ -462,28 +490,69 @@ with col1:
         with st.expander(label):
             st.caption(meta)
 
-            url = details_url(it)
-            if not url:
-                st.warning("Für dieses Angebot ist keine Detail-URL vorhanden.")
+            # Immer Web-Link anbieten
+            web_url = jobsuche_web_url(it)
+            if web_url:
+                try:
+                    st.link_button("🔗 In BA Jobsuche öffnen", web_url)
+                except Exception:
+                    st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
+
+            # Versuche API-Details zu laden, falls Link vorhanden
+            api_url = details_url_api(it)
+            if not api_url:
+                st.info("Keine API-Detail-URL im Suchtreffer vorhanden – zeige Basisinfos aus der Ergebnisliste.")
+                basis = {
+                    "RefNr": item_id(it),
+                    "Titel": item_title(it),
+                    "Arbeitgeber": item_company(it),
+                    "Ort": pretty_location(it),
+                    "Profil": it.get("_profile", ""),
+                    "Quelle": it.get("_bucket", ""),
+                    "Kurzbeschreibung": short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext"),
+                    "Veröffentlicht": short_field(it, "veroeffentlichungsdatum", "veroeffentlichtAm", "date"),
+                    "Aktualisiert": short_field(it, "aktualisiertAm", "aktualisiert", "updated"),
+                }
+                # Nur nicht-leere Felder anzeigen
+                basis = {k: v for k, v in basis.items() if v}
+                st.write("**Basisdaten:**")
+                st.table([[k, v] for k, v in basis.items()])
                 continue
 
-            details, derr = fetch_details(api_key, url)
+            details, derr = fetch_details(api_key, api_url)
             if derr:
                 st.error(derr)
+                st.info("Falls Details über die API nicht abrufbar sind, nutze den Link oben zur BA-Webseite.")
                 continue
             if not details:
                 st.info("Keine Details erhalten.")
                 continue
 
-            st.write("**Kurzinfo**")
-            c1, c2, c3 = st.columns(3)
-            c1.write(f"**Arbeitgeber:** {details.get('arbeitgeber') or details.get('arbeitgeberName') or '—'}")
-            c2.write(f"**Ort:** {details.get('arbeitsort') or '—'}")
-            c3.write(f"**ID:** {jid or '—'}")
+            # Kompakte, aussagekräftigere Darstellung
+            st.write("**Kurzprofil**")
+            c1, c2, c3, c4 = st.columns(4)
+            c1.metric("Relevanz-Score", score)
+            c2.write(f"**Profil:** {it.get('_profile','—')}")
+            c3.write(f"**Quelle:** {it.get('_bucket','—')}")
+            c4.write(f"**RefNr:** {jid or '—'}")
 
-            st.write("**Beschreibung**")
-            desc = details.get("stellenbeschreibung") or details.get("beschreibung") or details.get("jobbeschreibung")
+            st.write("**Rahmendaten**")
+            d_arbeitgeber = details.get("arbeitgeber") or details.get("arbeitgeberName") or item_company(it) or "—"
+            d_ort = details.get("arbeitsort") or pretty_location(it) or "—"
+            st.write(f"- **Arbeitgeber:** {d_arbeitgeber}")
+            st.write(f"- **Ort:** {d_ort}")
+
+            # Beschreibung: mehrere mögliche Felder
+            desc = (
+                details.get("stellenbeschreibung")
+                or details.get("beschreibung")
+                or details.get("jobbeschreibung")
+                or details.get("aufgaben")
+                or details.get("anforderungen")
+            )
+
+            st.write("**Beschreibung / Aufgaben / Anforderungen**")
             if isinstance(desc, str) and desc.strip():
                 st.write(desc)
             else:
-                st.info("Keine ausführliche Beschreibung im Detail-Response gefunden.")
+                st.info("Keine ausführliche Beschreibung im Detail-Response gefunden. Nutze ggf. den BA-Link oben.")
