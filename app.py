@@ -92,6 +92,7 @@ def fetch_search(
     page: int = 1,
     arbeitszeit: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
+
     params = {
         "angebotsart": "1",
         "page": str(page),
@@ -102,21 +103,24 @@ def fetch_search(
         "wo": wo,
         "was": was,
     }
-    if arbeitszeit:
-        params["arbeitszeit"] = arbeitszeit  # z.B. "ho"
 
-try:
-    r = requests.get(
-        SEARCH_URL,
-        headers=headers(api_key),
-        params=params,
-        timeout=25,
-        verify=False,  # wie im Beispiel :contentReference[oaicite:3]{index=3}
-    )
-except Exception as e:
-    return [], f"Request-Fehler: {type(e).__name__}: {e}"
+    if arbeitszeit:
+        params["arbeitszeit"] = arbeitszeit
+
+    try:
+        r = requests.get(
+            SEARCH_URL,
+            headers=headers(api_key),
+            params=params,
+            timeout=25,
+            verify=False,
+        )
+    except Exception as e:
+        return [], f"Request-Fehler: {type(e).__name__}: {e}"
+
     if r.status_code != 200:
         return [], f"Suche HTTP {r.status_code}: {r.text[:400]}"
+
     data = r.json()
     return extract_items(data), None
 
