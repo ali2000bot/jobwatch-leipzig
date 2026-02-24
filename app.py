@@ -5,6 +5,10 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 import requests
 import streamlit as st
+import urllib3
+
+# In vielen Umgebungen (inkl. Cloud/Proxies) ist verify=False nötig.
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 BASE = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service"
 SEARCH_URL = f"{BASE}/pc/v4/app/jobs"
@@ -33,7 +37,7 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
 
 
 def headers(api_key: str) -> Dict[str, str]:
-    # wie im offiziellen Beispiel (Jobsuche-App User-Agent + Host) :contentReference[oaicite:2]{index=2}
+    # Header wie Jobsuche-App (hilft oft bei Stabilität)
     return {
         "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077) Streamlit",
         "Host": "rest.arbeitsagentur.de",
@@ -44,10 +48,8 @@ def headers(api_key: str) -> Dict[str, str]:
 
 
 def extract_items(data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    # v4/app/jobs liefert häufig "stellenangebote"
     if isinstance(data.get("stellenangebote"), list):
         return data["stellenangebote"]
-    # Fallback:
     emb = data.get("_embedded") or {}
     if isinstance(emb.get("jobs"), list):
         return emb["jobs"]
@@ -55,7 +57,6 @@ def extract_items(data: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def item_id(it: Dict[str, Any]) -> str:
-    # Möglichst stabil: refnr wenn vorhanden, sonst hashId
     return it.get("refnr") or it.get("refNr") or it.get("hashId") or it.get("hashID") or ""
 
 
@@ -68,7 +69,14 @@ def item_company(it: Dict[str, Any]) -> str:
 
 
 def item_location(it: Dict[str, Any]) -> str:
-    return it.get("arbeitsort") or it.get("ort") or it.get("wo") or ""
+    v = it.get("arbeitsort") or it.get("ort") or it.get("wo") or ""
+    if isinstance(v, str):
+        return v
+    # falls dict/list kommt, robust darstellen
+    try:
+        return json.dumps(v, ensure_ascii=False)
+    except Exception:
+        return str(v)
 
 
 def details_url(it: Dict[str, Any]) -> Optional[str]:
@@ -92,7 +100,6 @@ def fetch_search(
     page: int = 1,
     arbeitszeit: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
-
     params = {
         "angebotsart": "1",
         "page": str(page),
@@ -103,9 +110,8 @@ def fetch_search(
         "wo": wo,
         "was": was,
     }
-
     if arbeitszeit:
-        params["arbeitszeit"] = arbeitszeit
+        params["arbeitszeit"] = arbeitszeit  # z.B. "ho"
 
     try:
         r = requests.get(
@@ -119,28 +125,41 @@ def fetch_search(
         return [], f"Request-Fehler: {type(e).__name__}: {e}"
 
     if r.status_code != 200:
-        return [], f"Suche HTTP {r.status_code}: {r.text[:400]}"
+        return [], f"Suche HTTP {r.status_code}: {r.text[:600]}"
 
-    data = r.json()
+    try:
+        data = r.json()
+    except Exception:
+        return [], "Suche: Antwort war kein gültiges JSON."
+
     return extract_items(data), None
 
 
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
-    r = requests.get(url, headers=headers(api_key), timeout=25)
+    try:
+        r = requests.get(url, headers=headers(api_key), timeout=25, verify=False)
+    except Exception as e:
+        return None, f"Details-Request-Fehler: {type(e).__name__}: {e}"
+
     if r.status_code != 200:
-        return None, f"Details HTTP {r.status_code}: {r.text[:400]}"
-    return r.json(), None
+        return None, f"Details HTTP {r.status_code}: {r.text[:600]}"
+
+    try:
+        return r.json(), None
+    except Exception:
+        return None, "Details: Antwort war kein gültiges JSON."
 
 
 def build_queries() -> Dict[str, str]:
-    # kurze, fokussierte Suchprofile (mehr Treffer)
+    # kurze, fokussierte Suchprofile (mehr Treffer als ein riesiger String)
     q_rd = "Thermoanalyse Thermophysik Analytik DSC TGA LFA Forschung Entwicklung R&D Teamleiter Laborleiter Leiter"
     q_pm = "Projektmanagement Project Manager Program Manager Teamleiter Leiter Head Lead Manager"
     q_sales = "Vertrieb Sales Business Development Key Account Manager Thermoanalyse Thermophysik"
     return {"R&D/Leitung": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
+# ---------------- UI ----------------
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
 
@@ -154,6 +173,7 @@ with st.sidebar:
 
     queries = build_queries()
     selected = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
+
     aktualitaet = st.slider("Nur Jobs der letzten X Tage", 0, 100, 30, 5)
     size = st.selectbox("Treffer pro Seite", [25, 50, 100], index=1)
 
@@ -168,7 +188,6 @@ with col2:
     st.write(snap.get("timestamp") or "— noch keiner gespeichert")
 
     if st.button("Snapshot speichern (aktueller Stand)"):
-        # wird nach dem Abruf gesetzt
         st.session_state["save_snapshot_requested"] = True
 
     if st.button("Snapshot löschen"):
@@ -178,14 +197,61 @@ with col2:
         st.success("Snapshot gelöscht. Seite neu laden.")
 
 with col1:
-    
-    if len(items_now) == 0 and not (err1 or err2):
-        st.warning(
-        "0 Treffer. Tipp: Suchtext ist evtl. zu streng. "
-        "Teste z.B. nur 'Thermoanalyse' oder nur 'Projektmanagement' "
-        "und setze 'aktualitaet' höher (z.B. 60)."
-    )
+    # --- Suche ausführen (MEHRERE Profile) + Merge ---
+    with st.spinner("Suche läuft…"):
+        all_items: List[Dict[str, Any]] = []
+        errs: List[str] = []
 
+        if not selected:
+            errs.append("Bitte mindestens ein Profil auswählen.")
+        else:
+            for name in selected:
+                q = queries[name]
+
+                # Vor-Ort
+                items_local, e1 = fetch_search(
+                    api_key, wo, int(umkreis), q, int(aktualitaet), int(size), arbeitszeit=None
+                )
+                if e1:
+                    errs.append(f"{name} (vor Ort): {e1}")
+                for it in items_local:
+                    it["_profile"] = name
+                    it["_bucket"] = f"Vor Ort ({umkreis} km)"
+                all_items.extend(items_local)
+
+                # Homeoffice
+                if include_ho:
+                    items_ho, e2 = fetch_search(
+                        api_key, wo, int(ho_umkreis), q, int(aktualitaet), int(size), arbeitszeit="ho"
+                    )
+                    if e2:
+                        errs.append(f"{name} (homeoffice): {e2}")
+                    for it in items_ho:
+                        it["_profile"] = name
+                        it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
+                    all_items.extend(items_ho)
+
+    if errs:
+        st.error("Fehler / Hinweise")
+        for e in errs:
+            st.code(e)
+
+    # Dedup nach ID
+    items_now: List[Dict[str, Any]] = []
+    seen: Set[str] = set()
+    for it in all_items:
+        jid = item_id(it)
+        if jid and jid not in seen:
+            seen.add(jid)
+            items_now.append(it)
+
+    if len(items_now) == 0 and not errs:
+        st.warning(
+            "0 Treffer. Tipp: Setze 'Nur Jobs der letzten X Tage' höher (z.B. 60–90) "
+            "oder wähle nur ein Profil (z.B. nur R&D/Leitung) und teste erneut."
+        )
+
+    # Snapshot-Vergleich
     prev_items = snap.get("items", [])
     prev_ids: Set[str] = {item_id(x) for x in prev_items if item_id(x)}
     now_ids: Set[str] = {item_id(x) for x in items_now if item_id(x)}
@@ -211,9 +277,19 @@ with col1:
         jid = item_id(it)
         is_new = jid in new_ids
         label = f"{'🟢 NEU  ' if is_new else ''}{item_title(it)}"
+
         meta = " | ".join(
-            [str(x) for x in [it.get("_profile", ""), it.get("_bucket", ""), item_company(it), item_location(it)] if x is not None and str(x).strip() != ""]
-            )
+            [
+                str(x)
+                for x in [
+                    it.get("_profile", ""),
+                    it.get("_bucket", ""),
+                    item_company(it),
+                    item_location(it),
+                ]
+                if x is not None and str(x).strip() != ""
+            ]
+        )
 
         with st.expander(label):
             st.caption(meta)
@@ -226,6 +302,9 @@ with col1:
             details, derr = fetch_details(api_key, url)
             if derr:
                 st.error(derr)
+                continue
+            if not details:
+                st.info("Keine Details erhalten.")
                 continue
 
             st.write("**Kurzinfo**")
