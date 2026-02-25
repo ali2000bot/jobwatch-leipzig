@@ -393,24 +393,6 @@ def leaflet_map_html(
 <script>
   const markers = {markers_json};
 
-  function baseUrl() {{
-    try {{
-      if (document.referrer) return document.referrer.split('?')[0];
-    }} catch(e) {{}}
-    return "";
-  }}
-
-  function jumpTo(key) {{
-    const base = baseUrl();
-    const target = (base ? (base + '?sel=' + encodeURIComponent(key)) : ('?sel=' + encodeURIComponent(key)));
-    const w = window.open(target, "jobwatch_select");
-    if (!w) {{
-      alert("Popup/Tab wurde blockiert. Bitte Popups für diese Seite erlauben.");
-      return;
-    }}
-    try {{ w.focus(); }} catch(e) {{}}
-  }}
-
   function pinSvg(color) {{
     return `
       <svg class="pinsvg" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">
@@ -448,7 +430,6 @@ def leaflet_map_html(
     const title = (m.title || '').replace(/</g,'&lt;');
     const company = (m.company || '').replace(/</g,'&lt;');
     const dist = (m.dist_km != null) ? (Math.round(m.dist_km*10)/10) : null;
-    const key = (m.key || '');
     const idx = m.idx || '';
 
     let color = "#c62828";
@@ -456,16 +437,10 @@ def leaflet_map_html(
     if (m.pin === "yellow") color = "#f9a825";
 
     const icon = numberedIcon(color, idx);
-    const safeKey = key.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'");
-
-    const jumpBtn = key
-      ? '<br/><button class="jump" onclick="jumpTo(\\'' + safeKey + '\\')">➡️ In App anzeigen</button>'
-      : '';
 
     const popup =
       '<b>' + idx + ') ' + title + '</b><br/>' + company
-      + (dist!=null ? '<br/>Dist: ' + dist + ' km' : '')
-      + jumpBtn;
+      + (dist!=null ? '<br/>Dist: ' + dist + ' km' : '');
 
     L.marker([lat, lon], {{icon: icon}}).addTo(fg).bindPopup(popup);
   }});
@@ -484,25 +459,6 @@ def leaflet_map_html(
 # -------------------- App UI --------------------
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
-
-# Query param sel (Marker-Klick-Tab) -> item_key
-try:
-    qp_sel = st.query_params.get("sel", "")
-except Exception:
-    qp_sel = st.experimental_get_query_params().get("sel", [""])[0]
-
-if "selected_key" not in st.session_state:
-    st.session_state["selected_key"] = ""
-
-if qp_sel and qp_sel != st.session_state["selected_key"]:
-    st.session_state["selected_key"] = qp_sel
-    try:
-        st.query_params.clear()
-    except Exception:
-        st.experimental_set_query_params()
-    st.rerun()
-
-selected_key = st.session_state["selected_key"]
 
 # Keyword Session defaults
 if "kw_focus" not in st.session_state:
@@ -528,18 +484,18 @@ with st.sidebar:
     st.subheader("Fahrzeit-Schätzung")
     speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
-    if selected_key:
-        if st.button("Auswahl zurücksetzen"):
-            st.session_state["selected_key"] = ""
-            st.rerun()
-
     st.divider()
     st.header("Sucheinstellungen")
     wo = st.text_input("Ort (BA-Suche)", value="Leipzig")
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 50], index=1)
 
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=True)
+
+    # max. 200 km
     ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 200, 25)
+
+    # ✅ NEU: Homeoffice-Bonus
+    ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
 
     queries = build_queries()
     selected_profiles = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
@@ -612,6 +568,15 @@ def looks_leadership(it: Dict[str, Any]) -> bool:
     return any(k in text for k in LEADERSHIP_KEYWORDS)
 
 
+def is_homeoffice_item(it: Dict[str, Any]) -> bool:
+    # robust: Bucket enthält "Homeoffice", oder arbeitszeit==ho in Item (falls vorhanden)
+    b = str(it.get("_bucket", "")).lower()
+    if "homeoffice" in b:
+        return True
+    az = str(it.get("arbeitszeit", "")).lower()
+    return az == "ho"
+
+
 def relevance_score(it: Dict[str, Any]) -> int:
     text = " ".join(
         [
@@ -632,6 +597,11 @@ def relevance_score(it: Dict[str, Any]) -> int:
     for k in NEGATIVE_KEYWORDS:
         if k and k in text:
             score -= 12
+
+    # ✅ NEU: Homeoffice-Bonus (aus Sidebar)
+    if is_homeoffice_item(it):
+        score += int(ho_bonus)
+
     return score
 
 
@@ -642,13 +612,9 @@ def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
 
 
 def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
-    """
-    Kleine 'Steckbrief'-Darstellung als 2-Spalten-Gitter.
-    """
     rows = [(k, v) for (k, v) in rows if v is not None and str(v).strip() != ""]
     if not rows:
         return
-    # in 2 Spalten ausgeben
     n = len(rows)
     half = (n + 1) // 2
     left = rows[:half]
@@ -671,6 +637,8 @@ with col1:
     with st.spinner("Suche läuft…"):
         all_items: List[Dict[str, Any]] = []
         errs: List[str] = []
+
+        queries = build_queries()  # safety
 
         for name in selected_profiles:
             q = queries[name]
@@ -765,7 +733,7 @@ with col1:
         )
 
     if debug:
-        st.info(f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)}")
+        st.info(f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)} | ho_bonus={ho_bonus}")
 
     if markers:
         st.write("### Karte – nummerierte Stecknadeln")
@@ -776,11 +744,6 @@ with col1:
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
-
-    # ✅ Verbesserungen:
-    # 1) Entfernung & Nummer im Titel
-    # 2) Farbliche Markierung im Titel
-    # 3) Detail-„Steckbrief“-Grid + Links oben
 
     for it in items_sorted:
         k = it.get("_key") or item_key(it)
@@ -794,13 +757,13 @@ with col1:
         emo = distance_emoji(bucket)
 
         lead = "⭐ " if looks_leadership(it) else ""
+        ho_tag = " 🏠" if is_homeoffice_item(it) else ""
 
         num_txt = f"{idx:02d}" if idx > 0 else "??"
         dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
-        # 1) + 2) Titel: Nummer + Distanz + Ampel + NEU
-        # Beispiel: "🟢 🟩 03 · 12.4 km · ⭐ Teamleiter Thermoanalyse"
-        label = f"{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {lead}{item_title(it)}"
+        # Titel: Nummer + Distanz + Ampel + NEU + HO-Icon
+        label = f"{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {lead}{item_title(it)}{ho_tag}"
 
         meta_text = " | ".join(
             [
@@ -813,16 +776,15 @@ with col1:
         )
 
         with st.expander(label):
-            # Oben: Badge + Meta
             badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
             st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
 
-            # 3) Steckbrief-Grid
             rid = item_id_raw(it) or "—"
             facts = [
                 ("Nr.", num_txt),
                 ("Distanz", dist_txt),
                 ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
+                ("Homeoffice", "Ja (Bonus aktiv)" if is_homeoffice_item(it) else "—"),
                 ("Arbeitgeber", item_company(it) or "—"),
                 ("Ort", pretty_location(it)),
                 ("Profil", it.get("_profile", "")),
@@ -832,7 +794,6 @@ with col1:
             ]
             render_fact_grid(facts)
 
-            # Links (oben/zentral)
             web_url = jobsuche_web_url(it)
             ll = extract_latlon_from_item(it)
             if web_url or ll:
@@ -853,17 +814,12 @@ with col1:
 
             st.divider()
 
-            # Details: API oder Fallback
             api_url = details_url_api(it)
             if not api_url:
                 st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
                 kurz = short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext")
-                if kurz:
-                    st.write("**Kurzbeschreibung**")
-                    st.write(kurz)
-                else:
-                    st.write("**Kurzbeschreibung**")
-                    st.write("—")
+                st.write("**Kurzbeschreibung**")
+                st.write(kurz if kurz else "—")
                 continue
 
             details, derr = fetch_details(api_key, api_url)
