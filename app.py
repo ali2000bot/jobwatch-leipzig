@@ -526,7 +526,7 @@ def leaflet_map_html(
 # Streamlit App
 # =========================
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
-st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
+st.title("JobWatch Raum Leipzig – Jobs finden & vergleichen")
 
 # Keyword Session defaults
 if "kw_focus" not in st.session_state:
@@ -554,7 +554,7 @@ with st.sidebar:
 
     st.divider()
     st.header("Sucheinstellungen")
-    wo = st.text_input("Ort (BA-Suche)", value="Leipzig")
+    wo = st.text_input("Ort (BA-Suche)", value="Merseburg")
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
 
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=True)
