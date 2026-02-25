@@ -267,33 +267,90 @@ def distance_badge_html(dist_km: Optional[float], t_min: Optional[int], near_km:
         return '<span style="background:#999;color:white;padding:2px 8px;border-radius:999px;font-size:12px;">Entf.: —</span>'
 
     if dist_km <= near_km:
-        bg = "#2e7d32"  # grün
+        bg = "#2e7d32"
     elif dist_km <= mid_km:
-        bg = "#f9a825"  # gelb
+        bg = "#f9a825"
     else:
-        bg = "#c62828"  # rot
+        bg = "#c62828"
 
     t_part = f" · ~{t_min} min" if t_min is not None else ""
     txt = f"{dist_km:.1f} km{t_part}"
     return f'<span style="background:{bg};color:white;padding:2px 8px;border-radius:999px;font-size:12px;">{txt}</span>'
 
 
-# ---------------- Map (NO WebGL) ----------------
-def bbox_from_points(points: List[Tuple[float, float]], pad_deg: float = 0.05) -> Tuple[float, float, float, float]:
-    lats = [p[0] for p in points]
-    lons = [p[1] for p in points]
-    min_lat, max_lat = min(lats), max(lats)
-    min_lon, max_lon = min(lons), max(lons)
-    return (min_lon - pad_deg, min_lat - pad_deg, max_lon + pad_deg, max_lat + pad_deg)
+# ---------------- Leaflet map (ohne WebGL) ----------------
+def leaflet_map_html(
+    home_lat: float,
+    home_lon: float,
+    markers: List[Dict[str, Any]],
+    height_px: int = 460,
+) -> str:
+    # markers: [{"lat":..,"lon":..,"title":..,"company":..,"dist_km":..}, ...]
+    markers_json = json.dumps(markers, ensure_ascii=False)
+    return f"""
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <style>
+    html, body {{ margin:0; padding:0; }}
+    #map {{ height: {height_px}px; width: 100%; }}
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  const homeLat = {home_lat};
+  const homeLon = {home_lon};
+  const markers = {markers_json};
 
+  const map = L.map('map');
+  L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
+  }}).addTo(map);
 
-def osm_embed_url(bbox: Tuple[float, float, float, float], marker: Optional[Tuple[float, float]] = None) -> str:
-    # https://www.openstreetmap.org/export/embed.html?bbox=...&layer=mapnik&marker=lat,lon
-    left, bottom, right, top = bbox
-    url = f"https://www.openstreetmap.org/export/embed.html?bbox={left}%2C{bottom}%2C{right}%2C{top}&layer=mapnik"
-    if marker:
-        url += f"&marker={marker[0]}%2C{marker[1]}"
-    return url
+  const homeIcon = L.divIcon({{
+    className: '',
+    html: '<div style="background:#1565c0;color:white;border-radius:999px;padding:4px 8px;font-size:12px;">Wohnort</div>'
+  }});
+
+  const jobIcon = L.divIcon({{
+    className: '',
+    html: '<div style="background:#2e7d32;color:white;border-radius:999px;padding:3px 7px;font-size:12px;">Job</div>'
+  }});
+
+  const fg = L.featureGroup();
+
+  const homeMarker = L.marker([homeLat, homeLon], {{icon: homeIcon}}).addTo(map);
+  homeMarker.bindPopup('<b>Wohnort</b><br/>{DEFAULT_HOME_LABEL}');
+  fg.addLayer(homeMarker);
+
+  markers.forEach(m => {{
+    const lat = m.lat, lon = m.lon;
+    const title = (m.title || '').replace(/</g,'&lt;');
+    const company = (m.company || '').replace(/</g,'&lt;');
+    const dist = (m.dist_km != null) ? (Math.round(m.dist_km*10)/10) : null;
+    const popup = `<b>${{title}}</b><br/>${{company}}` + (dist!=null ? `<br/>Dist: ${{dist}} km` : '');
+    const mk = L.marker([lat, lon], {{icon: jobIcon}}).addTo(map);
+    mk.bindPopup(popup);
+    fg.addLayer(mk);
+  }});
+
+  if (fg.getLayers().length > 1) {{
+    map.fitBounds(fg.getBounds().pad(0.15));
+  }} else {{
+    map.setView([homeLat, homeLon], 10);
+  }}
+</script>
+</body>
+</html>
+"""
 
 
 def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float, dest_lon: float) -> str:
@@ -538,23 +595,32 @@ with col1:
             for t in test_items[:3]:
                 st.write("-", item_title(t))
 
-    # --------- Übersichtskarte (iFrame, ohne WebGL) ----------
-    coords = []
+    # --------- Übersichtskarte: Leaflet (Wohnort + Treffer als Marker) ----------
+    markers = []
     for it in items_now_sorted[:200]:
         ll = extract_latlon_from_item(it)
-        if ll:
-            coords.append(ll)
+        if not ll:
+            continue
+        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        markers.append(
+            {
+                "lat": float(ll[0]),
+                "lon": float(ll[1]),
+                "title": item_title(it),
+                "company": item_company(it),
+                "dist_km": float(dist) if dist is not None else None,
+            }
+        )
 
-    st.caption(f"🗺️ Koordinaten verfügbar: {len(coords)} von {len(items_now_sorted)}")
+    st.caption(f"🗺️ Treffer mit Koordinaten: {len(markers)} von {len(items_now_sorted)}")
 
-    if coords:
-        # bbox um Wohnort + nächste Treffer
-        pts = [(float(home_lat), float(home_lon))] + [(c[0], c[1]) for c in coords[:50]]
-        bbox = bbox_from_points(pts, pad_deg=0.08)
-        url = osm_embed_url(bbox, marker=(float(home_lat), float(home_lon)))
-        st.write("### Karte (OpenStreetMap)")
-        components.iframe(url, height=420, scrolling=True)
-        st.caption("Falls die Karte hier trotzdem leer bleibt: In Edge ist evtl. das Laden von externen iFrames eingeschränkt (Firmenpolicy).")
+    if markers:
+        st.write("### Karte (Wohnort + Treffer)")
+        # Bis zu 60 Marker zeichnen (Performance)
+        markers_sorted = sorted(markers, key=lambda m: (m["dist_km"] if m["dist_km"] is not None else 999999.0))[:60]
+        html = leaflet_map_html(float(home_lat), float(home_lon), markers_sorted, height_px=460)
+        components.html(html, height=480)
+        st.caption("Tipp: In die Marker klicken (Popup mit Titel/Firma/Distanz).")
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
@@ -594,13 +660,6 @@ with col1:
             ll = extract_latlon_from_item(it)
             if ll:
                 lat, lon = ll
-                # Mini-Karte als OSM-iFrame (ohne WebGL)
-                pts = [(float(home_lat), float(home_lon)), (float(lat), float(lon))]
-                bbox = bbox_from_points(pts, pad_deg=0.03)
-                mini_url = osm_embed_url(bbox, marker=(float(lat), float(lon)))
-                components.iframe(mini_url, height=260, scrolling=False)
-
-                # Routenlink
                 gdir = google_directions_url(float(home_lat), float(home_lon), float(lat), float(lon))
                 try:
                     st.link_button("🚗 Route in Google Maps", gdir)
@@ -630,7 +689,7 @@ with col1:
             details, derr = fetch_details(api_key, api_url)
             if derr:
                 st.error(derr)
-                st.info("Falls Details über die API nicht abrufbar sind, nutze den BA-Link oben zur BA-Webseite.")
+                st.info("Falls Details über die API nicht abrufbar sind, nutze den BA-Link oben.")
                 continue
             if not details:
                 st.info("Keine Details erhalten.")
