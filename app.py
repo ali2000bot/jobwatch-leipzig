@@ -91,10 +91,6 @@ def extract_items(data: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 def item_id_raw(it: Dict[str, Any]) -> str:
-    """
-    BA liefert je nach Endpoint/Profil refnr/refNr/hashId… manchmal leer.
-    Wir nutzen das, wenn vorhanden, aber verlassen uns nicht darauf.
-    """
     v = it.get("refnr") or it.get("refNr") or it.get("hashId") or it.get("hashID") or ""
     return str(v).strip() if v is not None else ""
 
@@ -128,11 +124,6 @@ def pretty_location(it: Dict[str, Any]) -> str:
 
 
 def item_key(it: Dict[str, Any]) -> str:
-    """
-    Robuste, stabile ID:
-    - bevorzugt echte BA-ID
-    - sonst Hash aus Titel+Firma+Ort
-    """
     rid = item_id_raw(it)
     if rid:
         return f"ba:{rid}"
@@ -434,7 +425,6 @@ def leaflet_map_html(
 
   const fg = L.featureGroup().addTo(map);
 
-  // Home marker
   const homeIcon = numberedIcon("#1565c0", "");
   const homeMarker = L.marker([{home_lat}, {home_lon}], {{icon: homeIcon}}).addTo(fg);
   homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
@@ -482,7 +472,7 @@ def leaflet_map_html(
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
 
-# Query param sel (Marker-Klick-Tab) -> ist jetzt item_key
+# Query param sel (Marker-Klick-Tab) -> item_key
 try:
     qp_sel = st.query_params.get("sel", "")
 except Exception:
@@ -704,7 +694,7 @@ with col1:
 
     items_sorted = sorted(items_now, key=sort_key)
 
-    # Nummerierung: IMMER (1..N)
+    # Nummerierung: IMMER (1..N) direkt am Item
     for i, it in enumerate(items_sorted, start=1):
         it["_idx"] = i
 
@@ -718,7 +708,6 @@ with col1:
     st.caption(f"Neu seit Snapshot: {len(new_keys)}")
 
     if st.session_state.get("save_snapshot_requested"):
-        # Speichere Liste inkl. _key und _idx
         save_snapshot(items_sorted)
         st.session_state["save_snapshot_requested"] = False
         st.success("Snapshot gespeichert.")
@@ -767,9 +756,10 @@ with col1:
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
 
+    # ✅ HIER ist der entscheidende Teil: Nummer IM Expander-Titel (label)
     for it in items_sorted:
         k = it.get("_key") or item_key(it)
-        idx = it.get("_idx", "?")
+        idx = int(it.get("_idx", 0) or 0)
         is_new = (k in new_keys)
         score = relevance_score(it)
 
@@ -778,7 +768,11 @@ with col1:
         badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
 
         lead = "⭐ " if looks_leadership(it) else ""
-        label = f"{'🟢 NEU  ' if is_new else ''}{idx}) {lead}{item_title(it)}"
+
+        # Nummer sichtbar in der geschlossenen Liste:
+        # z.B. "🟢 03 · ⭐ Teamleiter …"
+        num_txt = f"{idx:02d}" if idx > 0 else "??"
+        label = f"{'🟢 ' if is_new else ''}{num_txt} · {lead}{item_title(it)}"
 
         meta_text = " | ".join(
             [
@@ -814,7 +808,7 @@ with col1:
             if not api_url:
                 st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
                 basis = {
-                    "Nr.": idx,
+                    "Nr.": num_txt,
                     "Key": k,
                     "RefNr/BA-ID": item_id_raw(it) or "—",
                     "Titel": item_title(it),
