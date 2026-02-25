@@ -272,6 +272,20 @@ def travel_time_minutes(distance_km: Optional[float], speed_kmh: float) -> Optio
     return max(0, minutes)
 
 
+def distance_bucket(dist_km: Optional[float], near_km: int, mid_km: int) -> str:
+    if dist_km is None:
+        return "na"
+    if dist_km <= near_km:
+        return "green"
+    if dist_km <= mid_km:
+        return "yellow"
+    return "red"
+
+
+def distance_emoji(bucket: str) -> str:
+    return {"green": "🟩", "yellow": "🟨", "red": "🟥", "na": "⬜"}.get(bucket, "⬜")
+
+
 def distance_badge_html(dist_km: Optional[float], t_min: Optional[int], near_km: int, mid_km: int) -> str:
     if dist_km is None:
         return '<span style="background:#999;color:white;padding:2px 8px;border-radius:999px;font-size:12px;">Entf.: —</span>'
@@ -442,7 +456,6 @@ def leaflet_map_html(
     if (m.pin === "yellow") color = "#f9a825";
 
     const icon = numberedIcon(color, idx);
-
     const safeKey = key.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'");
 
     const jumpBtn = key
@@ -628,6 +641,28 @@ def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
     return any(h in text for h in hard)
 
 
+def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
+    """
+    Kleine 'Steckbrief'-Darstellung als 2-Spalten-Gitter.
+    """
+    rows = [(k, v) for (k, v) in rows if v is not None and str(v).strip() != ""]
+    if not rows:
+        return
+    # in 2 Spalten ausgeben
+    n = len(rows)
+    half = (n + 1) // 2
+    left = rows[:half]
+    right = rows[half:]
+
+    c1, c2 = st.columns(2)
+    with c1:
+        for k, v in left:
+            st.markdown(f"**{k}:** {v}")
+    with c2:
+        for k, v in right:
+            st.markdown(f"**{k}:** {v}")
+
+
 with col1:
     if not selected_profiles:
         st.warning("Bitte mindestens ein Profil auswählen.")
@@ -694,15 +729,9 @@ with col1:
 
     items_sorted = sorted(items_now, key=sort_key)
 
-    # Nummerierung: IMMER (1..N) direkt am Item
+    # Nummerierung: IMMER (1..N)
     for i, it in enumerate(items_sorted, start=1):
         it["_idx"] = i
-
-    # Auswahl: ausgewählten Treffer nach oben ziehen
-    if selected_key:
-        picked = [x for x in items_sorted if x.get("_key") == selected_key]
-        rest = [x for x in items_sorted if x.get("_key") != selected_key]
-        items_sorted = picked + rest
 
     st.subheader(f"Treffer: {len(items_sorted)}")
     st.caption(f"Neu seit Snapshot: {len(new_keys)}")
@@ -720,15 +749,7 @@ with col1:
             continue
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         d = float(dist) if dist is not None else None
-
-        if d is None:
-            pin = "red"
-        elif d <= float(near_km):
-            pin = "green"
-        elif d <= float(mid_km):
-            pin = "yellow"
-        else:
-            pin = "red"
+        bucket = distance_bucket(d, int(near_km), int(mid_km))
 
         markers.append(
             {
@@ -739,12 +760,12 @@ with col1:
                 "company": item_company(it),
                 "dist_km": d,
                 "key": it.get("_key", ""),
-                "pin": pin,
+                "pin": bucket,
             }
         )
 
     if debug:
-        st.info(f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)} | selected_key={selected_key!r}")
+        st.info(f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)}")
 
     if markers:
         st.write("### Karte – nummerierte Stecknadeln")
@@ -756,7 +777,11 @@ with col1:
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
 
-    # ✅ HIER ist der entscheidende Teil: Nummer IM Expander-Titel (label)
+    # ✅ Verbesserungen:
+    # 1) Entfernung & Nummer im Titel
+    # 2) Farbliche Markierung im Titel
+    # 3) Detail-„Steckbrief“-Grid + Links oben
+
     for it in items_sorted:
         k = it.get("_key") or item_key(it)
         idx = int(it.get("_idx", 0) or 0)
@@ -765,14 +790,17 @@ with col1:
 
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         t_min = travel_time_minutes(dist, float(speed_kmh))
-        badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
+        bucket = distance_bucket(dist, int(near_km), int(mid_km))
+        emo = distance_emoji(bucket)
 
         lead = "⭐ " if looks_leadership(it) else ""
 
-        # Nummer sichtbar in der geschlossenen Liste:
-        # z.B. "🟢 03 · ⭐ Teamleiter …"
         num_txt = f"{idx:02d}" if idx > 0 else "??"
-        label = f"{'🟢 ' if is_new else ''}{num_txt} · {lead}{item_title(it)}"
+        dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
+
+        # 1) + 2) Titel: Nummer + Distanz + Ampel + NEU
+        # Beispiel: "🟢 🟩 03 · 12.4 km · ⭐ Teamleiter Thermoanalyse"
+        label = f"{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {lead}{item_title(it)}"
 
         meta_text = " | ".join(
             [
@@ -784,44 +812,58 @@ with col1:
             ]
         )
 
-        expanded = bool(selected_key) and (k == selected_key)
-
-        with st.expander(label, expanded=expanded):
+        with st.expander(label):
+            # Oben: Badge + Meta
+            badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
             st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
 
+            # 3) Steckbrief-Grid
+            rid = item_id_raw(it) or "—"
+            facts = [
+                ("Nr.", num_txt),
+                ("Distanz", dist_txt),
+                ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
+                ("Arbeitgeber", item_company(it) or "—"),
+                ("Ort", pretty_location(it)),
+                ("Profil", it.get("_profile", "")),
+                ("Quelle", it.get("_bucket", "")),
+                ("Score", str(score)),
+                ("RefNr/BA-ID", rid),
+            ]
+            render_fact_grid(facts)
+
+            # Links (oben/zentral)
             web_url = jobsuche_web_url(it)
-            if web_url:
-                try:
-                    st.link_button("🔗 In BA Jobsuche öffnen", web_url)
-                except Exception:
-                    st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
-
             ll = extract_latlon_from_item(it)
-            if ll:
-                gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
-                try:
-                    st.link_button("🚗 Route in Google Maps", gdir)
-                except Exception:
-                    st.markdown(f"[🚗 Route in Google Maps]({gdir})")
+            if web_url or ll:
+                cL, cR = st.columns(2)
+                with cL:
+                    if web_url:
+                        try:
+                            st.link_button("🔗 In BA Jobsuche öffnen", web_url)
+                        except Exception:
+                            st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
+                with cR:
+                    if ll:
+                        gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
+                        try:
+                            st.link_button("🚗 Route in Google Maps", gdir)
+                        except Exception:
+                            st.markdown(f"[🚗 Route in Google Maps]({gdir})")
 
+            st.divider()
+
+            # Details: API oder Fallback
             api_url = details_url_api(it)
             if not api_url:
                 st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
-                basis = {
-                    "Nr.": num_txt,
-                    "Key": k,
-                    "RefNr/BA-ID": item_id_raw(it) or "—",
-                    "Titel": item_title(it),
-                    "Arbeitgeber": item_company(it),
-                    "Ort": pretty_location(it),
-                    "Entfernung": f"{dist:.1f} km" if dist is not None else "—",
-                    "Fahrzeit (Schätzung)": f"~{t_min} min" if t_min is not None else "—",
-                    "Profil": it.get("_profile", ""),
-                    "Quelle": it.get("_bucket", ""),
-                    "Kurzbeschreibung": short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext"),
-                }
-                basis = {kk: vv for kk, vv in basis.items() if vv is not None and str(vv).strip() != ""}
-                st.table([[kk, vv] for kk, vv in basis.items()])
+                kurz = short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext")
+                if kurz:
+                    st.write("**Kurzbeschreibung**")
+                    st.write(kurz)
+                else:
+                    st.write("**Kurzbeschreibung**")
+                    st.write("—")
                 continue
 
             details, derr = fetch_details(api_key, api_url)
