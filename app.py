@@ -759,7 +759,7 @@ with col1:
         )
 
     st.divider()
-    st.write("### Ergebnisse (klick = Details aufklappen)")
+    st.write("### Ergebnisse")
 
     for it in items_sorted:
         jid = item_id(it)
