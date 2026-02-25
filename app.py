@@ -329,7 +329,7 @@ def build_queries() -> Dict[str, str]:
     return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
-# -------------------- Leaflet map: numbered pins + reuse ONE tab --------------------
+# -------------------- Leaflet map: numbered pins --------------------
 def leaflet_map_html(
     home_lat: float,
     home_lon: float,
@@ -375,16 +375,6 @@ def leaflet_map_html(
       color: #111;
       text-shadow: 0 1px 0 rgba(255,255,255,0.85);
       pointer-events: none;
-    }}
-
-    button.jump {{
-      margin-top: 8px;
-      padding: 6px 10px;
-      border-radius: 8px;
-      border: 1px solid #bbb;
-      background: #fff;
-      cursor: pointer;
-      font-weight: 600;
     }}
   </style>
 </head>
@@ -494,8 +484,11 @@ with st.sidebar:
     # max. 200 km
     ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 200, 25)
 
-    # ✅ NEU: Homeoffice-Bonus
+    # Homeoffice-Bonus
     ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
+
+    # Score-Details
+    show_score_breakdown = st.checkbox("Score-Aufschlüsselung anzeigen", value=True)
 
     queries = build_queries()
     selected_profiles = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
@@ -509,7 +502,7 @@ with st.sidebar:
     st.subheader("Profil-Filter")
     only_focus = st.checkbox("Nur profilrelevante Treffer anzeigen", value=True)
     hide_irrelevant = st.checkbox("Assistenzen/Office/Insurance ausblenden", value=True)
-    min_score = st.slider("Mindest-Score", 0, 50, 8, 1)
+    min_score = st.slider("Mindest-Score", 0, 80, 8, 1)
 
     st.divider()
     st.subheader("Keywords (sichtbar & editierbar)")
@@ -569,7 +562,6 @@ def looks_leadership(it: Dict[str, Any]) -> bool:
 
 
 def is_homeoffice_item(it: Dict[str, Any]) -> bool:
-    # robust: Bucket enthält "Homeoffice", oder arbeitszeit==ho in Item (falls vorhanden)
     b = str(it.get("_bucket", "")).lower()
     if "homeoffice" in b:
         return True
@@ -577,7 +569,10 @@ def is_homeoffice_item(it: Dict[str, Any]) -> bool:
     return az == "ho"
 
 
-def relevance_score(it: Dict[str, Any]) -> int:
+def score_breakdown(it: Dict[str, Any]) -> Tuple[int, List[str]]:
+    """
+    Liefert (score, details) für Transparenz.
+    """
     text = " ".join(
         [
             str(item_title(it)),
@@ -588,21 +583,36 @@ def relevance_score(it: Dict[str, Any]) -> int:
     ).lower()
 
     score = 0
+    parts: List[str] = []
+
     for k in FOCUS_KEYWORDS:
         if k and k in text:
             score += 10
+            parts.append(f"+10 {k}")
+
     for k in LEADERSHIP_KEYWORDS:
         if k and k in text:
             score += 6
+            parts.append(f"+6 {k}")
+
     for k in NEGATIVE_KEYWORDS:
         if k and k in text:
             score -= 12
+            parts.append(f"−12 {k}")
 
-    # ✅ NEU: Homeoffice-Bonus (aus Sidebar)
     if is_homeoffice_item(it):
         score += int(ho_bonus)
+        parts.append(f"+{int(ho_bonus)} homeoffice")
 
-    return score
+    if not parts:
+        parts = ["(keine Keyword-Treffer)"]
+
+    return score, parts
+
+
+def relevance_score(it: Dict[str, Any]) -> int:
+    s, _ = score_breakdown(it)
+    return s
 
 
 def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
@@ -638,7 +648,7 @@ with col1:
         all_items: List[Dict[str, Any]] = []
         errs: List[str] = []
 
-        queries = build_queries()  # safety
+        queries = build_queries()
 
         for name in selected_profiles:
             q = queries[name]
@@ -727,7 +737,6 @@ with col1:
                 "title": item_title(it),
                 "company": item_company(it),
                 "dist_km": d,
-                "key": it.get("_key", ""),
                 "pin": bucket,
             }
         )
@@ -746,10 +755,11 @@ with col1:
     st.write("### Ergebnisse (klick = Details aufklappen)")
 
     for it in items_sorted:
-        k = it.get("_key") or item_key(it)
         idx = int(it.get("_idx", 0) or 0)
+        k = it.get("_key") or item_key(it)
         is_new = (k in new_keys)
-        score = relevance_score(it)
+
+        score, parts = score_breakdown(it)
 
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         t_min = travel_time_minutes(dist, float(speed_kmh))
@@ -762,7 +772,6 @@ with col1:
         num_txt = f"{idx:02d}" if idx > 0 else "??"
         dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
-        # Titel: Nummer + Distanz + Ampel + NEU + HO-Icon
         label = f"{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {lead}{item_title(it)}{ho_tag}"
 
         meta_text = " | ".join(
@@ -793,6 +802,11 @@ with col1:
                 ("RefNr/BA-ID", rid),
             ]
             render_fact_grid(facts)
+
+            # Score-Aufschlüsselung
+            if show_score_breakdown:
+                st.write("**Score-Aufschlüsselung**")
+                st.code(" | ".join(parts))
 
             web_url = jobsuche_web_url(it)
             ll = extract_latlon_from_item(it)
