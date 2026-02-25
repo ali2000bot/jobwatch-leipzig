@@ -539,7 +539,7 @@ with st.sidebar:
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 50], index=1)
 
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=True)
-    ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 800, 200, 50)
+    ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 200, 25)
 
     queries = build_queries()
     selected_profiles = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
