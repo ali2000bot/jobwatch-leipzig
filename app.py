@@ -182,7 +182,6 @@ def fetch_search(
     page: int = 1,
     arbeitszeit: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
-    # Wichtig gegen 403: typische App-Parameter mitsenden
     params: Dict[str, Any] = {
         "angebotsart": "1",
         "page": str(page),
@@ -192,7 +191,6 @@ def fetch_search(
         "aktualitaet": str(aktualitaet_tage),
         "wo": wo,
     }
-    # "was" nur senden, wenn nicht leer
     if was and was.strip():
         params["was"] = was.strip()
     if arbeitszeit:
@@ -300,7 +298,6 @@ def keywords_to_text(words: List[str]) -> str:
 
 # -------------------- Profile Queries --------------------
 def build_queries() -> Dict[str, str]:
-    # bewusst breiter; die Feinheit macht Scoring/Filter
     q_rd = "Forschung Entwicklung R&D Thermoanalyse Thermophysik Analytik DSC TGA LFA"
     q_pm = "Projektmanagement Project Manager Program Manager Teamleiter Leiter"
     q_sales = "Vertrieb Sales Business Development Key Account Manager"
@@ -315,7 +312,6 @@ def leaflet_map_html(
     markers: List[Dict[str, Any]],
     height_px: int = 520,
 ) -> str:
-    # markers: [{"lat":..,"lon":..,"title":..,"company":..,"dist_km":..,"jid":..,"pin":"green|yellow|red"}, ...]
     markers_json = json.dumps(markers, ensure_ascii=False)
 
     def pin_svg(color: str) -> str:
@@ -331,6 +327,7 @@ def leaflet_map_html(
     yellow_svg = pin_svg("#f9a825")
     red_svg = pin_svg("#c62828")
 
+    # Wichtig: KEINE `${...}` oder f-string Mischungen – nur sauberes JS mit jumpTo(jid)
     return f"""
 <!doctype html>
 <html>
@@ -413,23 +410,15 @@ def leaflet_map_html(
     if (m.pin === 'green') icon = ICON_G;
     if (m.pin === 'yellow') icon = ICON_Y;
 
-    const jumpBtn = jid ? `
-      <br/>
-      <button class="jump" onclick='jumpTo(${json.dumps("__ID__")}.replace("__ID__", jid))'>➡️ In App anzeigen</button>
-    ` : '';
+    const jumpBtn = jid
+      ? '<br/><button class="jump" onclick="jumpTo(\\'' + jid.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,'\\\\\\'') + '\\')">➡️ In App anzeigen</button>'
+      : '';
 
-    // Hinweis: wir bauen den onclick sauber, indem jid als String in JS existiert
-    // (siehe: jid Variable + jumpTo(jid))
-    const fixedJumpBtn = jid ? `
-      <br/>
-      <button class="jump" onclick="jumpTo('${"${jid}".replace(/'/g, "%27")}')">➡️ In App anzeigen</button>
-    ` : '';
+    const popup = '<b>' + title + '</b><br/>' + company
+      + (dist!=null ? '<br/>Dist: ' + dist + ' km' : '')
+      + jumpBtn;
 
-    const popup = `<b>${{title}}</b><br/>${{company}}`
-      + (dist!=null ? `<br/>Dist: ${{dist}} km` : '')
-      + fixedJumpBtn;
-
-    const mk = L.marker([lat, lon], {{icon}}).addTo(map);
+    const mk = L.marker([lat, lon], {{icon: icon}}).addTo(map);
     mk.bindPopup(popup);
     fg.addLayer(mk);
   }});
@@ -714,9 +703,8 @@ with col1:
 
     if markers:
         st.write("### Karte – Marker klicken → „In App anzeigen“")
-        # Performance: nur nächste 80 Marker auf der Karte
         markers_sorted = sorted(markers, key=lambda m: (m["dist_km"] if m["dist_km"] is not None else 999999.0))[:80]
-        components.html(leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height_px=520), height=540)
+        components.html(leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height=540), height=560)
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
@@ -777,8 +765,6 @@ with col1:
                     "Profil": it.get("_profile", ""),
                     "Quelle": it.get("_bucket", ""),
                     "Kurzbeschreibung": short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext"),
-                    "Veröffentlicht": short_field(it, "veroeffentlichungsdatum", "veroeffentlichtAm", "date"),
-                    "Aktualisiert": short_field(it, "aktualisiertAm", "aktualisiert", "updated"),
                 }
                 basis = {k: v for k, v in basis.items() if v and str(v).strip()}
                 st.table([[k, v] for k, v in basis.items()])
@@ -799,12 +785,6 @@ with col1:
             c2.write(f"**Entfernung:** {dist:.1f} km" if dist is not None else "**Entfernung:** —")
             c3.write(f"**Fahrzeit:** ~{t_min} min" if t_min is not None else "**Fahrzeit:** —")
             c4.write(f"**RefNr:** {jid or '—'}")
-
-            st.write("**Rahmendaten**")
-            d_arbeitgeber = details.get("arbeitgeber") or details.get("arbeitgeberName") or item_company(it) or "—"
-            d_ort = details.get("arbeitsort") or pretty_location(it) or "—"
-            st.write(f"- **Arbeitgeber:** {d_arbeitgeber}")
-            st.write(f"- **Ort:** {d_ort}")
 
             desc = (
                 details.get("stellenbeschreibung")
