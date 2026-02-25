@@ -704,7 +704,7 @@ with col1:
     if markers:
         st.write("### Karte – Marker klicken → „In App anzeigen“")
         markers_sorted = sorted(markers, key=lambda m: (m["dist_km"] if m["dist_km"] is not None else 999999.0))[:80]
-        components.html(leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height=540), height=560)
+        components.html(leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height_px=540), height=560)
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
