@@ -633,10 +633,10 @@ with col2:
     st.subheader("Snapshot")
     st.write(snap.get("timestamp") or "— noch keiner gespeichert")
 
-    if st.button("Snapshot speichern (aktueller Stand)"):
+    if st.button("Stand speichern"):
         st.session_state["save_snapshot_requested"] = True
 
-    if st.button("Snapshot löschen"):
+    if st.button("Stand löschen"):
         ensure_state_dir()
         if os.path.exists(SNAPSHOT_FILE):
             os.remove(SNAPSHOT_FILE)
