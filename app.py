@@ -133,7 +133,6 @@ def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]
                     return float(lat), float(lon)
             except Exception:
                 pass
-
     coords2 = it.get("koordinaten")
     if isinstance(coords2, dict):
         lat = coords2.get("lat")
@@ -143,7 +142,6 @@ def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]
                 return float(lat), float(lon)
         except Exception:
             pass
-
     return None
 
 
@@ -278,15 +276,33 @@ def distance_badge_html(dist_km: Optional[float], t_min: Optional[int], near_km:
     return f'<span style="background:{bg};color:white;padding:2px 8px;border-radius:999px;font-size:12px;">{txt}</span>'
 
 
-# ---------------- Leaflet map (ohne WebGL) ----------------
+# ---------------- Leaflet map (Pins + Klick -> Auswahl) ----------------
 def leaflet_map_html(
     home_lat: float,
     home_lon: float,
+    home_label: str,
     markers: List[Dict[str, Any]],
-    height_px: int = 460,
+    height_px: int = 480,
 ) -> str:
-    # markers: [{"lat":..,"lon":..,"title":..,"company":..,"dist_km":..}, ...]
+    # markers: [{"lat":..,"lon":..,"title":..,"company":..,"dist_km":..,"jid":..,"pin":"green|yellow|red"}, ...]
     markers_json = json.dumps(markers, ensure_ascii=False)
+
+    # SVG pin (Stecknadel) als DivIcon
+    def pin_svg(color: str) -> str:
+        # einfache Pin-Form; Punkt innen
+        return (
+            f"""<svg width="26" height="38" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">"""
+            f"""<path d="M13 0C5.8 0 0 5.8 0 13c0 10.2 13 25 13 25s13-14.8 13-25C26 5.8 20.2 0 13 0z" fill="{color}"/>"""
+            f"""<circle cx="13" cy="13" r="5.2" fill="white" opacity="0.95"/>"""
+            f"""</svg>"""
+        )
+
+    home_svg = pin_svg("#1565c0")
+    green_svg = pin_svg("#2e7d32")
+    yellow_svg = pin_svg("#f9a825")
+    red_svg = pin_svg("#c62828")
+
+    # Leaflet expects HTML strings; we embed them as JS template strings below
     return f"""
 <!doctype html>
 <html>
@@ -300,6 +316,8 @@ def leaflet_map_html(
   <style>
     html, body {{ margin:0; padding:0; }}
     #map {{ height: {height_px}px; width: 100%; }}
+    .pin {{ transform: translate(-13px, -36px); }}
+    a.jump {{ display:inline-block; margin-top:6px; text-decoration:none; font-weight:600; }}
   </style>
 </head>
 <body>
@@ -307,6 +325,7 @@ def leaflet_map_html(
 <script>
   const homeLat = {home_lat};
   const homeLon = {home_lon};
+  const homeLabel = {json.dumps(home_label)};
   const markers = {markers_json};
 
   const map = L.map('map');
@@ -315,20 +334,25 @@ def leaflet_map_html(
     attribution: '&copy; OpenStreetMap contributors'
   }}).addTo(map);
 
-  const homeIcon = L.divIcon({{
-    className: '',
-    html: '<div style="background:#1565c0;color:white;border-radius:999px;padding:4px 8px;font-size:12px;">Wohnort</div>'
-  }});
+  function divPin(svg) {{
+    return L.divIcon({{
+      className: 'pin',
+      html: svg,
+      iconSize: [26, 38],
+      iconAnchor: [13, 36],
+      popupAnchor: [0, -36]
+    }});
+  }}
 
-  const jobIcon = L.divIcon({{
-    className: '',
-    html: '<div style="background:#2e7d32;color:white;border-radius:999px;padding:3px 7px;font-size:12px;">Job</div>'
-  }});
+  const ICON_HOME = divPin({json.dumps(home_svg)});
+  const ICON_G = divPin({json.dumps(green_svg)});
+  const ICON_Y = divPin({json.dumps(yellow_svg)});
+  const ICON_R = divPin({json.dumps(red_svg)});
 
   const fg = L.featureGroup();
 
-  const homeMarker = L.marker([homeLat, homeLon], {{icon: homeIcon}}).addTo(map);
-  homeMarker.bindPopup('<b>Wohnort</b><br/>{DEFAULT_HOME_LABEL}');
+  const homeMarker = L.marker([homeLat, homeLon], {{icon: ICON_HOME}}).addTo(map);
+  homeMarker.bindPopup('<b>Wohnort</b><br/>' + homeLabel);
   fg.addLayer(homeMarker);
 
   markers.forEach(m => {{
@@ -336,14 +360,22 @@ def leaflet_map_html(
     const title = (m.title || '').replace(/</g,'&lt;');
     const company = (m.company || '').replace(/</g,'&lt;');
     const dist = (m.dist_km != null) ? (Math.round(m.dist_km*10)/10) : null;
-    const popup = `<b>${{title}}</b><br/>${{company}}` + (dist!=null ? `<br/>Dist: ${{dist}} km` : '');
-    const mk = L.marker([lat, lon], {{icon: jobIcon}}).addTo(map);
+    const jid = (m.jid || '');
+
+    let icon = ICON_R;
+    if (m.pin === 'green') icon = ICON_G;
+    if (m.pin === 'yellow') icon = ICON_Y;
+
+    const jump = jid ? `<br/><a class="jump" href="?sel=${{encodeURIComponent(jid)}}" target="_top">➡️ In App anzeigen</a>` : '';
+    const popup = `<b>${{title}}</b><br/>${{company}}` + (dist!=null ? `<br/>Dist: ${{dist}} km` : '') + jump;
+
+    const mk = L.marker([lat, lon], {{icon}}).addTo(map);
     mk.bindPopup(popup);
     fg.addLayer(mk);
   }});
 
   if (fg.getLayers().length > 1) {{
-    map.fitBounds(fg.getBounds().pad(0.15));
+    map.fitBounds(fg.getBounds().pad(0.18));
   }} else {{
     map.setView([homeLat, homeLon], 10);
   }}
@@ -393,6 +425,13 @@ if "kw_lead" not in st.session_state:
 if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
+# Auswahl aus Query-Param (Marker-Klick)
+try:
+    selected_id = st.query_params.get("sel", "")
+except Exception:
+    # fallback für ältere Streamlit-Versionen
+    selected_id = st.experimental_get_query_params().get("sel", [""])[0]
+
 with st.sidebar:
     st.header("Wohnort & Entfernung")
     home_label = st.text_input("Wohnort (Anzeige)", value=DEFAULT_HOME_LABEL)
@@ -408,6 +447,14 @@ with st.sidebar:
 
     st.subheader("Fahrzeit-Schätzung")
     speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
+
+    if selected_id:
+        if st.button("Auswahl zurücksetzen"):
+            try:
+                st.query_params.clear()
+            except Exception:
+                st.experimental_set_query_params()
+            st.rerun()
 
     st.divider()
     st.header("Sucheinstellungen")
@@ -576,6 +623,12 @@ with col1:
 
     items_now_sorted = sorted(items_now, key=sort_key)
 
+    # “Sprung”: ausgewählten Treffer nach oben ziehen
+    if selected_id:
+        picked = [x for x in items_now_sorted if item_id(x) == selected_id]
+        rest = [x for x in items_now_sorted if item_id(x) != selected_id]
+        items_now_sorted = picked + rest
+
     st.subheader(f"Treffer: {len(items_now_sorted)}")
     st.caption(f"Neu seit Snapshot: {len(new_ids)}")
 
@@ -595,32 +648,42 @@ with col1:
             for t in test_items[:3]:
                 st.write("-", item_title(t))
 
-    # --------- Übersichtskarte: Leaflet (Wohnort + Treffer als Marker) ----------
+    # --------- Übersichtskarte: Leaflet (Pins + Klick -> Auswahl) ----------
     markers = []
-    for it in items_now_sorted[:200]:
+    for it in items_now_sorted[:250]:
         ll = extract_latlon_from_item(it)
         if not ll:
             continue
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        d = float(dist) if dist is not None else None
+        if d is None:
+            pin = "red"
+        elif d <= float(near_km):
+            pin = "green"
+        elif d <= float(mid_km):
+            pin = "yellow"
+        else:
+            pin = "red"
+
         markers.append(
             {
                 "lat": float(ll[0]),
                 "lon": float(ll[1]),
                 "title": item_title(it),
                 "company": item_company(it),
-                "dist_km": float(dist) if dist is not None else None,
+                "dist_km": d,
+                "jid": item_id(it),
+                "pin": pin,
             }
         )
 
     st.caption(f"🗺️ Treffer mit Koordinaten: {len(markers)} von {len(items_now_sorted)}")
 
     if markers:
-        st.write("### Karte (Wohnort + Treffer)")
-        # Bis zu 60 Marker zeichnen (Performance)
-        markers_sorted = sorted(markers, key=lambda m: (m["dist_km"] if m["dist_km"] is not None else 999999.0))[:60]
-        html = leaflet_map_html(float(home_lat), float(home_lon), markers_sorted, height_px=460)
-        components.html(html, height=480)
-        st.caption("Tipp: In die Marker klicken (Popup mit Titel/Firma/Distanz).")
+        st.write("### Karte (Wohnort + Treffer) – Marker klicken → „In App anzeigen“")
+        markers_sorted = sorted(markers, key=lambda m: (m["dist_km"] if m["dist_km"] is not None else 999999.0))[:80]
+        html = leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height_px=500)
+        components.html(html, height=520)
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
@@ -647,7 +710,9 @@ with col1:
             ]
         )
 
-        with st.expander(label):
+        expanded = bool(selected_id) and (jid == selected_id)
+
+        with st.expander(label, expanded=expanded):
             st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
 
             web_url = jobsuche_web_url(it)
