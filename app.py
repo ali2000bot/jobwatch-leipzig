@@ -366,7 +366,25 @@ def leaflet_map_html(
     if (m.pin === 'green') icon = ICON_G;
     if (m.pin === 'yellow') icon = ICON_Y;
 
-    const jump = jid ? `<br/><a class="jump" href="?sel=${{encodeURIComponent(jid)}}" target="_top">➡️ In App anzeigen</a>` : '';
+    const baseUrl = window.location.href.split('?')[0];
+
+    const jump = jid ? `
+      <br/>
+      <button style="margin-top:8px;padding:6px 10px;border-radius:8px;border:1px solid #bbb;background:#fff;cursor:pointer;font-weight:600;"
+        onclick="
+          (function(){
+            var u='?sel='+encodeURIComponent('${jid}');
+            try {
+              // Versuch: im selben Tab (oberstes Fenster) navigieren
+              window.top.location.assign(baseUrl + u);
+            } catch(e) {
+              // Fallback: neuer Tab
+              window.open(baseUrl + u, '_blank');
+            }
+          })();
+        "
+      >➡️ In App anzeigen</button>
+    ` : '';
     const popup = `<b>${{title}}</b><br/>${{company}}` + (dist!=null ? `<br/>Dist: ${{dist}} km` : '') + jump;
 
     const mk = L.marker([lat, lon], {{icon}}).addTo(map);
