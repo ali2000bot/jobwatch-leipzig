@@ -39,8 +39,14 @@ DEFAULT_FOCUS_KEYWORDS = [
     "verfahrenstechnik", "physik", "physics",
 ]
 DEFAULT_LEADERSHIP_KEYWORDS = [
-    "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter",
-    "leiter", "head", "lead", "director", "manager", "principal",
+    "laborleiter",
+    "teamleiter",
+    "gruppenleiter",
+    "abteilungsleiter",
+    "bereichsleiter",
+    "leiter ",
+    " head of ",
+    "director",
 ]
 DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung",
