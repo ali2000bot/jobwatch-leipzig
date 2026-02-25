@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import hashlib
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -89,16 +90,23 @@ def extract_items(data: Dict[str, Any]) -> List[Dict[str, Any]]:
     return []
 
 
-def item_id(it: Dict[str, Any]) -> str:
-    return it.get("refnr") or it.get("refNr") or it.get("hashId") or it.get("hashID") or ""
+def item_id_raw(it: Dict[str, Any]) -> str:
+    """
+    BA liefert je nach Endpoint/Profil refnr/refNr/hashId… manchmal leer.
+    Wir nutzen das, wenn vorhanden, aber verlassen uns nicht darauf.
+    """
+    v = it.get("refnr") or it.get("refNr") or it.get("hashId") or it.get("hashID") or ""
+    return str(v).strip() if v is not None else ""
 
 
 def item_title(it: Dict[str, Any]) -> str:
-    return it.get("titel") or it.get("beruf") or it.get("title") or "Ohne Titel"
+    v = it.get("titel") or it.get("beruf") or it.get("title") or "Ohne Titel"
+    return str(v)
 
 
 def item_company(it: Dict[str, Any]) -> str:
-    return it.get("arbeitgeber") or it.get("arbeitgeberName") or it.get("unternehmen") or ""
+    v = it.get("arbeitgeber") or it.get("arbeitgeberName") or it.get("unternehmen") or ""
+    return str(v)
 
 
 def pretty_location(it: Dict[str, Any]) -> str:
@@ -117,6 +125,20 @@ def pretty_location(it: Dict[str, Any]) -> str:
         return json.dumps(loc, ensure_ascii=False)
     except Exception:
         return str(loc)
+
+
+def item_key(it: Dict[str, Any]) -> str:
+    """
+    Robuste, stabile ID:
+    - bevorzugt echte BA-ID
+    - sonst Hash aus Titel+Firma+Ort
+    """
+    rid = item_id_raw(it)
+    if rid:
+        return f"ba:{rid}"
+    base = (item_title(it) + "|" + item_company(it) + "|" + pretty_location(it)).strip().lower()
+    h = hashlib.sha1(base.encode("utf-8", errors="ignore")).hexdigest()[:16]
+    return f"hx:{h}"
 
 
 def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]]:
@@ -154,10 +176,10 @@ def details_url_api(it: Dict[str, Any]) -> Optional[str]:
 
 
 def jobsuche_web_url(it: Dict[str, Any]) -> Optional[str]:
-    ref = item_id(it)
-    if not ref:
+    rid = item_id_raw(it)
+    if not rid:
         return None
-    return f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{ref}"
+    return f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{rid}"
 
 
 def short_field(it: Dict[str, Any], *keys: str) -> str:
@@ -373,10 +395,9 @@ def leaflet_map_html(
     return "";
   }}
 
-  function jumpTo(id) {{
+  function jumpTo(key) {{
     const base = baseUrl();
-    const target = (base ? (base + '?sel=' + encodeURIComponent(id)) : ('?sel=' + encodeURIComponent(id)));
-
+    const target = (base ? (base + '?sel=' + encodeURIComponent(key)) : ('?sel=' + encodeURIComponent(key)));
     const w = window.open(target, "jobwatch_select");
     if (!w) {{
       alert("Popup/Tab wurde blockiert. Bitte Popups für diese Seite erlauben.");
@@ -413,7 +434,7 @@ def leaflet_map_html(
 
   const fg = L.featureGroup().addTo(map);
 
-  // Home marker (ohne Nummer)
+  // Home marker
   const homeIcon = numberedIcon("#1565c0", "");
   const homeMarker = L.marker([{home_lat}, {home_lon}], {{icon: homeIcon}}).addTo(fg);
   homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
@@ -423,7 +444,7 @@ def leaflet_map_html(
     const title = (m.title || '').replace(/</g,'&lt;');
     const company = (m.company || '').replace(/</g,'&lt;');
     const dist = (m.dist_km != null) ? (Math.round(m.dist_km*10)/10) : null;
-    const jid = (m.jid || '');
+    const key = (m.key || '');
     const idx = m.idx || '';
 
     let color = "#c62828";
@@ -432,10 +453,10 @@ def leaflet_map_html(
 
     const icon = numberedIcon(color, idx);
 
-    const safeId = jid.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'");
+    const safeKey = key.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'");
 
-    const jumpBtn = jid
-      ? '<br/><button class="jump" onclick="jumpTo(\\'' + safeId + '\\')">➡️ In App anzeigen</button>'
+    const jumpBtn = key
+      ? '<br/><button class="jump" onclick="jumpTo(\\'' + safeKey + '\\')">➡️ In App anzeigen</button>'
       : '';
 
     const popup =
@@ -461,25 +482,24 @@ def leaflet_map_html(
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
 
-# Query param sel (Marker-Klick-Tab)
+# Query param sel (Marker-Klick-Tab) -> ist jetzt item_key
 try:
     qp_sel = st.query_params.get("sel", "")
 except Exception:
     qp_sel = st.experimental_get_query_params().get("sel", [""])[0]
 
-# Auswahl in Session übernehmen, Query leeren
-if "selected_id" not in st.session_state:
-    st.session_state["selected_id"] = ""
+if "selected_key" not in st.session_state:
+    st.session_state["selected_key"] = ""
 
-if qp_sel and qp_sel != st.session_state["selected_id"]:
-    st.session_state["selected_id"] = qp_sel
+if qp_sel and qp_sel != st.session_state["selected_key"]:
+    st.session_state["selected_key"] = qp_sel
     try:
         st.query_params.clear()
     except Exception:
         st.experimental_set_query_params()
     st.rerun()
 
-selected_id = st.session_state["selected_id"]
+selected_key = st.session_state["selected_key"]
 
 # Keyword Session defaults
 if "kw_focus" not in st.session_state:
@@ -505,9 +525,9 @@ with st.sidebar:
     st.subheader("Fahrzeit-Schätzung")
     speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
-    if selected_id:
+    if selected_key:
         if st.button("Auswahl zurücksetzen"):
-            st.session_state["selected_id"] = ""
+            st.session_state["selected_key"] = ""
             st.rerun()
 
     st.divider()
@@ -652,13 +672,14 @@ with col1:
         for e in errs:
             st.code(e)
 
-    # Dedup nach ID
+    # Dedup nach robuster ID
     items_now: List[Dict[str, Any]] = []
     seen: Set[str] = set()
     for it in all_items:
-        jid = item_id(it)
-        if jid and jid not in seen:
-            seen.add(jid)
+        k = item_key(it)
+        if k not in seen:
+            seen.add(k)
+            it["_key"] = k
             items_now.append(it)
 
     # Filter
@@ -667,48 +688,47 @@ with col1:
     if only_focus:
         items_now = [it for it in items_now if relevance_score(it) >= int(min_score)]
 
-    # Snapshot compare
+    # Snapshot compare (nutze _key)
     prev_items = snap.get("items", [])
-    prev_ids: Set[str] = {item_id(x) for x in prev_items if item_id(x)}
-    now_ids: Set[str] = {item_id(x) for x in items_now if item_id(x)}
-    new_ids = now_ids - prev_ids
+    prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items}
+    now_keys: Set[str] = {x.get("_key") or item_key(x) for x in items_now}
+    new_keys = now_keys - prev_keys
 
     # Sort: Entfernung -> neu -> Score
     def sort_key(it: Dict[str, Any]):
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         dist_rank = dist if dist is not None else 999999.0
-        is_new_rank = 0 if item_id(it) in new_ids else 1
+        is_new_rank = 0 if (it.get("_key") in new_keys) else 1
         score = relevance_score(it)
         return (dist_rank, is_new_rank, -score, item_title(it).lower())
 
     items_sorted = sorted(items_now, key=sort_key)
 
+    # Nummerierung: IMMER (1..N)
+    for i, it in enumerate(items_sorted, start=1):
+        it["_idx"] = i
+
     # Auswahl: ausgewählten Treffer nach oben ziehen
-    if selected_id:
-        picked = [x for x in items_sorted if item_id(x) == selected_id]
-        rest = [x for x in items_sorted if item_id(x) != selected_id]
+    if selected_key:
+        picked = [x for x in items_sorted if x.get("_key") == selected_key]
+        rest = [x for x in items_sorted if x.get("_key") != selected_key]
         items_sorted = picked + rest
 
-    # -------- Nummerierung: ALLE Treffer in der Liste (nach Sortierung) --------
-    jid_to_num: Dict[str, int] = {}
-    counter = 0
-    for it in items_sorted:
-        jid = item_id(it)
-        if not jid:
-            continue
-        counter += 1
-        jid_to_num[jid] = counter
+    st.subheader(f"Treffer: {len(items_sorted)}")
+    st.caption(f"Neu seit Snapshot: {len(new_keys)}")
 
-    # -------- Marker: nur Treffer mit Koordinaten, behalten aber die Listennummer --------
+    if st.session_state.get("save_snapshot_requested"):
+        # Speichere Liste inkl. _key und _idx
+        save_snapshot(items_sorted)
+        st.session_state["save_snapshot_requested"] = False
+        st.success("Snapshot gespeichert.")
+
+    # Marker bauen (nur Treffer mit Koordinaten), verwenden _idx
     markers: List[Dict[str, Any]] = []
     for it in items_sorted:
-        jid = item_id(it)
-        if not jid:
-            continue
         ll = extract_latlon_from_item(it)
         if not ll:
             continue
-
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         d = float(dist) if dist is not None else None
 
@@ -723,47 +743,34 @@ with col1:
 
         markers.append(
             {
-                "idx": jid_to_num.get(jid, ""),
+                "idx": it.get("_idx", ""),
                 "lat": float(ll[0]),
                 "lon": float(ll[1]),
                 "title": item_title(it),
                 "company": item_company(it),
                 "dist_km": d,
-                "jid": jid,
+                "key": it.get("_key", ""),
                 "pin": pin,
             }
         )
 
-    st.subheader(f"Treffer: {len(items_sorted)}")
-    st.caption(f"Neu seit Snapshot: {len(new_ids)} | Marker (mit Koordinaten): {len(markers)}")
-
-    if st.session_state.get("save_snapshot_requested"):
-        save_snapshot(items_sorted)
-        st.session_state["save_snapshot_requested"] = False
-        st.success("Snapshot gespeichert.")
-
     if debug:
-        st.info("Debug ist aktiv.")
-        st.write(f"Debug: Nummeriert (IDs): {len(jid_to_num)} | Marker: {len(markers)}")
-        test_items, test_err = fetch_search(api_key, wo, int(umkreis), "", 365, 25, page=1, arbeitszeit=None)
-        st.write(f"Debug-Test ohne Suchtext (365 Tage, {umkreis} km): **{len(test_items)} Treffer**")
-        if test_err:
-            st.code(test_err)
+        st.info(f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)} | selected_key={selected_key!r}")
 
-    # --- Karte (zeige max. 80 Marker, Nummern bleiben konsistent) ---
     if markers:
-        st.write("### Karte")
+        st.write("### Karte – nummerierte Stecknadeln")
         components.html(
             leaflet_map_html(float(home_lat), float(home_lon), home_label, markers[:80], height_px=520),
             height=560
         )
 
     st.divider()
-    st.write("### Ergebnisse")
+    st.write("### Ergebnisse (klick = Details aufklappen)")
 
     for it in items_sorted:
-        jid = item_id(it)
-        is_new = jid in new_ids
+        k = it.get("_key") or item_key(it)
+        idx = it.get("_idx", "?")
+        is_new = (k in new_keys)
         score = relevance_score(it)
 
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
@@ -771,12 +778,7 @@ with col1:
         badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
 
         lead = "⭐ " if looks_leadership(it) else ""
-
-        num_prefix = ""
-        if jid and jid in jid_to_num:
-            num_prefix = f"{jid_to_num[jid]}) "
-
-        label = f"{'🟢 NEU  ' if is_new else ''}{num_prefix}{lead}{item_title(it)}"
+        label = f"{'🟢 NEU  ' if is_new else ''}{idx}) {lead}{item_title(it)}"
 
         meta_text = " | ".join(
             [
@@ -788,7 +790,7 @@ with col1:
             ]
         )
 
-        expanded = bool(selected_id) and (jid == selected_id)
+        expanded = bool(selected_key) and (k == selected_key)
 
         with st.expander(label, expanded=expanded):
             st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
@@ -812,8 +814,9 @@ with col1:
             if not api_url:
                 st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
                 basis = {
-                    "Nr.": jid_to_num.get(jid, "—") if jid else "—",
-                    "RefNr": jid or "—",
+                    "Nr.": idx,
+                    "Key": k,
+                    "RefNr/BA-ID": item_id_raw(it) or "—",
                     "Titel": item_title(it),
                     "Arbeitgeber": item_company(it),
                     "Ort": pretty_location(it),
@@ -823,8 +826,8 @@ with col1:
                     "Quelle": it.get("_bucket", ""),
                     "Kurzbeschreibung": short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext"),
                 }
-                basis = {k: v for k, v in basis.items() if v is not None and str(v).strip() != ""}
-                st.table([[k, v] for k, v in basis.items()])
+                basis = {kk: vv for kk, vv in basis.items() if vv is not None and str(vv).strip() != ""}
+                st.table([[kk, vv] for kk, vv in basis.items()])
                 continue
 
             details, derr = fetch_details(api_key, api_url)
