@@ -44,7 +44,7 @@ DEFAULT_FOCUS_KEYWORDS = [
     "analytik", "instrumentierung", "messgerät", "labor",
     "werkstoff", "werkstoffe", "polymer", "keramik", "metall",
     "f&e", "forschung", "entwicklung", "r&d", "research", "development",
-    "verfahrenstechnik", "physik", "physics",
+    "verfahrenstechnik", "thermodynamik", "wärmeübertragung", "kältetechnik", "thermische simulation", "physik", "physics",
 ]
 # Für den Score (nicht für ⭐): darf ruhig etwas breiter sein
 DEFAULT_LEADERSHIP_KEYWORDS = [
@@ -55,7 +55,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung",
     "assistant", "assistenz", "sekretariat",
     "office", "backoffice", "reception", "empfang",
-    "vorstandsassistenz", "management assistant",
+    "vorstandsassistenz", "dachdecker", "management assistant",
 ]
 
 # =========================
@@ -861,14 +861,14 @@ with col1:
         )
 
     if markers:
-        st.write("### Karte – nummerierte Stecknadeln")
+        st.write("### Karte")
         components.html(
             leaflet_map_html(float(home_lat), float(home_lon), home_label, markers[:80], height_px=520),
             height=560,
         )
 
     st.divider()
-    st.write("### Ergebnisse (klick = Details aufklappen)")
+    st.write("### Ergebnisse")
 
     for it in items_sorted:
         idx = int(it.get("_idx", 0) or 0)
