@@ -752,7 +752,7 @@ with col1:
 
     # --- Karte (zeige max. 80 Marker, Nummern bleiben konsistent) ---
     if markers:
-        st.write("### Karte – nummerierte Stecknadeln")
+        st.write("### Karte")
         components.html(
             leaflet_map_html(float(home_lat), float(home_lon), home_label, markers[:80], height_px=520),
             height=560
