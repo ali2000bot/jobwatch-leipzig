@@ -51,6 +51,7 @@ DEFAULT_FOCUS_KEYWORDS = [
 DEFAULT_LEADERSHIP_KEYWORDS = [
     "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
     "leiter", "head", "lead", "director", "manager", "principal", "betriebsstättenleiter", "standortleiter", 
+    "sektionsleiter", "section manager", 
 ]
 DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung",
