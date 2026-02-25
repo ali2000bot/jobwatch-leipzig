@@ -234,7 +234,7 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
         return None, "Details: Antwort war kein gültiges JSON."
 
 
-# -------------------- Distance helpers --------------------
+# -------------------- Distance + travel time --------------------
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     r = 6371.0088
     phi1 = math.radians(lat1)
@@ -250,13 +250,15 @@ def distance_from_home_km(it: Dict[str, Any], home_lat: float, home_lon: float) 
     ll = extract_latlon_from_item(it)
     if not ll:
         return None
-    return haversine_km(home_lat, home_lon, ll[0], ll[1])
+    lat, lon = ll
+    return haversine_km(home_lat, home_lon, lat, lon)
 
 
 def travel_time_minutes(distance_km: Optional[float], speed_kmh: float) -> Optional[int]:
     if distance_km is None or speed_kmh <= 0:
         return None
-    return max(0, int(round((distance_km / speed_kmh) * 60)))
+    minutes = int(round((distance_km / speed_kmh) * 60))
+    return max(0, minutes)
 
 
 def distance_badge_html(dist_km: Optional[float], t_min: Optional[int], near_km: int, mid_km: int) -> str:
@@ -269,7 +271,8 @@ def distance_badge_html(dist_km: Optional[float], t_min: Optional[int], near_km:
     else:
         bg = "#c62828"
     t_part = f" · ~{t_min} min" if t_min is not None else ""
-    return f'<span style="background:{bg};color:white;padding:2px 8px;border-radius:999px;font-size:12px;">{dist_km:.1f} km{t_part}</span>'
+    txt = f"{dist_km:.1f} km{t_part}"
+    return f'<span style="background:{bg};color:white;padding:2px 8px;border-radius:999px;font-size:12px;">{txt}</span>'
 
 
 def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float, dest_lon: float) -> str:
@@ -301,7 +304,7 @@ def build_queries() -> Dict[str, str]:
     return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
-# -------------------- Leaflet map: SAME TAB via target=_top --------------------
+# -------------------- Leaflet map: re-use ONE tab --------------------
 def leaflet_map_html(
     home_lat: float,
     home_lon: float,
@@ -338,17 +341,22 @@ def leaflet_map_html(
     html, body {{ margin:0; padding:0; }}
     #map {{ height: {height_px}px; width: 100%; }}
     .pin {{ transform: translate(-13px, -36px); }}
-    a.jump {{
-      display:inline-block;
-      margin-top:8px;
-      padding:6px 10px;
-      border-radius:8px;
-      border:1px solid #bbb;
-      background:#fff;
-      text-decoration:none;
-      font-weight:600;
-      color:#111;
+    button.jump {{
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1px solid #bbb;
+      background: #fff;
+      cursor: pointer;
+      font-weight: 600;
     }}
+    .hint {{
+      margin-top: 6px;
+      font-size: 12px;
+      color: #666;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
+    }}
+    .mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }}
   </style>
 </head>
 <body>
@@ -359,15 +367,27 @@ def leaflet_map_html(
   const homeLabel = {json.dumps(home_label)};
   const markers = {markers_json};
 
-  // Basispfad der App zuverlässig aus Referrer (nicht aus srcdoc)
-  function appBase() {{
+  function baseUrl() {{
     try {{
+      // In srcdoc/iFrame ist document.referrer normalerweise die echte App-URL
       if (document.referrer) return document.referrer.split('?')[0];
     }} catch(e) {{}}
-    return '';
+    // Fallback: relative
+    return "";
   }}
 
-  const base = appBase();
+  function jumpTo(id) {{
+    const base = baseUrl();
+    const target = (base ? (base + '?sel=' + encodeURIComponent(id)) : ('?sel=' + encodeURIComponent(id)));
+
+    // Benannter Tab -> wird wiederverwendet (kein Tab-Spam)
+    const w = window.open(target, "jobwatch_select");
+    if (!w) {{
+      alert("Popup/Tab wurde blockiert. Bitte Popups für diese Seite erlauben.");
+      return;
+    }}
+    try {{ w.focus(); }} catch(e) {{}}
+  }}
 
   const map = L.map('map');
   L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
@@ -407,16 +427,17 @@ def leaflet_map_html(
     if (m.pin === 'green') icon = ICON_G;
     if (m.pin === 'yellow') icon = ICON_Y;
 
-    const href = (base ? (base + '?sel=' + encodeURIComponent(jid)) : ('?sel=' + encodeURIComponent(jid)));
+    const safeId = jid.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'");
 
-    // target=_top -> gleiche Browser-Registerkarte (kein neuer Tab)
-    const jumpLink = jid
-      ? '<br/><a class="jump" target="_top" href="' + href + '">➡️ In App anzeigen</a>'
+    const hint = '<div class="hint">Tab-Name: <span class="mono">jobwatch_select</span> (wird wiederverwendet)</div>';
+
+    const jumpBtn = jid
+      ? '<br/><button class="jump" onclick="jumpTo(\\'' + safeId + '\\')">➡️ In App anzeigen</button>' + hint
       : '';
 
     const popup = '<b>' + title + '</b><br/>' + company
       + (dist!=null ? '<br/>Dist: ' + dist + ' km' : '')
-      + jumpLink;
+      + jumpBtn;
 
     const mk = L.marker([lat, lon], {{icon: icon}}).addTo(map);
     mk.bindPopup(popup);
@@ -438,13 +459,13 @@ def leaflet_map_html(
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
 
-# 1) Query-Param lesen (von Marker-Klick)
+# 1) Query-Param sel lesen (kommt aus Marker-Klick-Tab)
 try:
     qp_sel = st.query_params.get("sel", "")
 except Exception:
     qp_sel = st.experimental_get_query_params().get("sel", [""])[0]
 
-# 2) Auswahl in Session übernehmen und Query sofort leeren (damit URL sauber bleibt)
+# 2) Auswahl in Session übernehmen und Query sofort leeren (URL sauber halten)
 if "selected_id" not in st.session_state:
     st.session_state["selected_id"] = ""
 
@@ -713,7 +734,7 @@ with col1:
     st.caption(f"🗺️ Treffer mit Koordinaten: {len(markers)} von {len(items_sorted)}")
 
     if markers:
-        st.write("### Karte – Marker klicken → „In App anzeigen“ (gleicher Tab)")
+        st.write("### Karte – Marker klicken → öffnet/aktualisiert immer denselben Tab")
         markers_sorted = sorted(markers, key=lambda m: (m["dist_km"] if m["dist_km"] is not None else 999999.0))[:80]
         components.html(
             leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height_px=520),
@@ -752,12 +773,19 @@ with col1:
 
             web_url = jobsuche_web_url(it)
             if web_url:
-                st.link_button("🔗 In BA Jobsuche öffnen", web_url)
+                try:
+                    st.link_button("🔗 In BA Jobsuche öffnen", web_url)
+                except Exception:
+                    st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
 
             ll = extract_latlon_from_item(it)
             if ll:
-                gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
-                st.link_button("🚗 Route in Google Maps", gdir)
+                lat, lon = ll
+                gdir = google_directions_url(float(home_lat), float(home_lon), float(lat), float(lon))
+                try:
+                    st.link_button("🚗 Route in Google Maps", gdir)
+                except Exception:
+                    st.markdown(f"[🚗 Route in Google Maps]({gdir})")
 
             api_url = details_url_api(it)
             if not api_url:
@@ -781,6 +809,9 @@ with col1:
             if derr:
                 st.error(derr)
                 st.info("Wenn Details per API nicht gehen: nutze den BA-Link oben.")
+                continue
+            if not details:
+                st.info("Keine Details erhalten.")
                 continue
 
             desc = (
