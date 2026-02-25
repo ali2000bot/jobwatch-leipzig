@@ -526,7 +526,7 @@ def leaflet_map_html(
 # Streamlit App
 # =========================
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
-st.title("JobWatch Raum Leipzig – Jobs finden & vergleichen")
+st.title("Raum Leipzig – Jobs finden & vergleichen")
 
 # Keyword Session defaults
 if "kw_focus" not in st.session_state:
