@@ -304,7 +304,7 @@ def build_queries() -> Dict[str, str]:
     return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
-# -------------------- Leaflet map (Pins + Jump) --------------------
+# -------------------- Leaflet map: robust jump (TOP location) --------------------
 def leaflet_map_html(
     home_lat: float,
     home_lon: float,
@@ -327,7 +327,6 @@ def leaflet_map_html(
     yellow_svg = pin_svg("#f9a825")
     red_svg = pin_svg("#c62828")
 
-    # Wichtig: KEINE `${...}` oder f-string Mischungen – nur sauberes JS mit jumpTo(jid)
     return f"""
 <!doctype html>
 <html>
@@ -361,6 +360,23 @@ def leaflet_map_html(
   const homeLabel = {json.dumps(home_label)};
   const markers = {markers_json};
 
+  function jumpTo(id) {{
+    // Robust: nutze TOP Window Location (nicht iframe/srcdoc)
+    try {{
+      const topLoc = window.top.location;
+      const base = topLoc.origin + topLoc.pathname;  // echte App-URL (ohne query)
+      topLoc.href = base + '?sel=' + encodeURIComponent(id);
+      return;
+    }} catch(e) {{}}
+
+    // Fallback: neuer Tab mit relativer URL
+    try {{
+      window.open('?sel=' + encodeURIComponent(id), '_blank');
+    }} catch(e) {{
+      alert('Navigation blockiert. Bitte den Treffer in der Liste anklicken.');
+    }}
+  }}
+
   const map = L.map('map');
   L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
     maxZoom: 19,
@@ -388,17 +404,6 @@ def leaflet_map_html(
   homeMarker.bindPopup('<b>Wohnort</b><br/>' + homeLabel);
   fg.addLayer(homeMarker);
 
-  const baseUrl = window.location.href.split('?')[0];
-
-  function jumpTo(id) {{
-    const u = baseUrl + '?sel=' + encodeURIComponent(id);
-    try {{
-      window.top.location.assign(u);
-    }} catch(e) {{
-      window.open(u, '_blank');
-    }}
-  }}
-
   markers.forEach(m => {{
     const lat = m.lat, lon = m.lon;
     const title = (m.title || '').replace(/</g,'&lt;');
@@ -410,8 +415,9 @@ def leaflet_map_html(
     if (m.pin === 'green') icon = ICON_G;
     if (m.pin === 'yellow') icon = ICON_Y;
 
+    const safeId = jid.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'");
     const jumpBtn = jid
-      ? '<br/><button class="jump" onclick="jumpTo(\\'' + jid.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,'\\\\\\'') + '\\')">➡️ In App anzeigen</button>'
+      ? '<br/><button class="jump" onclick="jumpTo(\\'' + safeId + '\\')">➡️ In App anzeigen</button>'
       : '';
 
     const popup = '<b>' + title + '</b><br/>' + company
@@ -649,7 +655,7 @@ with col1:
 
     items_sorted = sorted(items_now, key=sort_key)
 
-    # Marker-Auswahl: ausgewählten Treffer nach oben ziehen
+    # Auswahl von Karte: ausgewählten Treffer nach oben ziehen
     if selected_id:
         picked = [x for x in items_sorted if item_id(x) == selected_id]
         rest = [x for x in items_sorted if item_id(x) != selected_id]
@@ -704,7 +710,10 @@ with col1:
     if markers:
         st.write("### Karte – Marker klicken → „In App anzeigen“")
         markers_sorted = sorted(markers, key=lambda m: (m["dist_km"] if m["dist_km"] is not None else 999999.0))[:80]
-        components.html(leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height_px=540), height=560)
+        components.html(
+            leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height_px=520),
+            height=560
+        )
 
     st.divider()
     st.write("### Ergebnisse (klick = Details aufklappen)")
@@ -778,13 +787,6 @@ with col1:
             if not details:
                 st.info("Keine Details erhalten.")
                 continue
-
-            st.write("**Kurzprofil**")
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Relevanz-Score", score)
-            c2.write(f"**Entfernung:** {dist:.1f} km" if dist is not None else "**Entfernung:** —")
-            c3.write(f"**Fahrzeit:** ~{t_min} min" if t_min is not None else "**Fahrzeit:** —")
-            c4.write(f"**RefNr:** {jid or '—'}")
 
             desc = (
                 details.get("stellenbeschreibung")
