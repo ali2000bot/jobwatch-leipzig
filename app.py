@@ -377,7 +377,6 @@ def leaflet_map_html(
     const base = baseUrl();
     const target = (base ? (base + '?sel=' + encodeURIComponent(id)) : ('?sel=' + encodeURIComponent(id)));
 
-    // Benannter Tab (wiederverwenden)
     const w = window.open(target, "jobwatch_select");
     if (!w) {{
       alert("Popup/Tab wurde blockiert. Bitte Popups für diese Seite erlauben.");
@@ -690,20 +689,25 @@ with col1:
         rest = [x for x in items_sorted if item_id(x) != selected_id]
         items_sorted = picked + rest
 
-    # -------- Nummerierung: nur für Treffer MIT Koordinaten --------
+    # -------- Nummerierung: ALLE Treffer in der Liste (nach Sortierung) --------
     jid_to_num: Dict[str, int] = {}
-    markers: List[Dict[str, Any]] = []
-    num = 0
-
-    # Marker werden in der Reihenfolge der sortierten Liste nummeriert
+    counter = 0
     for it in items_sorted:
         jid = item_id(it)
-        ll = extract_latlon_from_item(it)
-        if not jid or not ll:
+        if not jid:
             continue
+        counter += 1
+        jid_to_num[jid] = counter
 
-        num += 1
-        jid_to_num[jid] = num
+    # -------- Marker: nur Treffer mit Koordinaten, behalten aber die Listennummer --------
+    markers: List[Dict[str, Any]] = []
+    for it in items_sorted:
+        jid = item_id(it)
+        if not jid:
+            continue
+        ll = extract_latlon_from_item(it)
+        if not ll:
+            continue
 
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         d = float(dist) if dist is not None else None
@@ -719,7 +723,7 @@ with col1:
 
         markers.append(
             {
-                "idx": num,                 # <-- Nummer für die Stecknadel
+                "idx": jid_to_num.get(jid, ""),
                 "lat": float(ll[0]),
                 "lon": float(ll[1]),
                 "title": item_title(it),
@@ -740,17 +744,17 @@ with col1:
 
     if debug:
         st.info("Debug ist aktiv.")
+        st.write(f"Debug: Nummeriert (IDs): {len(jid_to_num)} | Marker: {len(markers)}")
         test_items, test_err = fetch_search(api_key, wo, int(umkreis), "", 365, 25, page=1, arbeitszeit=None)
         st.write(f"Debug-Test ohne Suchtext (365 Tage, {umkreis} km): **{len(test_items)} Treffer**")
         if test_err:
             st.code(test_err)
 
-    # --- Karte (zeige max. 80 Marker, aber Nummern bleiben konsistent) ---
+    # --- Karte (zeige max. 80 Marker, Nummern bleiben konsistent) ---
     if markers:
         st.write("### Karte – nummerierte Stecknadeln")
-        markers_show = markers[:80]
         components.html(
-            leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_show, height_px=520),
+            leaflet_map_html(float(home_lat), float(home_lon), home_label, markers[:80], height_px=520),
             height=560
         )
 
