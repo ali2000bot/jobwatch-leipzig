@@ -76,6 +76,13 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
 
 
 # -------------------- BA API helpers --------------------
+def match_target_org(company: str) -> Optional[Dict[str, str]]:
+    c = (company or "").lower()
+    for org in TARGET_ORGS:
+        if any(m in c for m in org["match"]):
+            return org
+    return None
+
 def headers(api_key: str) -> Dict[str, str]:
     return {
         "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077) Streamlit",
