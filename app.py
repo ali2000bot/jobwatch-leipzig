@@ -70,7 +70,6 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
 
 # -------------------- BA API helpers --------------------
 def headers(api_key: str) -> Dict[str, str]:
-    # Wichtig gegen 403: App-ähnlicher User-Agent + X-API-Key
     return {
         "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077) Streamlit",
         "X-API-Key": api_key,
@@ -250,8 +249,7 @@ def distance_from_home_km(it: Dict[str, Any], home_lat: float, home_lon: float) 
     ll = extract_latlon_from_item(it)
     if not ll:
         return None
-    lat, lon = ll
-    return haversine_km(home_lat, home_lon, lat, lon)
+    return haversine_km(home_lat, home_lon, ll[0], ll[1])
 
 
 def travel_time_minutes(distance_km: Optional[float], speed_kmh: float) -> Optional[int]:
@@ -304,7 +302,7 @@ def build_queries() -> Dict[str, str]:
     return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
-# -------------------- Leaflet map: re-use ONE tab --------------------
+# -------------------- Leaflet map: numbered pins + reuse ONE tab --------------------
 def leaflet_map_html(
     home_lat: float,
     home_lon: float,
@@ -313,19 +311,6 @@ def leaflet_map_html(
     height_px: int = 520,
 ) -> str:
     markers_json = json.dumps(markers, ensure_ascii=False)
-
-    def pin_svg(color: str) -> str:
-        return (
-            f"""<svg width="26" height="38" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">"""
-            f"""<path d="M13 0C5.8 0 0 5.8 0 13c0 10.2 13 25 13 25s13-14.8 13-25C26 5.8 20.2 0 13 0z" fill="{color}"/>"""
-            f"""<circle cx="13" cy="13" r="5.2" fill="white" opacity="0.95"/>"""
-            f"""</svg>"""
-        )
-
-    home_svg = pin_svg("#1565c0")
-    green_svg = pin_svg("#2e7d32")
-    yellow_svg = pin_svg("#f9a825")
-    red_svg = pin_svg("#c62828")
 
     return f"""
 <!doctype html>
@@ -340,7 +325,31 @@ def leaflet_map_html(
   <style>
     html, body {{ margin:0; padding:0; }}
     #map {{ height: {height_px}px; width: 100%; }}
-    .pin {{ transform: translate(-13px, -36px); }}
+
+    .pinwrap {{
+      position: relative;
+      width: 28px;
+      height: 42px;
+      transform: translate(-14px, -40px);
+    }}
+    .pinsvg {{
+      width: 28px;
+      height: 42px;
+      display: block;
+    }}
+    .pinnum {{
+      position: absolute;
+      top: 9px;
+      left: 0;
+      width: 28px;
+      text-align: center;
+      font-weight: 800;
+      font-size: 12px;
+      color: #111;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.85);
+      pointer-events: none;
+    }}
+
     button.jump {{
       margin-top: 8px;
       padding: 6px 10px;
@@ -350,29 +359,17 @@ def leaflet_map_html(
       cursor: pointer;
       font-weight: 600;
     }}
-    .hint {{
-      margin-top: 6px;
-      font-size: 12px;
-      color: #666;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-    }}
-    .mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }}
   </style>
 </head>
 <body>
 <div id="map"></div>
 <script>
-  const homeLat = {home_lat};
-  const homeLon = {home_lon};
-  const homeLabel = {json.dumps(home_label)};
   const markers = {markers_json};
 
   function baseUrl() {{
     try {{
-      // In srcdoc/iFrame ist document.referrer normalerweise die echte App-URL
       if (document.referrer) return document.referrer.split('?')[0];
     }} catch(e) {{}}
-    // Fallback: relative
     return "";
   }}
 
@@ -380,7 +377,7 @@ def leaflet_map_html(
     const base = baseUrl();
     const target = (base ? (base + '?sel=' + encodeURIComponent(id)) : ('?sel=' + encodeURIComponent(id)));
 
-    // Benannter Tab -> wird wiederverwendet (kein Tab-Spam)
+    // Benannter Tab (wiederverwenden)
     const w = window.open(target, "jobwatch_select");
     if (!w) {{
       alert("Popup/Tab wurde blockiert. Bitte Popups für diese Seite erlauben.");
@@ -389,32 +386,38 @@ def leaflet_map_html(
     try {{ w.focus(); }} catch(e) {{}}
   }}
 
+  function pinSvg(color) {{
+    return `
+      <svg class="pinsvg" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">
+        <path d="M13 0C5.8 0 0 5.8 0 13c0 10.2 13 25 13 25s13-14.8 13-25C26 5.8 20.2 0 13 0z" fill="${{color}}"/>
+        <circle cx="13" cy="13" r="5.2" fill="white" opacity="0.95"/>
+      </svg>
+    `;
+  }}
+
+  function numberedIcon(color, numText) {{
+    const html = `<div class="pinwrap">${{pinSvg(color)}}<div class="pinnum">${{numText}}</div></div>`;
+    return L.divIcon({{
+      className: '',
+      html: html,
+      iconSize: [28, 42],
+      iconAnchor: [14, 40],
+      popupAnchor: [0, -40]
+    }});
+  }}
+
   const map = L.map('map');
   L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors'
   }}).addTo(map);
 
-  function divPin(svg) {{
-    return L.divIcon({{
-      className: 'pin',
-      html: svg,
-      iconSize: [26, 38],
-      iconAnchor: [13, 36],
-      popupAnchor: [0, -36]
-    }});
-  }}
+  const fg = L.featureGroup().addTo(map);
 
-  const ICON_HOME = divPin({json.dumps(home_svg)});
-  const ICON_G = divPin({json.dumps(green_svg)});
-  const ICON_Y = divPin({json.dumps(yellow_svg)});
-  const ICON_R = divPin({json.dumps(red_svg)});
-
-  const fg = L.featureGroup();
-
-  const homeMarker = L.marker([homeLat, homeLon], {{icon: ICON_HOME}}).addTo(map);
-  homeMarker.bindPopup('<b>Wohnort</b><br/>' + homeLabel);
-  fg.addLayer(homeMarker);
+  // Home marker (ohne Nummer)
+  const homeIcon = numberedIcon("#1565c0", "");
+  const homeMarker = L.marker([{home_lat}, {home_lon}], {{icon: homeIcon}}).addTo(fg);
+  homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
 
   markers.forEach(m => {{
     const lat = m.lat, lon = m.lon;
@@ -422,32 +425,32 @@ def leaflet_map_html(
     const company = (m.company || '').replace(/</g,'&lt;');
     const dist = (m.dist_km != null) ? (Math.round(m.dist_km*10)/10) : null;
     const jid = (m.jid || '');
+    const idx = m.idx || '';
 
-    let icon = ICON_R;
-    if (m.pin === 'green') icon = ICON_G;
-    if (m.pin === 'yellow') icon = ICON_Y;
+    let color = "#c62828";
+    if (m.pin === "green") color = "#2e7d32";
+    if (m.pin === "yellow") color = "#f9a825";
+
+    const icon = numberedIcon(color, idx);
 
     const safeId = jid.replace(/\\\\/g,'\\\\\\\\').replace(/'/g,"\\\\'");
 
-    const hint = '<div class="hint">Tab-Name: <span class="mono">jobwatch_select</span> (wird wiederverwendet)</div>';
-
     const jumpBtn = jid
-      ? '<br/><button class="jump" onclick="jumpTo(\\'' + safeId + '\\')">➡️ In App anzeigen</button>' + hint
+      ? '<br/><button class="jump" onclick="jumpTo(\\'' + safeId + '\\')">➡️ In App anzeigen</button>'
       : '';
 
-    const popup = '<b>' + title + '</b><br/>' + company
+    const popup =
+      '<b>' + idx + ') ' + title + '</b><br/>' + company
       + (dist!=null ? '<br/>Dist: ' + dist + ' km' : '')
       + jumpBtn;
 
-    const mk = L.marker([lat, lon], {{icon: icon}}).addTo(map);
-    mk.bindPopup(popup);
-    fg.addLayer(mk);
+    L.marker([lat, lon], {{icon: icon}}).addTo(fg).bindPopup(popup);
   }});
 
   if (fg.getLayers().length > 1) {{
     map.fitBounds(fg.getBounds().pad(0.18));
   }} else {{
-    map.setView([homeLat, homeLon], 10);
+    map.setView([{home_lat}, {home_lon}], 10);
   }}
 </script>
 </body>
@@ -459,13 +462,13 @@ def leaflet_map_html(
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
 
-# 1) Query-Param sel lesen (kommt aus Marker-Klick-Tab)
+# Query param sel (Marker-Klick-Tab)
 try:
     qp_sel = st.query_params.get("sel", "")
 except Exception:
     qp_sel = st.experimental_get_query_params().get("sel", [""])[0]
 
-# 2) Auswahl in Session übernehmen und Query sofort leeren (URL sauber halten)
+# Auswahl in Session übernehmen, Query leeren
 if "selected_id" not in st.session_state:
     st.session_state["selected_id"] = ""
 
@@ -479,7 +482,7 @@ if qp_sel and qp_sel != st.session_state["selected_id"]:
 
 selected_id = st.session_state["selected_id"]
 
-# Session defaults für Keyword-Editor
+# Keyword Session defaults
 if "kw_focus" not in st.session_state:
     st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
 if "kw_lead" not in st.session_state:
@@ -687,8 +690,48 @@ with col1:
         rest = [x for x in items_sorted if item_id(x) != selected_id]
         items_sorted = picked + rest
 
+    # -------- Nummerierung: nur für Treffer MIT Koordinaten --------
+    jid_to_num: Dict[str, int] = {}
+    markers: List[Dict[str, Any]] = []
+    num = 0
+
+    # Marker werden in der Reihenfolge der sortierten Liste nummeriert
+    for it in items_sorted:
+        jid = item_id(it)
+        ll = extract_latlon_from_item(it)
+        if not jid or not ll:
+            continue
+
+        num += 1
+        jid_to_num[jid] = num
+
+        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        d = float(dist) if dist is not None else None
+
+        if d is None:
+            pin = "red"
+        elif d <= float(near_km):
+            pin = "green"
+        elif d <= float(mid_km):
+            pin = "yellow"
+        else:
+            pin = "red"
+
+        markers.append(
+            {
+                "idx": num,                 # <-- Nummer für die Stecknadel
+                "lat": float(ll[0]),
+                "lon": float(ll[1]),
+                "title": item_title(it),
+                "company": item_company(it),
+                "dist_km": d,
+                "jid": jid,
+                "pin": pin,
+            }
+        )
+
     st.subheader(f"Treffer: {len(items_sorted)}")
-    st.caption(f"Neu seit Snapshot: {len(new_ids)}")
+    st.caption(f"Neu seit Snapshot: {len(new_ids)} | Marker (mit Koordinaten): {len(markers)}")
 
     if st.session_state.get("save_snapshot_requested"):
         save_snapshot(items_sorted)
@@ -702,42 +745,12 @@ with col1:
         if test_err:
             st.code(test_err)
 
-    # --- Karte ---
-    markers: List[Dict[str, Any]] = []
-    for it in items_sorted[:300]:
-        ll = extract_latlon_from_item(it)
-        if not ll:
-            continue
-        dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-        d = float(dist) if dist is not None else None
-        if d is None:
-            pin = "red"
-        elif d <= float(near_km):
-            pin = "green"
-        elif d <= float(mid_km):
-            pin = "yellow"
-        else:
-            pin = "red"
-
-        markers.append(
-            {
-                "lat": float(ll[0]),
-                "lon": float(ll[1]),
-                "title": item_title(it),
-                "company": item_company(it),
-                "dist_km": d,
-                "jid": item_id(it),
-                "pin": pin,
-            }
-        )
-
-    st.caption(f"🗺️ Treffer mit Koordinaten: {len(markers)} von {len(items_sorted)}")
-
+    # --- Karte (zeige max. 80 Marker, aber Nummern bleiben konsistent) ---
     if markers:
-        st.write("### Karte – Marker klicken → öffnet/aktualisiert immer denselben Tab")
-        markers_sorted = sorted(markers, key=lambda m: (m["dist_km"] if m["dist_km"] is not None else 999999.0))[:80]
+        st.write("### Karte – nummerierte Stecknadeln")
+        markers_show = markers[:80]
         components.html(
-            leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_sorted, height_px=520),
+            leaflet_map_html(float(home_lat), float(home_lon), home_label, markers_show, height_px=520),
             height=560
         )
 
@@ -754,7 +767,12 @@ with col1:
         badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
 
         lead = "⭐ " if looks_leadership(it) else ""
-        label = f"{'🟢 NEU  ' if is_new else ''}{lead}{item_title(it)}"
+
+        num_prefix = ""
+        if jid and jid in jid_to_num:
+            num_prefix = f"{jid_to_num[jid]}) "
+
+        label = f"{'🟢 NEU  ' if is_new else ''}{num_prefix}{lead}{item_title(it)}"
 
         meta_text = " | ".join(
             [
@@ -780,8 +798,7 @@ with col1:
 
             ll = extract_latlon_from_item(it)
             if ll:
-                lat, lon = ll
-                gdir = google_directions_url(float(home_lat), float(home_lon), float(lat), float(lon))
+                gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
                 try:
                     st.link_button("🚗 Route in Google Maps", gdir)
                 except Exception:
@@ -791,7 +808,8 @@ with col1:
             if not api_url:
                 st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
                 basis = {
-                    "RefNr": item_id(it),
+                    "Nr.": jid_to_num.get(jid, "—") if jid else "—",
+                    "RefNr": jid or "—",
                     "Titel": item_title(it),
                     "Arbeitgeber": item_company(it),
                     "Ort": pretty_location(it),
@@ -801,7 +819,7 @@ with col1:
                     "Quelle": it.get("_bucket", ""),
                     "Kurzbeschreibung": short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext"),
                 }
-                basis = {k: v for k, v in basis.items() if v and str(v).strip()}
+                basis = {k: v for k, v in basis.items() if v is not None and str(v).strip() != ""}
                 st.table([[k, v] for k, v in basis.items()])
                 continue
 
