@@ -45,6 +45,7 @@ DEFAULT_FOCUS_KEYWORDS = [
     "werkstoff", "werkstoffe", "polymer", "keramik", "metall",
     "f&e", "forschung", "entwicklung", "r&d", "research", "development",
     "verfahrenstechnik", "thermodynamik", "wärmeübertragung", "kältetechnik", "thermische simulation", "physik", "physics",
+    "wärmetechnik",
 ]
 # Für den Score (nicht für ⭐): darf ruhig etwas breiter sein
 DEFAULT_LEADERSHIP_KEYWORDS = [
