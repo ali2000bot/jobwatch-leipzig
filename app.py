@@ -497,6 +497,28 @@ with st.sidebar:
     show_score_breakdown = st.checkbox("Score-Aufschlüsselung anzeigen", value=True)
 
     queries = build_queries()
+    TARGET_ORGS = [
+        {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/karriere"},
+        {"name": "TotalEnergies", "match": ["totalenergies", "raffinerie mitteldeutschland"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
+        {"name": "Dow", "match": ["dow"], "url": "https://de.dow.com/de-de/karriere.html"},
+        {"name": "Trinseo", "match": ["trinseo"], "url": "https://www.trinseo.com/careers"},
+        {"name": "DOMO", "match": ["domo", "caproleuna"], "url": "https://www.domochemicals.com/de/stellenangebote"},
+        {"name": "UPM Biochemicals", "match": ["upm"], "url": "https://www.upmbiochemicals.com/de/karriere/"},
+        {"name": "ADDINOL", "match": ["addinol"], "url": "https://addinol.de/unternehmen/karriere/"},
+        {"name": "Linde", "match": ["linde"], "url": "https://de.lindecareers.com/"},
+        {"name": "Air Liquide", "match": ["air liquide"], "url": "https://de.airliquide.com/karriere"},
+        {"name": "BMW Werk Leipzig", "match": ["bmw"], "url": "https://www.bmwgroup.jobs/de/de/standorte/werke-in-deutschland/werk-leipzig.html"},
+        {"name": "Porsche Leipzig", "match": ["porsche"], "url": "https://www.porsche-leipzig.com/jobs-karriere/"},
+        {"name": "VNG", "match": ["vng"], "url": "https://karriere.vng.de/"},
+        {"name": "UFZ", "match": ["ufz", "helmholtz-zentrum für umweltforschung"], "url": "https://www.ufz.de/index.php?de=34276"},
+        {"name": "DBFZ", "match": ["dbfz"], "url": "https://www.dbfz.de/karriere/stellenausschreibungen"},
+        {"name": "Fraunhofer IMWS", "match": ["imws", "fraunhofer"], "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"},
+        {"name": "Fraunhofer IZI", "match": ["izi", "fraunhofer"], "url": "https://www.izi.fraunhofer.de/de/jobs-karriere.html"},
+        {"name": "Uni Leipzig", "match": ["universität leipzig", "uni leipzig"], "url": "https://www.uni-leipzig.de/universitaet/arbeiten-an-der-universitaet-leipzig/stellenausschreibungen"},
+        {"name": "MLU Halle", "match": ["universität halle", "uni halle", "martin-luther-universität"], "url": "https://personal.verwaltung.uni-halle.de/jobs/"},
+        {"name": "Hochschule Merseburg", "match": ["hochschule merseburg"], "url": "https://www.hs-merseburg.de/hochschule/information/stellenausschreibungen/"},
+        {"name": "HTWK Leipzig", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
+        ]
     selected_profiles = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
 
     aktualitaet = st.slider("Nur Jobs der letzten X Tage", 0, 365, 60, 5)
