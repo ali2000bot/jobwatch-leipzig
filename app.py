@@ -12,21 +12,29 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- BA Jobsuche (App Endpoint) ---
+# =========================
+# BA Jobsuche (App Endpoint)
+# =========================
 BASE = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service"
 SEARCH_URL = f"{BASE}/pc/v4/app/jobs"
 API_KEY_DEFAULT = "jobboerse-jobsuche"
 
-# --- Snapshot state ---
+# =========================
+# Snapshot state
+# =========================
 STATE_DIR = ".jobwatch_state"
 SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
 
-# --- Default Wohnort: 06242 Braunsbedra ---
+# =========================
+# Default Wohnort: 06242 Braunsbedra
+# =========================
 DEFAULT_HOME_LABEL = "06242 Braunsbedra"
 DEFAULT_HOME_LAT = 51.2861
 DEFAULT_HOME_LON = 11.8900
 
-# --- Keyword Defaults ---
+# =========================
+# Keywords (Defaults)
+# =========================
 DEFAULT_FOCUS_KEYWORDS = [
     "thermoanalyse", "thermophysik", "thermal analysis", "thermophysical",
     "dsc", "tga", "lfa", "dilatometrie", "dilatometer", "sta", "dma", "tma",
@@ -38,21 +46,48 @@ DEFAULT_FOCUS_KEYWORDS = [
     "f&e", "forschung", "entwicklung", "r&d", "research", "development",
     "verfahrenstechnik", "physik", "physics",
 ]
+# Für den Score (nicht für ⭐): darf ruhig etwas breiter sein
 DEFAULT_LEADERSHIP_KEYWORDS = [
-    "laborleiter",
-    "teamleiter",
-    "gruppenleiter",
-    "abteilungsleiter",
-    "bereichsleiter",
-    "leiter ",
-    " head of ",
-    "director",
+    "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
+    "leiter", "head", "lead", "director", "manager", "principal",
 ]
 DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung",
     "assistant", "assistenz", "sekretariat",
     "office", "backoffice", "reception", "empfang",
     "vorstandsassistenz", "management assistant",
+]
+
+# =========================
+# Strategie A / Variante 2:
+# Ziel-Organisationen (20) + Karriereseiten (nur Links, kein Scraping)
+# =========================
+TARGET_ORGS: List[Dict[str, Any]] = [
+    # Industrie
+    {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/karriere"},
+    {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
+    {"name": "Dow (Schkopau/Böhlen)", "match": ["dow"], "url": "https://de.dow.com/de-de/karriere.html"},
+    {"name": "Trinseo (Schkopau)", "match": ["trinseo"], "url": "https://www.trinseo.com/careers"},
+    {"name": "DOMO / Caproleuna", "match": ["domo", "caproleuna"], "url": "https://www.domochemicals.com/de/stellenangebote"},
+    {"name": "UPM Biochemicals (Leuna)", "match": ["upm"], "url": "https://www.upmbiochemicals.com/de/karriere/"},
+    {"name": "ADDINOL (Leuna)", "match": ["addinol"], "url": "https://addinol.de/unternehmen/karriere/"},
+    {"name": "Linde", "match": ["linde"], "url": "https://de.lindecareers.com/"},
+    {"name": "Air Liquide", "match": ["air liquide"], "url": "https://de.airliquide.com/karriere"},
+    {"name": "BMW Werk Leipzig", "match": ["bmw"], "url": "https://www.bmwgroup.jobs/de/de/standorte/werke-in-deutschland/werk-leipzig.html"},
+    {"name": "Porsche Leipzig", "match": ["porsche"], "url": "https://www.porsche-leipzig.com/jobs-karriere/"},
+    {"name": "VNG (Leipzig)", "match": ["vng"], "url": "https://karriere.vng.de/"},
+
+    # Forschung / Institute
+    {"name": "UFZ Helmholtz (Leipzig)", "match": ["ufz", "helmholtz-zentrum", "umweltforschung"], "url": "https://www.ufz.de/index.php?de=34276"},
+    {"name": "DBFZ Leipzig", "match": ["dbfz"], "url": "https://www.dbfz.de/karriere/stellenausschreibungen"},
+    {"name": "Fraunhofer IMWS (Halle)", "match": ["imws", "fraunhofer imws"], "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"},
+    {"name": "Fraunhofer IZI (Leipzig)", "match": ["izi", "fraunhofer izi"], "url": "https://www.izi.fraunhofer.de/de/jobs-karriere.html"},
+
+    # Uni / Hochschule
+    {"name": "Universität Leipzig", "match": ["universität leipzig", "uni leipzig"], "url": "https://www.uni-leipzig.de/universitaet/arbeiten-an-der-universitaet-leipzig/stellenausschreibungen"},
+    {"name": "MLU Halle", "match": ["martin-luther-universität", "universität halle", "uni halle", "mlu"], "url": "https://personal.verwaltung.uni-halle.de/jobs/"},
+    {"name": "Hochschule Merseburg", "match": ["hochschule merseburg", "hs merseburg"], "url": "https://www.hs-merseburg.de/hochschule/information/stellenausschreibungen/"},
+    {"name": "HTWK Leipzig", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
 ]
 
 
@@ -76,13 +111,6 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
 
 
 # -------------------- BA API helpers --------------------
-def match_target_org(company: str) -> Optional[Dict[str, str]]:
-    c = (company or "").lower()
-    for org in TARGET_ORGS:
-        if any(m in c for m in org["match"]):
-            return org
-    return None
-
 def headers(api_key: str) -> Dict[str, str]:
     return {
         "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077) Streamlit",
@@ -342,6 +370,17 @@ def build_queries() -> Dict[str, str]:
     return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
 
 
+# -------------------- Ziel-Org Matching --------------------
+def match_target_org(company: str) -> Optional[Dict[str, Any]]:
+    c = (company or "").lower()
+    if not c.strip():
+        return None
+    for org in TARGET_ORGS:
+        if any(m in c for m in org.get("match", [])):
+            return org
+    return None
+
+
 # -------------------- Leaflet map: numbered pins --------------------
 def leaflet_map_html(
     home_lat: float,
@@ -459,7 +498,9 @@ def leaflet_map_html(
 """
 
 
-# -------------------- App UI --------------------
+# =========================
+# Streamlit App
+# =========================
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("JobWatch Leipzig – neue Angebote finden & vergleichen")
 
@@ -490,11 +531,9 @@ with st.sidebar:
     st.divider()
     st.header("Sucheinstellungen")
     wo = st.text_input("Ort (BA-Suche)", value="Leipzig")
-    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 50], index=1)
+    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
 
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=True)
-
-    # max. 200 km
     ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 200, 25)
 
     # Homeoffice-Bonus
@@ -504,28 +543,6 @@ with st.sidebar:
     show_score_breakdown = st.checkbox("Score-Aufschlüsselung anzeigen", value=True)
 
     queries = build_queries()
-    TARGET_ORGS = [
-        {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/karriere"},
-        {"name": "TotalEnergies", "match": ["totalenergies", "raffinerie mitteldeutschland"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
-        {"name": "Dow", "match": ["dow"], "url": "https://de.dow.com/de-de/karriere.html"},
-        {"name": "Trinseo", "match": ["trinseo"], "url": "https://www.trinseo.com/careers"},
-        {"name": "DOMO", "match": ["domo", "caproleuna"], "url": "https://www.domochemicals.com/de/stellenangebote"},
-        {"name": "UPM Biochemicals", "match": ["upm"], "url": "https://www.upmbiochemicals.com/de/karriere/"},
-        {"name": "ADDINOL", "match": ["addinol"], "url": "https://addinol.de/unternehmen/karriere/"},
-        {"name": "Linde", "match": ["linde"], "url": "https://de.lindecareers.com/"},
-        {"name": "Air Liquide", "match": ["air liquide"], "url": "https://de.airliquide.com/karriere"},
-        {"name": "BMW Werk Leipzig", "match": ["bmw"], "url": "https://www.bmwgroup.jobs/de/de/standorte/werke-in-deutschland/werk-leipzig.html"},
-        {"name": "Porsche Leipzig", "match": ["porsche"], "url": "https://www.porsche-leipzig.com/jobs-karriere/"},
-        {"name": "VNG", "match": ["vng"], "url": "https://karriere.vng.de/"},
-        {"name": "UFZ", "match": ["ufz", "helmholtz-zentrum für umweltforschung"], "url": "https://www.ufz.de/index.php?de=34276"},
-        {"name": "DBFZ", "match": ["dbfz"], "url": "https://www.dbfz.de/karriere/stellenausschreibungen"},
-        {"name": "Fraunhofer IMWS", "match": ["imws", "fraunhofer"], "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"},
-        {"name": "Fraunhofer IZI", "match": ["izi", "fraunhofer"], "url": "https://www.izi.fraunhofer.de/de/jobs-karriere.html"},
-        {"name": "Uni Leipzig", "match": ["universität leipzig", "uni leipzig"], "url": "https://www.uni-leipzig.de/universitaet/arbeiten-an-der-universitaet-leipzig/stellenausschreibungen"},
-        {"name": "MLU Halle", "match": ["universität halle", "uni halle", "martin-luther-universität"], "url": "https://personal.verwaltung.uni-halle.de/jobs/"},
-        {"name": "Hochschule Merseburg", "match": ["hochschule merseburg"], "url": "https://www.hs-merseburg.de/hochschule/information/stellenausschreibungen/"},
-        {"name": "HTWK Leipzig", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
-        ]
     selected_profiles = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
 
     aktualitaet = st.slider("Nur Jobs der letzten X Tage", 0, 365, 60, 5)
@@ -539,6 +556,17 @@ with st.sidebar:
     hide_irrelevant = st.checkbox("Assistenzen/Office/Insurance ausblenden", value=True)
     min_score = st.slider("Mindest-Score", 0, 80, 8, 1)
 
+    # Ziel-Organisationen (Variante 2)
+    st.divider()
+    st.subheader("Ziel-Organisationen (20)")
+    st.caption("Variante 2: keine zusätzlichen Jobbörsen abfragen – nur BA + direkte Karrierelinks.")
+    with st.expander("Liste anzeigen / öffnen", expanded=False):
+        for org in TARGET_ORGS:
+            try:
+                st.link_button(f"🏢 {org['name']}", org["url"])
+            except Exception:
+                st.markdown(f"[🏢 {org['name']}]({org['url']})")
+
     st.divider()
     st.subheader("Keywords (sichtbar & editierbar)")
     with st.expander("Fokus-Keywords", expanded=False):
@@ -547,7 +575,7 @@ with st.sidebar:
             value=st.session_state["kw_focus"],
             height=150,
         )
-    with st.expander("Leitung/Führung-Keywords", expanded=False):
+    with st.expander("Leitung/Führung-Keywords (für Score)", expanded=False):
         st.session_state["kw_lead"] = st.text_area(
             "Ein Begriff pro Zeile (oder Komma-getrennt)",
             value=st.session_state["kw_lead"],
@@ -591,9 +619,33 @@ with col2:
         st.success("Snapshot gelöscht. Seite neu laden.")
 
 
-def looks_leadership(it: Dict[str, Any]) -> bool:
-    text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
-    return any(k in text for k in LEADERSHIP_KEYWORDS)
+# =========================
+# ⭐ Strengere Stern-Logik (NICHT jeder "Manager")
+# =========================
+def looks_leadership_strict(it: Dict[str, Any]) -> bool:
+    text = " ".join(
+        [
+            str(item_title(it)),
+            str(it.get("kurzbeschreibung", "")),
+        ]
+    ).lower()
+
+    # harte Leitungsbegriffe
+    strict_terms = [
+        "laborleiter",
+        "teamleiter",
+        "gruppenleiter",
+        "abteilungsleiter",
+        "bereichsleiter",
+        " head of ",
+        "director",
+    ]
+
+    # "leiter" nur als eigenes Wort
+    if " leiter " in f" {text} ":
+        return True
+
+    return any(term in text for term in strict_terms)
 
 
 def is_homeoffice_item(it: Dict[str, Any]) -> bool:
@@ -604,7 +656,7 @@ def is_homeoffice_item(it: Dict[str, Any]) -> bool:
     return az == "ho"
 
 
-def score_breakdown(it: Dict[str, Any]) -> Tuple[int, List[str]]:
+def score_breakdown(it: Dict[str, Any], ho_bonus_val: int) -> Tuple[int, List[str]]:
     """
     Liefert (score, details) für Transparenz.
     """
@@ -635,9 +687,9 @@ def score_breakdown(it: Dict[str, Any]) -> Tuple[int, List[str]]:
             score -= 12
             parts.append(f"−12 {k}")
 
-    if is_homeoffice_item(it):
-        score += int(ho_bonus)
-        parts.append(f"+{int(ho_bonus)} homeoffice")
+    if is_homeoffice_item(it) and ho_bonus_val > 0:
+        score += int(ho_bonus_val)
+        parts.append(f"+{int(ho_bonus_val)} homeoffice")
 
     if not parts:
         parts = ["(keine Keyword-Treffer)"]
@@ -645,14 +697,18 @@ def score_breakdown(it: Dict[str, Any]) -> Tuple[int, List[str]]:
     return score, parts
 
 
-def relevance_score(it: Dict[str, Any]) -> int:
-    s, _ = score_breakdown(it)
+def relevance_score(it: Dict[str, Any], ho_bonus_val: int) -> int:
+    s, _ = score_breakdown(it, ho_bonus_val)
     return s
 
 
 def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
     text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
-    hard = ["vorstandsassistenz", "management assistant", "assistant", "assistenz", "sekretariat", "insurance", "versicherung"]
+    hard = [
+        "vorstandsassistenz", "management assistant",
+        "assistant", "assistenz", "sekretariat",
+        "insurance", "versicherung",
+    ]
     return any(h in text for h in hard)
 
 
@@ -724,7 +780,7 @@ with col1:
     if hide_irrelevant:
         items_now = [it for it in items_now if not is_probably_irrelevant(it)]
     if only_focus:
-        items_now = [it for it in items_now if relevance_score(it) >= int(min_score)]
+        items_now = [it for it in items_now if relevance_score(it, int(ho_bonus)) >= int(min_score)]
 
     # Snapshot compare (nutze _key)
     prev_items = snap.get("items", [])
@@ -737,7 +793,7 @@ with col1:
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         dist_rank = dist if dist is not None else 999999.0
         is_new_rank = 0 if (it.get("_key") in new_keys) else 1
-        score = relevance_score(it)
+        score = relevance_score(it, int(ho_bonus))
         return (dist_rank, is_new_rank, -score, item_title(it).lower())
 
     items_sorted = sorted(items_now, key=sort_key)
@@ -754,7 +810,7 @@ with col1:
         st.session_state["save_snapshot_requested"] = False
         st.success("Snapshot gespeichert.")
 
-    # Marker bauen (nur Treffer mit Koordinaten), verwenden _idx
+    # Marker bauen (nur Treffer mit Koordinaten)
     markers: List[Dict[str, Any]] = []
     for it in items_sorted:
         ll = extract_latlon_from_item(it)
@@ -777,13 +833,15 @@ with col1:
         )
 
     if debug:
-        st.info(f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)} | ho_bonus={ho_bonus}")
+        st.info(
+            f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)} | ho_bonus={ho_bonus} | target_orgs={len(TARGET_ORGS)}"
+        )
 
     if markers:
         st.write("### Karte – nummerierte Stecknadeln")
         components.html(
             leaflet_map_html(float(home_lat), float(home_lon), home_label, markers[:80], height_px=520),
-            height=560
+            height=560,
         )
 
     st.divider()
@@ -794,20 +852,27 @@ with col1:
         k = it.get("_key") or item_key(it)
         is_new = (k in new_keys)
 
-        score, parts = score_breakdown(it)
+        score, parts = score_breakdown(it, int(ho_bonus))
 
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         t_min = travel_time_minutes(dist, float(speed_kmh))
         bucket = distance_bucket(dist, int(near_km), int(mid_km))
         emo = distance_emoji(bucket)
 
-        lead = "⭐ " if looks_leadership(it) else ""
+        # ⭐ (streng)
+        star = "⭐ " if looks_leadership_strict(it) else ""
+
+        # Homeoffice icon
         ho_tag = " 🏠" if is_homeoffice_item(it) else ""
+
+        # Zielorganisation marker
+        org = match_target_org(item_company(it))
+        target_tag = " 🎯" if org else ""
 
         num_txt = f"{idx:02d}" if idx > 0 else "??"
         dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
-        label = f"{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {lead}{item_title(it)}{ho_tag}"
+        label = f"{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{ho_tag}{target_tag}"
 
         meta_text = " | ".join(
             [
@@ -829,6 +894,7 @@ with col1:
                 ("Distanz", dist_txt),
                 ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
                 ("Homeoffice", "Ja (Bonus aktiv)" if is_homeoffice_item(it) else "—"),
+                ("Ziel-Organisation", org["name"] if org else "—"),
                 ("Arbeitgeber", item_company(it) or "—"),
                 ("Ort", pretty_location(it)),
                 ("Profil", it.get("_profile", "")),
@@ -838,11 +904,20 @@ with col1:
             ]
             render_fact_grid(facts)
 
+            # Karriereseite (Variante 2)
+            if org:
+                st.write("**Karriereseite (Ziel-Organisation)**")
+                try:
+                    st.link_button("🏢 Karriereseite öffnen", org["url"])
+                except Exception:
+                    st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
+
             # Score-Aufschlüsselung
             if show_score_breakdown:
                 st.write("**Score-Aufschlüsselung**")
                 st.code(" | ".join(parts))
 
+            # BA Web Link + Route
             web_url = jobsuche_web_url(it)
             ll = extract_latlon_from_item(it)
             if web_url or ll:
@@ -863,6 +938,7 @@ with col1:
 
             st.divider()
 
+            # Details (wenn verfügbar)
             api_url = details_url_api(it)
             if not api_url:
                 st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
