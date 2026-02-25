@@ -63,33 +63,56 @@ DEFAULT_NEGATIVE_KEYWORDS = [
 # Ziel-Organisationen (20) + Karriereseiten (nur Links, kein Scraping)
 # =========================
 TARGET_ORGS: List[Dict[str, Any]] = [
-    # Industrie
-    {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/karriere"},
+    # --- Industrie / Chemie / Energie (Region) ---
+    {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},  # :contentReference[oaicite:1]{index=1}
     {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
-    {"name": "Dow (Schkopau/Böhlen)", "match": ["dow"], "url": "https://de.dow.com/de-de/karriere.html"},
+    {"name": "Dow (Schkopau/Böhlen)", "match": ["dow", "olefinverbund"], "url": "https://de.dow.com/de-de/karriere.html"},  # :contentReference[oaicite:2]{index=2}
     {"name": "Trinseo (Schkopau)", "match": ["trinseo"], "url": "https://www.trinseo.com/careers"},
     {"name": "DOMO / Caproleuna", "match": ["domo", "caproleuna"], "url": "https://www.domochemicals.com/de/stellenangebote"},
     {"name": "UPM Biochemicals (Leuna)", "match": ["upm"], "url": "https://www.upmbiochemicals.com/de/karriere/"},
     {"name": "ADDINOL (Leuna)", "match": ["addinol"], "url": "https://addinol.de/unternehmen/karriere/"},
+    {"name": "Arkema", "match": ["arkema"], "url": "https://www.arkema.com/germany/de/careers/"},  # :contentReference[oaicite:3]{index=3}
+    {"name": "Eastman", "match": ["eastman"], "url": "https://www.eastman.com/en/careers"},  # :contentReference[oaicite:4]{index=4}
+    {"name": "Innospec", "match": ["innospec"], "url": "https://www.inno-spec.de/karriere/"},  # :contentReference[oaicite:5]{index=5}
+    {"name": "Shell (Catalysts/Leuna)", "match": ["shell", "catalysts"], "url": "https://www.shell.de/ueber-uns/karriere.html"},  # :contentReference[oaicite:6]{index=6}
     {"name": "Linde", "match": ["linde"], "url": "https://de.lindecareers.com/"},
     {"name": "Air Liquide", "match": ["air liquide"], "url": "https://de.airliquide.com/karriere"},
+    {"name": "BASF", "match": ["basf"], "url": "https://www.basf.com/global/de/careers"},  # :contentReference[oaicite:7]{index=7}
+    {"name": "Wacker Chemie", "match": ["wacker"], "url": "https://www.wacker.com/cms/de-de/careers/overview.html"},  # :contentReference[oaicite:8]{index=8}
+    {"name": "Verbio (Leipzig)", "match": ["verbio"], "url": "https://www.verbio.de/karriere/"},  # :contentReference[oaicite:9]{index=9}
+    {"name": "VNG (Leipzig)", "match": ["vng"], "url": "https://karriere.vng.de/"},
+    {"name": "Siemens Energy", "match": ["siemens energy"], "url": "https://jobs.siemens-energy.com/de_DE/jobs/Jobs"},  # :contentReference[oaicite:10]{index=10}
+    {"name": "Siemens (allgemein)", "match": ["siemens"], "url": "https://www.siemens.com/de/de/unternehmen/jobs.html"},  # :contentReference[oaicite:11]{index=11}
+
+    # --- Automotive / Logistik (regional, falls interessant) ---
     {"name": "BMW Werk Leipzig", "match": ["bmw"], "url": "https://www.bmwgroup.jobs/de/de/standorte/werke-in-deutschland/werk-leipzig.html"},
     {"name": "Porsche Leipzig", "match": ["porsche"], "url": "https://www.porsche-leipzig.com/jobs-karriere/"},
-    {"name": "VNG (Leipzig)", "match": ["vng"], "url": "https://karriere.vng.de/"},
+    {"name": "DHL Hub Leipzig", "match": ["dhl", "deutsche post", "hub leipzig"], "url": "https://www.dhl.com/de-de/microsites/express/hubs/hub-leipzig/jobs.html"},  # :contentReference[oaicite:12]{index=12}
+    {"name": "Mitteldeutsche Flughafen AG (LEJ)", "match": ["mitteldeutsche flughafen", "flughafen leipzig", "leipzig/halle", "leipzig-halle"], "url": "https://www.mdf-ag.com/karriere/alle-jobs/flughafen-leipzig-halle"},  # :contentReference[oaicite:13]{index=13}
 
-    # Forschung / Institute
-    {"name": "UFZ Helmholtz (Leipzig)", "match": ["ufz", "helmholtz-zentrum", "umweltforschung"], "url": "https://www.ufz.de/index.php?de=34276"},
+    # --- Regionale Infrastruktur/Versorger ---
+    {"name": "Stadtwerke Leipzig / Leipziger Gruppe", "match": ["stadtwerke leipzig", "leipziger gruppe", "l-gruppe", "l.de"], "url": "https://www.l.de/karriere/stellenangebote/"},  # :contentReference[oaicite:14]{index=14}
+    {"name": "enviaM-Gruppe", "match": ["enviam", "envia", "mitgas"], "url": "https://jobs.enviam-gruppe.de/"},  # :contentReference[oaicite:15]{index=15}
+
+    # --- Analytik / Prüfen / Zertifizieren ---
+    {"name": "GBA Group", "match": ["gba"], "url": "https://www.gba-group.com/karriere/jobs/"},  # :contentReference[oaicite:16]{index=16}
+    {"name": "Eurofins", "match": ["eurofins"], "url": "https://careers.eurofins.com/de"},  # :contentReference[oaicite:17]{index=17}
+    {"name": "SGS", "match": ["sgs"], "url": "https://www.sgs.com/de-de/unternehmen/karriere-bei-sgs/stellenangebote"},  # :contentReference[oaicite:18]{index=18}
+    {"name": "DEKRA", "match": ["dekra"], "url": "https://www.dekra.de/de/karriere/ueberblick/"},  # :contentReference[oaicite:19]{index=19}
+
+    # --- Forschung / Institute / Uni / HAW ---
+    {"name": "UFZ Helmholtz (Leipzig)", "match": ["ufz", "helmholtz-zentrum", "umweltforschung"], "url": "https://www.ufz.de/index.php?de=34275"},  # :contentReference[oaicite:20]{index=20}
     {"name": "DBFZ Leipzig", "match": ["dbfz"], "url": "https://www.dbfz.de/karriere/stellenausschreibungen"},
-    {"name": "Fraunhofer IMWS (Halle)", "match": ["imws", "fraunhofer imws"], "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"},
-    {"name": "Fraunhofer IZI (Leipzig)", "match": ["izi", "fraunhofer izi"], "url": "https://www.izi.fraunhofer.de/de/jobs-karriere.html"},
-
-    # Uni / Hochschule
+    {"name": "Fraunhofer IZI (Leipzig)", "match": ["fraunhofer izi", "izi"], "url": "https://www.izi.fraunhofer.de/de/jobs-karriere.html"},  # :contentReference[oaicite:21]{index=21}
+    {"name": "Fraunhofer (Jobportal)", "match": ["fraunhofer"], "url": "https://www.fraunhofer.de/de/jobs-und-karriere.html"},  # :contentReference[oaicite:22]{index=22}
+    {"name": "Leibniz IOM (Leipzig)", "match": ["iom", "oberflächenmodifizierung", "leibniz"], "url": "https://www.leibniz-gemeinschaft.de/karriere/stellenportal/"},  # :contentReference[oaicite:23]{index=23}
+    {"name": "Leibniz IPB (Halle)", "match": ["ipb", "pflanzenbiochemie", "leibniz"], "url": "https://www.leibniz-gemeinschaft.de/karriere/stellenportal/"},  # :contentReference[oaicite:24]{index=24}
+    {"name": "Max-Planck-Gesellschaft (Stellenbörse)", "match": ["max-planck", "max planck", "mpg"], "url": "https://www.mpg.de/stellenboerse"},  # :contentReference[oaicite:25]{index=25}
     {"name": "Universität Leipzig", "match": ["universität leipzig", "uni leipzig"], "url": "https://www.uni-leipzig.de/universitaet/arbeiten-an-der-universitaet-leipzig/stellenausschreibungen"},
     {"name": "MLU Halle", "match": ["martin-luther-universität", "universität halle", "uni halle", "mlu"], "url": "https://personal.verwaltung.uni-halle.de/jobs/"},
     {"name": "Hochschule Merseburg", "match": ["hochschule merseburg", "hs merseburg"], "url": "https://www.hs-merseburg.de/hochschule/information/stellenausschreibungen/"},
     {"name": "HTWK Leipzig", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
 ]
-
 
 # -------------------- Snapshot helpers --------------------
 def ensure_state_dir() -> None:
