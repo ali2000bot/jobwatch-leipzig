@@ -127,6 +127,27 @@ TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "MLU Halle", "match": ["martin-luther-universität", "universität halle", "uni halle", "mlu"], "url": "https://personal.verwaltung.uni-halle.de/jobs/"},
     {"name": "Hochschule Merseburg", "match": ["hochschule merseburg", "hs merseburg"], "url": "https://www.hs-merseburg.de/hochschule/information/stellenausschreibungen/"},
     {"name": "HTWK Leipzig", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
+
+    # --- Materialprüfung / WLF teilw. Netzsch-Geräte
+    
+    {"name": "MFPA Leipzig GmbH", "match": ["mfpa leipzig", "mfpa"], "url": "https://www.mfpa-leipzig.de/"},
+    {"name": "MFPA Leipzig – Wärmeleitfähigkeit (Service)", "match": ["mfpa leipzig", "mfpa"], "url": "https://www.mfpa-leipzig.de/service/pruefung-der-waermeleitfaehigkeit-von-daemmstoffen/"},
+
+    {"name": "Universität Leipzig – Institut f. Technische Chemie (Equipment)", 
+     "match": ["universität leipzig", "uni leipzig", "institut für technische chemie", "technical chemistry"],
+     "url": "https://www.chemie.uni-leipzig.de/en/institute-of-chemical-technology/technical-equipment"},
+
+    {"name": "MLU Halle – Thermal analysis (Geo / MinGeo)", 
+     "match": ["mlu", "uni halle", "martin-luther", "universität halle"],
+     "url": "https://geo.uni-halle.de/en/mingeochem/laboratories/thermalanalysis/"},
+
+    {"name": "HTWK Leipzig – MNZ Werkstoffprüfung (Analytisches Zentrum)", 
+     "match": ["htwk", "mnz"], 
+     "url": "https://mnz.htwk-leipzig.de/forschung/analytisches-zentrum/analysemethoden/werkstoffpruefung/"},
+
+    {"name": "TZO Leipzig – Labor Umwelterprobung & Werkstoffprüfung (LUW)", 
+     "match": ["tzo leipzig", "luw"], 
+     "url": "https://tzoleipzig.de/labor-fuer-umwelterprobung/"},
 ]
 
 # -------------------- Snapshot helpers --------------------
