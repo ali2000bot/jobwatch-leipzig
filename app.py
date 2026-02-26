@@ -1131,11 +1131,25 @@ with col1:
         # CSV (ohne pandas)
         csv_lines = ["name,url,priority,last_checked,count,prev_count,diff,notes"]
         
-        
-        # High Priority zuerst
-        def org_sort_key(o: Dict[str, Any]) -> Tuple[int, str]:
+        def org_sort_key(o: Dict[str, Any]) -> Tuple[int, int, str]:
+            # 1) High-Priority zuerst
             pr = 0 if o.get("priority") == "high" else 1
-            return (pr, o.get("name", ""))
+
+            # 2) Überfälligkeit / nie geprüft zuerst
+            org_name = o.get("name", "")
+            data = company_state.get(org_name, {})
+            last_checked = str(data.get("last_checked") or "")
+            ds = days_since(last_checked)
+            # nie geprüft => ganz nach oben
+            if ds is None:
+                overdue_rank = 0
+                ds_rank = 10**9
+            else:
+                # rot/gelb -> weiter oben
+                overdue_rank = 1 if ds >= int(warn_days) else 2
+                ds_rank = -ds  # je älter, desto weiter oben innerhalb der Gruppe
+
+            return (pr, overdue_rank, ds_rank, org_name)
 
         filtered_orgs = []
         for org in sorted(TARGET_ORGS, key=org_sort_key):
