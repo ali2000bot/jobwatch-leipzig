@@ -1036,7 +1036,22 @@ with col1:
 
         company_state = load_company_state()
         today = datetime.now().strftime("%Y-%m-%d")
+        
+        # --- Bewertungslogik: "überfällig" nach Tagen ---
+        use_sliders = st.checkbox("Schwellen per Slider einstellen", value=True, key="fc_use_sliders")
 
+        if use_sliders:
+            warn_days = st.slider("Gelb ab X Tagen ohne Prüfung", 1, 60, 7, 1, key="fc_warn_days")
+            crit_days = st.slider("Rot ab X Tagen ohne Prüfung", 2, 120, 14, 1, key="fc_crit_days")
+        else:
+            # feste Werte (fallback)
+            warn_days = 7
+            crit_days = 14
+
+        # Sicherheit: crit muss >= warn sein
+        if crit_days < warn_days:
+            crit_days = warn_days
+            
         # --- Firmencheck: Filter / Suche / Export ---
         st.markdown("### Übersicht & Tools")
 
