@@ -1051,21 +1051,6 @@ with col1:
         # Sicherheit: crit muss >= warn sein
         if crit_days < warn_days:
             crit_days = warn_days
-            
-        # --- Firmencheck: Filter / Suche / Export ---
-        st.markdown("### Übersicht & Tools")
-
-        only_high = st.checkbox("Nur High-Priority (🔥) anzeigen", value=False, key="fc_only_high")
-        name_filter = st.text_input("Firma suchen (Teilstring)", value="", key="fc_name_filter").strip().lower()
-
-        # Hilfs-Map: org_name -> org (für priority/url)
-        org_by_name: Dict[str, Dict[str, Any]] = {o["name"]: o for o in TARGET_ORGS}
-
-        # Übersicht berechnen
-        checked_today = 0
-        checked_any = 0
-        overdue = 0
-        total_positive = 0
 
         def days_since(date_str: str) -> Optional[int]:
             """
@@ -1093,6 +1078,21 @@ with col1:
                 return "🟡", f"{ds} Tage"
             return "🟢", f"{ds} Tage"
         
+        # --- Firmencheck: Filter / Suche / Export ---
+        st.markdown("### Übersicht & Tools")
+
+        only_high = st.checkbox("Nur High-Priority (🔥) anzeigen", value=False, key="fc_only_high")
+        name_filter = st.text_input("Firma suchen (Teilstring)", value="", key="fc_name_filter").strip().lower()
+
+        # Hilfs-Map: org_name -> org (für priority/url)
+        org_by_name: Dict[str, Dict[str, Any]] = {o["name"]: o for o in TARGET_ORGS}
+
+        # Übersicht berechnen
+        checked_today = 0
+        checked_any = 0
+        overdue = 0
+        total_positive = 0
+      
         for org in TARGET_ORGS:
             org_name = org["name"]
             data = company_state.get(org_name, {})
