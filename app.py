@@ -255,6 +255,18 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
     with open(SNAPSHOT_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
+COMPANY_STATE_FILE = os.path.join(STATE_DIR, "company_monitor.json")
+
+def load_company_state() -> Dict[str, Any]:
+    if not os.path.exists(COMPANY_STATE_FILE):
+        return {}
+    with open(COMPANY_STATE_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+def save_company_state(state: Dict[str, Any]) -> None:
+    ensure_state_dir()
+    with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
 
 # -------------------- BA API helpers --------------------
 def headers(api_key: str) -> Dict[str, str]:
