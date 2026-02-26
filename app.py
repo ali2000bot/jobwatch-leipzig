@@ -587,7 +587,7 @@ with st.sidebar:
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
 
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=False)
-    ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 200, 25)
+    ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 100, 25)
 
     ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
     show_score_breakdown = st.checkbox("Score-Aufschlüsselung anzeigen", value=True)
