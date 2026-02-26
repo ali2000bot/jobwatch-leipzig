@@ -158,6 +158,79 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         ],
         "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"
     },
+    {
+    "name": "Fraunhofer IMWS (Halle)",
+    "match": [
+        "fraunhofer imws",
+        "imws",
+        "fraunhofer institut für mikrostruktur",
+        "mikrostruktur von werkstoffen",
+        "halle (saale)"
+    ],
+    "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"
+    },
+
+    {
+    "name": "Leibniz-Institut für Oberflächenmodifizierung (IOM)",
+    "match": [
+        "leibniz iom",
+        "iom leipzig",
+        "oberflächenmodifizierung",
+        "leibniz institut"
+    ],
+    "url": "https://www.iom-leipzig.de/de/karriere/"
+    },
+
+    {
+    "name": "MFPA Leipzig GmbH",
+    "match": [
+        "mfpa leipzig",
+        "mfpa",
+        "materialforschungs",
+        "prüfanstalt"
+    ],
+    "url": "https://www.mfpa-leipzig.de/"
+    },
+
+    {
+    "name": "DBFZ Leipzig",
+    "match": [
+        "dbfz",
+        "deutsches biomasseforschungszentrum"
+    ],
+    "url": "https://www.dbfz.de/karriere/stellenausschreibungen"
+    },
+
+    {
+    "name": "UFZ Helmholtz-Zentrum für Umweltforschung",
+    "match": [
+        "ufz",
+        "helmholtz zentrum",
+        "umweltforschung leipzig"
+    ],
+    "url": "https://www.ufz.de/index.php?de=34276"
+    },
+
+    {
+    "name": "HTWK Leipzig – Analytisches Zentrum",
+    "match": [
+        "htwk",
+        "hochschule leipzig",
+        "analytisches zentrum"
+    ],
+    "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"
+    },
+
+    {
+    "name": "MLU Halle – Materialwissenschaft / Geo",
+    "match": [
+        "martin luther universität",
+        "mlu halle",
+        "universität halle",
+        "geo halle"
+    ],
+    "url": "https://personal.verwaltung.uni-halle.de/jobs/"
+    },
 ]
 
 # -------------------- Snapshot helpers --------------------
