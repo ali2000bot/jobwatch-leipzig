@@ -1214,3 +1214,22 @@ with col1:
                 st.success("Notizen gespeichert.")
 
             st.divider()
+        st.markdown("### Export")
+        json_bytes = json.dumps(export_payload, ensure_ascii=False, indent=2).encode("utf-8")
+        csv_bytes = ("\n".join(csv_lines)).encode("utf-8")
+
+        cE1, cE2 = st.columns(2)
+        with cE1:
+            st.download_button(
+                "⬇️ Firmencheck als JSON herunterladen",
+                data=json_bytes,
+                file_name=f"firmencheck_{today}.json",
+                mime="application/json",
+            )
+        with cE2:
+            st.download_button(
+                "⬇️ Firmencheck als CSV herunterladen",
+                data=csv_bytes,
+                file_name=f"firmencheck_{today}.csv",
+                mime="text/csv",
+            )
