@@ -148,6 +148,16 @@ TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "TZO Leipzig – Labor Umwelterprobung & Werkstoffprüfung (LUW)", 
      "match": ["tzo leipzig", "luw"], 
      "url": "https://tzoleipzig.de/labor-fuer-umwelterprobung/"},
+    {"name": "Fraunhofer IMWS (Halle)",
+        "match": [
+        "fraunhofer imws",
+        "imws",
+        "fraunhofer institut für mikrostruktur",
+        "mikrostruktur",
+        "halle (saale)"
+        ],
+        "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"
+    },
 ]
 
 # -------------------- Snapshot helpers --------------------
