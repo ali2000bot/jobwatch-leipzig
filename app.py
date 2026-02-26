@@ -168,6 +168,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         "halle (saale)"
     ],
     "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"
+    "priority": "high"
     },
 
     {
@@ -179,6 +180,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         "leibniz institut"
     ],
     "url": "https://www.iom-leipzig.de/de/karriere/"
+    "priority": "high"
     },
 
     {
@@ -190,6 +192,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         "prüfanstalt"
     ],
     "url": "https://www.mfpa-leipzig.de/"
+    "priority": "high"
     },
 
     {
@@ -199,6 +202,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         "deutsches biomasseforschungszentrum"
     ],
     "url": "https://www.dbfz.de/karriere/stellenausschreibungen"
+    "priority": "high"
     },
 
     {
@@ -1009,7 +1013,13 @@ with col1:
 
         # Zielorganisation marker
         org = match_target_org(item_company(it))
-        target_tag = " 🎯" if org else ""
+        if org:
+            if org.get("priority") == "high":
+                target_tag = " 🔥🎯"
+            else:
+                target_tag = " 🎯"
+        else:
+            target_tag = ""
 
         num_txt = f"{idx:02d}" if idx > 0 else "??"
         dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
