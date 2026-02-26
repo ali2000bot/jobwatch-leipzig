@@ -1095,7 +1095,18 @@ with col1:
             pr = 0 if o.get("priority") == "high" else 1
             return (pr, o.get("name", ""))
 
+        filtered_orgs = []
         for org in sorted(TARGET_ORGS, key=org_sort_key):
+            if only_high and org.get("priority") != "high":
+                continue
+            if name_filter and (name_filter not in org.get("name", "").lower()):
+                continue
+            filtered_orgs.append(org)
+
+        st.caption(f"Angezeigte Firmen: {len(filtered_orgs)} von {len(TARGET_ORGS)}")
+        st.divider()
+
+        for org in filtered_orgs:
             org_name = org["name"]
             url = org["url"]
 
