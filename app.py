@@ -936,11 +936,15 @@ with col1:
 
     # Sort: Entfernung -> neu -> Score
     def sort_key(it: Dict[str, Any]):
+        org = match_target_org(item_company(it))
+        priority_rank = 0
+        if org and org.get("priority") == "high":
+        priority_rank = -1  # höher priorisieren
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         dist_rank = dist if dist is not None else 999999.0
         is_new_rank = 0 if (it.get("_key") in new_keys) else 1
         score = relevance_score(it, int(ho_bonus))
-        return (dist_rank, is_new_rank, -score, item_title(it).lower())
+        return (priority_rank, dist_rank, is_new_rank, -score, item_title(it).lower())
 
     items_sorted = sorted(items_now, key=sort_key)
 
@@ -950,6 +954,20 @@ with col1:
 
     st.subheader(f"Treffer: {len(items_sorted)}")
     st.caption(f"Neu seit Snapshot: {len(new_keys)}")
+    st.divider()
+    st.write("## 🔥 High-Priority Treffer")
+
+    hp_items = [
+        it for it in items_sorted
+        if match_target_org(item_company(it)) and
+       match_target_org(item_company(it)).get("priority") == "high"
+    ]
+
+    if hp_items:
+        for it in hp_items:
+            st.write(f"• {item_title(it)} – {item_company(it)}")
+    else:
+        st.info("Aktuell keine High-Priority Treffer.")
 
     if st.session_state.get("save_snapshot_requested"):
         save_snapshot(items_sorted)
