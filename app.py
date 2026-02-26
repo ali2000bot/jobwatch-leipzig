@@ -1121,6 +1121,38 @@ with col1:
             data = company_state[org_name]
             prev_count = int(data.get("prev_count", 0))
             saved_count = int(data.get("count", 0))
+            priority = org.get("priority", "")
+            last_checked = str(data.get("last_checked") or "")
+            notes_saved = str(data.get("notes") or "")
+
+            diff_saved = saved_count - prev_count
+
+            export_payload["items"].append({
+                "name": org_name,
+                "url": url,
+                "priority": priority,
+                "last_checked": last_checked,
+                "count": saved_count,
+                "prev_count": prev_count,
+                "diff": diff_saved,
+                "notes": notes_saved,
+            })
+
+            # CSV-Zeile (quotes minimal sicher machen)
+            def _csv_safe(s: str) -> str:
+                s = (s or "").replace('"', '""').replace("\n", " ").replace("\r", " ")
+                return f'"{s}"'
+
+            csv_lines.append(",".join([
+                _csv_safe(org_name),
+                _csv_safe(url),
+                _csv_safe(priority),
+                _csv_safe(last_checked),
+                str(saved_count),
+                str(prev_count),
+                str(diff_saved),
+                _csv_safe(notes_saved),
+            ]))
 
             hp = "🔥 " if org.get("priority") == "high" else ""
 
