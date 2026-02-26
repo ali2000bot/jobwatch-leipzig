@@ -1214,7 +1214,8 @@ with col1:
 
             headL, headR, headX = st.columns([5, 1.3, 1.1])
             with headL:
-                st.markdown(f"### {hp}🏢 {org_name}")
+                emoji, age_label = freshness_badge(str(data.get("last_checked") or ""), int(warn_days), int(crit_days))
+                st.markdown(f"### {emoji} {hp}🏢 {org_name}  ·  {age_label}")
                 st.caption(f"Zuletzt geprüft: {data.get('last_checked') or '—'}")
             with headR:
                 try:
