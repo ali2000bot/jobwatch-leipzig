@@ -167,7 +167,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         "mikrostruktur von werkstoffen",
         "halle (saale)"
     ],
-    "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html"
+    "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html",
     "priority": "high"
     },
 
@@ -179,7 +179,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         "oberflächenmodifizierung",
         "leibniz institut"
     ],
-    "url": "https://www.iom-leipzig.de/de/karriere/"
+    "url": "https://www.iom-leipzig.de/de/karriere/",
     "priority": "high"
     },
 
@@ -191,7 +191,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         "materialforschungs",
         "prüfanstalt"
     ],
-    "url": "https://www.mfpa-leipzig.de/"
+    "url": "https://www.mfpa-leipzig.de/",
     "priority": "high"
     },
 
@@ -201,7 +201,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
         "dbfz",
         "deutsches biomasseforschungszentrum"
     ],
-    "url": "https://www.dbfz.de/karriere/stellenausschreibungen"
+    "url": "https://www.dbfz.de/karriere/stellenausschreibungen",
     "priority": "high"
     },
 
