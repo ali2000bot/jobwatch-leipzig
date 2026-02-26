@@ -1076,8 +1076,9 @@ with col1:
             if last_checked == today:
                 checked_today += 1
 
-            # "Überfällig" = noch nie geprüft oder nicht heute (einfach, robust)
-            if last_checked != today:
+            # Überfällig = Gelb oder Rot nach Tagen-Logik
+            emoji, _label = freshness_badge(last_checked, int(warn_days), int(crit_days))
+            if emoji in ("🟡", "🔴"):
                 overdue += 1
 
             prev_count = int(data.get("prev_count", 0) or 0)
