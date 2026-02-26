@@ -1037,6 +1037,59 @@ with col1:
         company_state = load_company_state()
         today = datetime.now().strftime("%Y-%m-%d")
 
+        # --- Firmencheck: Filter / Suche / Export ---
+        st.markdown("### Übersicht & Tools")
+
+        only_high = st.checkbox("Nur High-Priority (🔥) anzeigen", value=False, key="fc_only_high")
+        name_filter = st.text_input("Firma suchen (Teilstring)", value="", key="fc_name_filter").strip().lower()
+
+        # Hilfs-Map: org_name -> org (für priority/url)
+        org_by_name: Dict[str, Dict[str, Any]] = {o["name"]: o for o in TARGET_ORGS}
+
+        # Übersicht berechnen
+        checked_today = 0
+        checked_any = 0
+        overdue = 0
+        total_positive = 0
+
+        for org in TARGET_ORGS:
+            org_name = org["name"]
+            data = company_state.get(org_name, {})
+            last_checked = str(data.get("last_checked") or "")
+            if last_checked:
+                checked_any += 1
+            if last_checked == today:
+                checked_today += 1
+
+            # "Überfällig" = noch nie geprüft oder nicht heute (einfach, robust)
+            if last_checked != today:
+                overdue += 1
+
+            prev_count = int(data.get("prev_count", 0) or 0)
+            cur_count = int(data.get("count", 0) or 0)
+            diff = cur_count - prev_count
+            if diff > 0:
+                total_positive += diff
+
+        cA, cB, cC, cD = st.columns(4)
+        cA.metric("Firmen gesamt", len(TARGET_ORGS))
+        cB.metric("Heute geprüft", checked_today)
+        cC.metric("Überfällig", overdue)
+        cD.metric("Σ +neu (seit letzter Prüfung)", total_positive)
+
+        st.divider()
+
+        # Export vorbereiten
+        export_payload = {
+            "exported_at": datetime.now().isoformat(timespec="seconds"),
+            "today": today,
+            "items": []
+        }
+
+        # CSV (ohne pandas)
+        csv_lines = ["name,url,priority,last_checked,count,prev_count,diff,notes"]
+        
+        
         # High Priority zuerst
         def org_sort_key(o: Dict[str, Any]) -> Tuple[int, str]:
             pr = 0 if o.get("priority") == "high" else 1
