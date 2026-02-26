@@ -586,7 +586,7 @@ with st.sidebar:
     wo = st.text_input("Ort (BA-Suche)", value="Merseburg")
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
 
-    include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=True)
+    include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=False)
     ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 200, 25)
 
     ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
