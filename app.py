@@ -1094,6 +1094,32 @@ with col1:
 
         st.divider()
 
+        def days_since(date_str: str) -> Optional[int]:
+            """
+            Erwartet YYYY-MM-DD. Gibt Anzahl Tage seit Datum zurück, oder None.
+            """
+            s = (date_str or "").strip()
+            if not s:
+                return None
+            try:
+                d = datetime.strptime(s, "%Y-%m-%d").date()
+                return (datetime.now().date() - d).days
+            except Exception:
+                return None
+
+        def freshness_badge(last_checked: str, warn: int, crit: int) -> Tuple[str, str]:
+            """
+            Return (emoji, label)
+            """
+            ds = days_since(last_checked)
+            if ds is None:
+                return "🔴", "nie geprüft"
+            if ds >= crit:
+                return "🔴", f"{ds} Tage"
+            if ds >= warn:
+                return "🟡", f"{ds} Tage"
+            return "🟢", f"{ds} Tage"
+        
         # Export vorbereiten
         export_payload = {
             "exported_at": datetime.now().isoformat(timespec="seconds"),
