@@ -939,7 +939,7 @@ with col1:
         org = match_target_org(item_company(it))
         priority_rank = 0
         if org and org.get("priority") == "high":
-        priority_rank = -1  # höher priorisieren
+            priority_rank = -1  # höher priorisieren
         dist = distance_from_home_km(it, float(home_lat), float(home_lon))
         dist_rank = dist if dist is not None else 999999.0
         is_new_rank = 0 if (it.get("_key") in new_keys) else 1
