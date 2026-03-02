@@ -461,38 +461,14 @@ def keywords_to_text(words: List[str]) -> str:
 # -------------------- Profile Queries --------------------
 def build_queries() -> Dict[str, str]:
     """
-    BREITERE Jobarten für die BA-Suche.
-    Idee: 'was' nur grob, danach Auswahl über Score/Keywords.
+    Sehr breite BA-Suche.
+    Filterung erfolgt über Score + Keywords im Anschluss.
     """
-    # R&D / Scientist / Engineer – breit
-    q_rd = "Forschung Entwicklung R&D Engineer Scientist Werkstoff Material"
-
-    # Thermoanalyse/Thermophysik – aber nicht mit 20 Gerätenamen überladen
-    q_thermal = "Thermoanalyse Thermophysik Wärmeleitfähigkeit Materialcharakterisierung"
-
-    # Labor / Leitung – breit (Leiter-Keywords ziehen gut)
-    q_lead = "Laborleiter Teamleiter Gruppenleiter Abteilungsleiter Bereichsleiter"
-
-    # Prüfen / Testing – breit
-    q_testing = "Materialprüfung Werkstoffprüfung Prüflabor Analytik Qualitäts"
-
-    # Applikation / Anwendung / Service – breit
-    q_app = "Applikationsingenieur Application Engineer Service Support Messtechnik"
-
-    # Projektmanagement – breit
-    q_pm = "Projektmanagement Project Manager Technical Manager"
-
-    # Technischer Vertrieb / BD – breit, aber nicht zu generisch
-    q_sales = "Sales Engineer Technischer Vertrieb Business Development Key Account"
-
     return {
-        "R&D (breit)": q_rd,
-        "Thermal/Material (breit)": q_thermal,
-        "Leitung (Labor/Team)": q_lead,
-        "Materialprüfung/Analytik": q_testing,
-        "Applikation/Service": q_app,
-        "Technisches PM": q_pm,
-        "Technischer Vertrieb/BD": q_sales,
+        "Breit (alle technischen Stellen)": "",
+        "Leitung (breit)": "Leiter Teamleiter Laborleiter Bereichsleiter",
+        "Projektmanagement (breit)": "Projektmanager Project Manager",
+        "Technischer Vertrieb (breit)": "Sales Engineer Technischer Vertrieb",
     }
 
 # -------------------- Ziel-Org Matching --------------------
@@ -756,7 +732,7 @@ with st.sidebar:
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
-        default=["Leitung (Labor/Team)", "Thermal/Material (breit)", "R&D (breit)", "Materialprüfung/Analytik"],
+        default=["Breit (alle technischen Stellen)"],
     )
 
     st.divider()
