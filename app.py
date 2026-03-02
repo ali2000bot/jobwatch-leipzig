@@ -1107,6 +1107,7 @@ with col1:
                 f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)} | ho_bonus={ho_bonus} | target_orgs={len(TARGET_ORGS)}"
             )
             st.info(f"Treffer gesamt: {len(items_sorted)} | mit Koordinaten: {len(markers)} | ohne Koordinaten: {len(items_sorted)-len(markers)}")
+        st.caption(f"Treffer gesamt: {len(items_sorted)} | Marker auf Karte: {len(markers)}")
         if markers:
             st.write("### Karte")
             components.html(
