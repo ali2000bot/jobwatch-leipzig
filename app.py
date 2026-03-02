@@ -797,7 +797,12 @@ with st.sidebar:
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
-        default=["R&D", "Projektmanagement", "Vertrieb"],
+        default=[
+            "Labor-/Bereichsleitung (Thermal/Material)",
+            "R&D / Thermophysik & Thermoanalyse",
+            "Materialprüfung & Analytik (Prüflabor)",
+            "Applikationsingenieur / Anwendung / Service",
+        ],
     )
 
     st.divider()
