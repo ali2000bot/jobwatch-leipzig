@@ -1068,10 +1068,21 @@ with col1:
 
         # Marker bauen (nur Treffer mit Koordinaten)
         markers: List[Dict[str, Any]] = []
+        missing_coords = 0
+
         for it in items_sorted:
             ll = extract_latlon_from_item(it)
+
+            # Fallback: wenn BA keine Koordinaten liefert, Ort geocoden
             if not ll:
-                continue
+                loc_text = pretty_location(it)  # nutzt deine vorhandene Funktion
+                # möglichst „geocode-freundlich“ machen
+                # Beispiel: "Leipzig, Sachsen, Deutschland"
+                ll = geocode_job_location(loc_text)
+                if not ll:
+                    missing_coords += 1
+                    continue
+
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
             d = float(dist) if dist is not None else None
             bucket = distance_bucket(d, int(near_km), int(mid_km))
@@ -1087,6 +1098,9 @@ with col1:
                     "pin": bucket,
                 }
             )
+
+        if debug:
+            st.info(f"Marker: {len(markers)} | ohne Koordinaten (auch nach Geocode): {missing_coords}")
 
         if debug:
             st.info(
