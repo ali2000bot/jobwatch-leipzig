@@ -668,7 +668,7 @@ with st.sidebar:
     ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 100, 25)
 
     ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
-    show_score_breakdown = st.checkbox("Score-Aufschlüsselung anzeigen", value=True)
+    #show_score_breakdown = st.checkbox("Score-Aufschlüsselung anzeigen", value=True)
 
     queries = build_queries()
     selected_profiles = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
