@@ -335,9 +335,11 @@ def fetch_search(
         "pav": "false",
         "size": str(size),
         "umkreis": str(umkreis_km),
-        "aktualitaet": str(aktualitaet_tage),
         "wo": wo,
     }
+
+    if aktualitaet_tage is not None:
+        params["aktualitaet"] = str(int(aktualitaet_tage))
     if was and was.strip():
         params["was"] = was.strip()
     if arbeitszeit:
