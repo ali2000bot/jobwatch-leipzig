@@ -460,11 +460,81 @@ def keywords_to_text(words: List[str]) -> str:
 
 # -------------------- Profile Queries --------------------
 def build_queries() -> Dict[str, str]:
-    q_rd = "Forschung Entwicklung R&D Thermoanalyse Thermophysik Analytik DSC TGA LFA"
-    q_pm = "Projektmanagement Project Manager Program Manager Teamleiter Leiter"
-    q_sales = "Vertrieb Sales Business Development Key Account Manager"
-    return {"R&D": q_rd, "Projektmanagement": q_pm, "Vertrieb": q_sales}
+    """
+    Jobarten / Suchprofile – zugeschnitten auf Thermophysik / Thermoanalyse / Materialcharakterisierung
+    + Leitungsrollen im Labor/Prüfumfeld. Bewusst „technisch“ gehalten, um Rauschen zu reduzieren.
+    """
+    q_rd = (
+        "Thermophysik Thermophysikalisch thermophysical "
+        "Thermoanalyse thermal analysis "
+        "Materialcharakterisierung material characterization "
+        "Wärmeleitfähigkeit thermal conductivity "
+        "Temperaturleitfähigkeit diffusivity Diffusivität "
+        "Wärmekapazität heat capacity Cp "
+        "Kalorimetrie calorimetry "
+        "DSC TGA STA DTA DMA TMA Dilatometer Dilatometrie "
+        "LFA laser flash HFM heat flow meter "
+        "Forschung Entwicklung R&D research development "
+        "Werkstoff Materialwissenschaft Physik"
+    )
 
+    q_lab_lead = (
+        "Laborleiter Laborleitung Teamleiter Gruppenleiter Abteilungsleiter Bereichsleiter "
+        "Sektionsleiter Section Manager Head of Laboratory Head of Lab "
+        "Leiter Applikationslabor Applikationsleiter Application Lab Manager "
+        "Leiter Prüflabor Prüfleitung "
+        "Thermoanalyse Thermophysik Wärmeleitfähigkeit LFA HFM "
+        "Materialcharakterisierung Analytik"
+    )
+
+    q_testing_analytics = (
+        "Materialprüfung Werkstoffprüfung Prüflabor "
+        "Thermoanalyse Thermophysik Wärmeleitfähigkeit thermal conductivity "
+        "LFA laser flash HFM heat flow meter "
+        "DSC TGA STA DTA DMA TMA Dilatometer "
+        "Analytik Charakterisierung characterization "
+        "Qualitätssicherung QA QC "
+        "Prüfingenieur Test engineer"
+    )
+
+    q_app_eng = (
+        "Applikationsingenieur Application Engineer "
+        "Applikationsspezialist Application Specialist "
+        "Messtechnik instrumentierung instrumentation "
+        "Thermoanalyse Thermophysik "
+        "DSC TGA STA DMA TMA Dilatometer "
+        "LFA laser flash HFM heat flow meter "
+        "Kundenschulung training Support Service"
+    )
+
+    q_pm_tech = (
+        "Projektmanagement Project Manager "
+        "Technisches Projektmanagement Technical Project Manager "
+        "Programmmanager Program Manager "
+        "Leiter Projekte Lead projects "
+        "F&E Projekte Entwicklungsprojekte "
+        "Instrumentierung Messtechnik "
+        "Thermoanalyse Thermophysik"
+    )
+
+    q_sales_tech = (
+        "Technischer Vertrieb Sales Engineer "
+        "Business Development Key Account "
+        "Account Manager "
+        "Thermoanalyse Thermophysik "
+        "Messtechnik Instrumentierung "
+        "DSC TGA STA DMA TMA Dilatometer "
+        "LFA laser flash HFM heat flow meter"
+    )
+
+    return {
+        "R&D / Thermophysik & Thermoanalyse": q_rd,
+        "Labor-/Bereichsleitung (Thermal/Material)": q_lab_lead,
+        "Materialprüfung & Analytik (Prüflabor)": q_testing_analytics,
+        "Applikationsingenieur / Anwendung / Service": q_app_eng,
+        "Technisches Projektmanagement": q_pm_tech,
+        "Technischer Vertrieb / Business Dev": q_sales_tech,
+    }
 
 # -------------------- Ziel-Org Matching --------------------
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
