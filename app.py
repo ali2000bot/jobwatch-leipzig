@@ -147,7 +147,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "assistant", "assistenz", "sekretariat",
     "office", "backoffice", "reception", "empfang",
     "vorstandsassistenz", "dachdecker", "management assistant", "altenpfleger", "altenpflegehelfer", "staplerfahrer", "restaurantfachmann", 
-    "umformmechaniker",
+    "umformmechaniker", "gabelstaplerfahrer", "busfahrer", 
     # Pflege/Gesundheit
     "altenpfleger", "pflege", "krankenpfleger", "pflegefachkraft", "pflegedienst",
     "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut",
@@ -926,7 +926,7 @@ def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
         # bisherige
         "vorstandsassistenz", "management assistant",
         "assistant", "assistenz", "sekretariat",
-        "insurance", "versicherung", "steuerfachangestellte", "sachbearbeiter", 
+        "insurance", "versicherung", "steuerfachangestellte", "sachbearbeiter", "gabelstaplerfahrer", "busfahrer",
 
         # Pflege/Gesundheit
         "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
