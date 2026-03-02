@@ -660,7 +660,7 @@ with st.sidebar:
 
     st.divider()
     st.header("Sucheinstellungen")
-    wo = st.text_input("Ort (BA-Suche)", value="Merseburg")
+    wo = st.session_state.get("home_query", DEFAULT_HOME_LABEL)
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
 
     include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=False)
