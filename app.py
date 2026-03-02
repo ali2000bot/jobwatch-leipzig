@@ -604,41 +604,50 @@ if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
 with st.sidebar:
-    st.header("Wohnort & Entfernung")
-    # Session Defaults (damit wir lat/lon speichern)
+    st.header("Wohnort")
+    # Session defaults
+    if "home_query" not in st.session_state:
+        st.session_state["home_query"] = DEFAULT_HOME_LABEL
     if "home_lat" not in st.session_state:
         st.session_state["home_lat"] = float(DEFAULT_HOME_LAT)
     if "home_lon" not in st.session_state:
         st.session_state["home_lon"] = float(DEFAULT_HOME_LON)
-    if "home_query" not in st.session_state:
-        st.session_state["home_query"] = DEFAULT_HOME_LABEL
     if "home_display" not in st.session_state:
         st.session_state["home_display"] = DEFAULT_HOME_LABEL
-    home_query = st.text_input("Wohnort (Adresse/PLZ/Ort)", value=st.session_state["home_query"])
-    c_geo1, c_geo2 = st.columns([1, 1])
-    with c_geo1:
-        if st.button("📍 Koordinaten automatisch setzen"):
-            lat, lon, msg = geocode_nominatim(home_query)
-            if lat is None or lon is None:
-                st.error(msg or "Geocoding fehlgeschlagen.")
-            else:
-                st.session_state["home_lat"] = lat
-                st.session_state["home_lon"] = lon
-                st.session_state["home_query"] = home_query
-                st.session_state["home_display"] = msg or home_query
-                st.success(f"Gesetzt: {st.session_state['home_display']} ({lat:.5f}, {lon:.5f})")
-    with c_geo2:
-        if st.button("↩︎ Default (Braunsbedra)"):
-            st.session_state["home_lat"] = float(DEFAULT_HOME_LAT)
-            st.session_state["home_lon"] = float(DEFAULT_HOME_LON)
-            st.session_state["home_query"] = DEFAULT_HOME_LABEL
-            st.session_state["home_display"] = DEFAULT_HOME_LABEL
-            st.success("Wohnort zurückgesetzt.")
+    if "geocode_error" not in st.session_state:
+        st.session_state["geocode_error"] = ""
 
-    # Wir benutzen in der App ab jetzt diese Werte:
+    def _auto_geocode():
+        q = (st.session_state.get("home_query") or "").strip()
+        if not q:
+            st.session_state["geocode_error"] = "Bitte Wohnort eingeben."
+            return
+        lat, lon, msg = geocode_nominatim(q)
+        if lat is None or lon is None:
+            st.session_state["geocode_error"] = msg or "Geocoding fehlgeschlagen."
+            return
+        st.session_state["home_lat"] = float(lat)
+        st.session_state["home_lon"] = float(lon)
+        st.session_state["home_display"] = msg or q
+        st.session_state["geocode_error"] = ""
+
+    # EIN Feld, ohne Button: bei Änderung automatisch geocoden
+    st.text_input(
+        "Wohnort (PLZ/Ort oder Adresse)",
+        key="home_query",
+        on_change=_auto_geocode,
+    )
+
+    # Statusanzeige (ohne Extra-Eingaben)
+    if st.session_state.get("geocode_error"):
+        st.warning(st.session_state["geocode_error"])
+    else:
+        st.caption(f"📍 verwendet: {st.session_state.get('home_display')}")
+
+    # Für den Rest der App:
     home_lat = float(st.session_state["home_lat"])
     home_lon = float(st.session_state["home_lon"])
-    home_label = str(st.session_state.get("home_display") or home_query)
+    home_label = str(st.session_state.get("home_display") or st.session_state.get("home_query"))
     
     st.caption(f"Aktiver Wohnort: {home_label}")
 
