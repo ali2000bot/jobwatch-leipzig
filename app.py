@@ -1067,17 +1067,16 @@ with col1:
             st.success("Snapshot gespeichert.")
 
         # Marker bauen (nur Treffer mit Koordinaten)
-        markers: List[Dict[str, Any]] = []
+        from collections import defaultdict
+
+        raw_markers: List[Dict[str, Any]] = []
         missing_coords = 0
 
         for it in items_sorted:
             ll = extract_latlon_from_item(it)
 
-            # Fallback: wenn BA keine Koordinaten liefert, Ort geocoden
             if not ll:
-                loc_text = pretty_location(it)  # nutzt deine vorhandene Funktion
-                # möglichst „geocode-freundlich“ machen
-                # Beispiel: "Leipzig, Sachsen, Deutschland"
+                loc_text = pretty_location(it)
                 ll = geocode_job_location(loc_text)
                 if not ll:
                     missing_coords += 1
@@ -1087,9 +1086,9 @@ with col1:
             d = float(dist) if dist is not None else None
             bucket = distance_bucket(d, int(near_km), int(mid_km))
 
-            markers.append(
+            raw_markers.append(
                 {
-                    "idx": it.get("_idx", ""),
+                    "idx": int(it.get("_idx", 0)),
                     "lat": float(ll[0]),
                     "lon": float(ll[1]),
                     "title": item_title(it),
@@ -1099,6 +1098,32 @@ with col1:
                 }
             )
 
+        # ---------
+        # Gruppieren nach Koordinaten
+        # ---------
+        groups = defaultdict(list)
+
+        for m in raw_markers:
+            key = (round(m["lat"], 6), round(m["lon"], 6))  # Rundung verhindert Mini-Abweichungen
+            groups[key].append(m)
+
+        markers = []
+
+        for (lat, lon), group in groups.items():
+            if len(group) == 1:
+                markers.append(group[0])
+            else:
+                idxs = sorted([g["idx"] for g in group if g["idx"] > 0])
+                idx_label = f"{idxs[0]}–{idxs[-1]}" if idxs else "?"
+
+                # wir nehmen repräsentativ das erste Element
+                base = group[0].copy()
+                base["idx"] = idx_label
+                base["title"] = f"{len(group)} Treffer an diesem Ort"
+                markers.append(base)
+
+        if debug:
+            st.info(f"Marker nach Gruppierung: {len(markers)} | ursprüngliche Marker: {len(raw_markers)}")
         if debug:
             st.info(f"Marker: {len(markers)} | ohne Koordinaten (auch nach Geocode): {missing_coords}")
 
