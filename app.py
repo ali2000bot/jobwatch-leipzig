@@ -1215,7 +1215,10 @@ with col1:
             headL, headR, headX = st.columns([5, 1.3, 1.1])
             with headL:
                 emoji, age_label = freshness_badge(str(data.get("last_checked") or ""), int(warn_days), int(crit_days))
-                st.markdown(f"### {emoji} {hp}🏢 {org_name}  ·  {age_label}")
+                diff_saved = saved_count - prev_count
+                diff_tag = f" · 🟢 +{diff_saved}" if diff_saved > 0 else (f" · 🔴 {diff_saved}" if diff_saved < 0 else "")
+                count_tag = f" · ⭐ {saved_count} interessant" if saved_count > 0 else ""
+                st.markdown(f"### {emoji} {hp}🏢 {org_name}{count_tag}{diff_tag}  ·  {age_label}")
                 st.caption(f"Zuletzt geprüft: {data.get('last_checked') or '—'}")
             with headR:
                 try:
