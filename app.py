@@ -1082,7 +1082,7 @@ with col1:
         if markers:
             st.write("### Karte")
             components.html(
-                leaflet_map_html(float(home_lat), float(home_lon), home_label, markers[:80], height_px=520),
+                leaflet_map_html(float(home_lat), float(home_lon), home_label, markers, height_px=520),
                 height=560,
             )
 
