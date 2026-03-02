@@ -51,6 +51,20 @@ def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Opt
     except Exception:
         return None, None, "Geocode: Treffer ohne gültige Koordinaten."
 
+@st.cache_data(ttl=7*24*3600, show_spinner=False)
+def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
+    """
+    Sehr kleines Geocoding für Job-Orte (PLZ/Ort/Region).
+    Nutzt Nominatim (OSM) und cached Ergebnisse.
+    """
+    q = (query or "").strip()
+    if not q:
+        return None
+    lat, lon, _msg = geocode_nominatim(q)  # nutzt deine bestehende Funktion
+    if lat is None or lon is None:
+        return None
+    return float(lat), float(lon)
+
 # =========================
 # BA Jobsuche (App Endpoint)
 # =========================
