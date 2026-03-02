@@ -12,6 +12,45 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+@st.cache_data(ttl=7*24*3600, show_spinner=False)
+def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
+    """
+    Geocoding via OSM Nominatim.
+    Returns: (lat, lon, display_name_or_error)
+    """
+    q = (query or "").strip()
+    if not q:
+        return None, None, "Kein Wohnort angegeben."
+
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"q": q, "format": "json", "limit": 1}
+    headers = {"User-Agent": "JobWatchLeipzig/1.0 (Streamlit App)"}
+
+    try:
+        r = requests.get(url, params=params, headers=headers, timeout=20)
+    except Exception as e:
+        return None, None, f"Geocode-Request fehlgeschlagen: {type(e).__name__}: {e}"
+
+    if r.status_code != 200:
+        return None, None, f"Geocode HTTP {r.status_code}: {r.text[:200]}"
+
+    try:
+        data = r.json()
+    except Exception:
+        return None, None, "Geocode: Antwort war kein gültiges JSON."
+
+    if not isinstance(data, list) or len(data) == 0:
+        return None, None, "Keine Koordinaten gefunden. Tipp: 'PLZ Ort' eingeben."
+
+    hit = data[0]
+    try:
+        lat = float(hit.get("lat"))
+        lon = float(hit.get("lon"))
+        name = str(hit.get("display_name") or q)
+        return lat, lon, name
+    except Exception:
+        return None, None, "Geocode: Treffer ohne gültige Koordinaten."
+
 # =========================
 # BA Jobsuche (App Endpoint)
 # =========================
@@ -613,6 +652,53 @@ ho_bonus = 8
 
 with st.sidebar:
     st.header("JobWatch – Einstellungen")
+
+    # =========================
+    # Wohnort (1 Feld, Auto-Geocode)
+    # =========================
+    st.subheader("Wohnort")
+
+    if "home_query" not in st.session_state:
+        st.session_state["home_query"] = DEFAULT_HOME_LABEL
+    if "home_lat" not in st.session_state:
+        st.session_state["home_lat"] = float(DEFAULT_HOME_LAT)
+    if "home_lon" not in st.session_state:
+        st.session_state["home_lon"] = float(DEFAULT_HOME_LON)
+    if "home_display" not in st.session_state:
+        st.session_state["home_display"] = DEFAULT_HOME_LABEL
+    if "geocode_error" not in st.session_state:
+        st.session_state["geocode_error"] = ""
+
+    def _auto_geocode():
+        q = (st.session_state.get("home_query") or "").strip()
+        lat, lon, msg = geocode_nominatim(q)
+        if lat is None or lon is None:
+            st.session_state["geocode_error"] = msg or "Geocoding fehlgeschlagen."
+        else:
+            st.session_state["home_lat"] = float(lat)
+            st.session_state["home_lon"] = float(lon)
+            st.session_state["home_display"] = msg or q
+            st.session_state["geocode_error"] = ""
+
+    # Eingabe (kein Button) -> bei Änderung automatisch geocoden
+    st.text_input("PLZ/Ort oder Adresse", key="home_query", on_change=_auto_geocode)
+
+    # Beim ersten Start einmal geocoden (wenn noch nie erfolgt)
+    if st.session_state.get("home_display") == DEFAULT_HOME_LABEL and st.session_state.get("home_query") == DEFAULT_HOME_LABEL:
+        _auto_geocode()
+
+    if st.session_state.get("geocode_error"):
+        st.warning(st.session_state["geocode_error"])
+    else:
+        st.caption(f"📍 verwendet: {st.session_state.get('home_display')}")
+
+    # Werte für den Rest der App
+    home_query = str(st.session_state.get("home_query") or DEFAULT_HOME_LABEL)
+    home_lat = float(st.session_state.get("home_lat") or DEFAULT_HOME_LAT)
+    home_lon = float(st.session_state.get("home_lon") or DEFAULT_HOME_LON)
+    home_label = str(st.session_state.get("home_display") or home_query)
+
+    st.divider()
 
     # -------------------------
     # 1) Wohnort (ein Feld, Auto-Geocode) – MUSS vorher gesetzt sein
