@@ -1083,7 +1083,9 @@ with col1:
 
         only_high = st.checkbox("Nur High-Priority (🔥) anzeigen", value=False, key="fc_only_high")
         name_filter = st.text_input("Firma suchen (Teilstring)", value="", key="fc_name_filter").strip().lower()
-
+        only_interesting = st.checkbox("Nur Firmen mit ⭐ interessanten Stellen", value=False, key="fc_only_interesting")
+        only_new = st.checkbox("Nur Firmen mit 🟢 +neu seit letzter Prüfung", value=False, key="fc_only_new")
+        
         # Hilfs-Map: org_name -> org (für priority/url)
         org_by_name: Dict[str, Dict[str, Any]] = {o["name"]: o for o in TARGET_ORGS}
 
