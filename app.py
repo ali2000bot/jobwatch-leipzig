@@ -923,7 +923,8 @@ with col1:
         if not selected_profiles:
             st.warning("Bitte mindestens ein Profil auswählen.")
             st.stop()
-
+            
+        wo = home_query
         with st.spinner("Suche läuft…"):
             all_items: List[Dict[str, Any]] = []
             errs: List[str] = []
