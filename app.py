@@ -707,7 +707,7 @@ with st.sidebar:
     wo = home_query  # BA-Ort = Wohnort (kein extra Feld)
 
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
-    include_ho = st.checkbox("Homeoffice berücksichtigen", value=True)
+    include_ho = st.checkbox("Homeoffice berücksichtigen", value=False)
     ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 200, 25) if include_ho else 0
 
     aktualitaet = st.slider("Aktualität (Tage)", 0, 365, 60, 5)
