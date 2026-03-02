@@ -604,127 +604,106 @@ if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
 with st.sidebar:
-    st.header("Wohnort")
-    # Session defaults
-    if "home_query" not in st.session_state:
-        st.session_state["home_query"] = DEFAULT_HOME_LABEL
-    if "home_lat" not in st.session_state:
-        st.session_state["home_lat"] = float(DEFAULT_HOME_LAT)
-    if "home_lon" not in st.session_state:
-        st.session_state["home_lon"] = float(DEFAULT_HOME_LON)
-    if "home_display" not in st.session_state:
-        st.session_state["home_display"] = DEFAULT_HOME_LABEL
-    if "geocode_error" not in st.session_state:
-        st.session_state["geocode_error"] = ""
+    st.header("JobWatch – Einstellungen")
 
-    def _auto_geocode():
-        q = (st.session_state.get("home_query") or "").strip()
-        if not q:
-            st.session_state["geocode_error"] = "Bitte Wohnort eingeben."
-            return
-        lat, lon, msg = geocode_nominatim(q)
-        if lat is None or lon is None:
-            st.session_state["geocode_error"] = msg or "Geocoding fehlgeschlagen."
-            return
-        st.session_state["home_lat"] = float(lat)
-        st.session_state["home_lon"] = float(lon)
-        st.session_state["home_display"] = msg or q
-        st.session_state["geocode_error"] = ""
+    # -------------------------
+    # 1) Wohnort (ein Feld, Auto-Geocode) – MUSS vorher gesetzt sein
+    #    Erwartet: home_query, home_lat, home_lon, home_label
+    # -------------------------
+    st.subheader("Wohnort")
+    st.caption(f"📍 verwendet: {home_label}")
 
-    # EIN Feld, ohne Button: bei Änderung automatisch geocoden
-    st.text_input(
-        "Wohnort (PLZ/Ort oder Adresse)",
-        key="home_query",
-        on_change=_auto_geocode,
+    st.divider()
+
+    # -------------------------
+    # 2) BA-Suche (minimal)
+    # -------------------------
+    st.subheader("Suche")
+    wo = home_query  # BA-Ort = Wohnort (kein extra Feld)
+
+    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
+    include_ho = st.checkbox("Homeoffice berücksichtigen", value=True)
+    ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 200, 25) if include_ho else 0
+
+    aktualitaet = st.slider("Aktualität (Tage)", 0, 365, 60, 5)
+
+    queries = build_queries()
+    selected_profiles = st.multiselect(
+        "Jobarten",
+        list(queries.keys()),
+        default=["R&D", "Projektmanagement", "Vertrieb"],
     )
 
-    # Statusanzeige (ohne Extra-Eingaben)
-    if st.session_state.get("geocode_error"):
-        st.warning(st.session_state["geocode_error"])
-    else:
-        st.caption(f"📍 verwendet: {st.session_state.get('home_display')}")
+    st.divider()
 
-    # Für den Rest der App:
-    home_lat = float(st.session_state["home_lat"])
-    home_lon = float(st.session_state["home_lon"])
-    home_label = str(st.session_state.get("home_display") or st.session_state.get("home_query"))
-    
-    st.caption(f"Aktiver Wohnort: {home_label}")
-
-    st.subheader("Farbmarkierung Entfernung")
-    near_km = st.slider("Grün bis (km)", 5, 80, 25, 5)
-    mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
-
-    st.subheader("Fahrzeit-Schätzung")
-    speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
+    # -------------------------
+    # 3) Relevanz-Filter (minimal)
+    # -------------------------
+    st.subheader("Filter")
+    only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
+    min_score = st.slider("Mindest-Relevanz", 0, 80, 10, 1)
+    hide_irrelevant = st.checkbox("Offensichtlich unpassende Treffer ausblenden", value=True)
 
     st.divider()
-    st.header("Sucheinstellungen")
-    wo = st.session_state.get("home_query", DEFAULT_HOME_LABEL)
-    st.caption(f"BA-Suche um: {wo}")
-    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
 
-    include_ho = st.checkbox("Homeoffice/Telearbeit extra berücksichtigen", value=False)
-    ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 100, 25)
+    # -------------------------
+    # 4) Erweitert (alles Technische wegklappen)
+    # -------------------------
+    with st.expander("Erweitert", expanded=False):
+        st.caption("Nur wenn du feintunen oder debuggen willst.")
 
-    ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
-    
-    queries = build_queries()
-    selected_profiles = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
+        # Darstellung Entfernung / Fahrzeit
+        st.markdown("**Entfernung / Fahrzeit**")
+        near_km = st.slider("Grün bis (km)", 5, 80, 25, 5)
+        mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
+        speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
-    aktualitaet = st.slider("Nur Jobs der letzten X Tage", 0, 365, 60, 5)
-    size = st.selectbox("Treffer pro Seite", [25, 50, 100], index=1)
+        st.divider()
 
-    st.divider()
-    api_key = st.text_input("X-API-Key", value=API_KEY_DEFAULT)
+        # Score Tuning
+        st.markdown("**Score-Tuning**")
+        ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
 
-    st.subheader("Profil-Filter")
-    only_focus = st.checkbox("Nur profilrelevante Treffer anzeigen", value=True)
-    hide_irrelevant = st.checkbox("Assistenzen/Office/Insurance ausblenden", value=True)
-    min_score = st.slider("Mindest-Score", 0, 80, 8, 1)
+        st.divider()
 
-    st.divider()
-    st.subheader(f"Ziel-Organisationen ({len(TARGET_ORGS)})")
-    st.caption("Direkte Karrierelinks (manueller Check im Firmencheck-Tab).")
-    with st.expander("Liste anzeigen / öffnen", expanded=False):
-        for org in TARGET_ORGS:
-            hp = "🔥 " if org.get("priority") == "high" else ""
-            try:
-                st.link_button(f"{hp}🏢 {org['name']}", org["url"])
-            except Exception:
-                st.markdown(f"[{hp}🏢 {org['name']}]({org['url']})")
+        # Treffer pro Seite / API Key (nur falls nötig)
+        st.markdown("**Technik**")
+        size = st.selectbox("Treffer pro Seite", [25, 50, 100], index=1)
+        api_key = st.text_input("X-API-Key (nur bei Problemen)", value=API_KEY_DEFAULT)
 
-    st.divider()
-    st.subheader("Keywords (sichtbar & editierbar)")
-    with st.expander("Fokus-Keywords", expanded=False):
-        st.session_state["kw_focus"] = st.text_area(
-            "Ein Begriff pro Zeile (oder Komma-getrennt)",
-            value=st.session_state["kw_focus"],
-            height=150,
-        )
-    with st.expander("Leitung/Führung-Keywords (für Score)", expanded=False):
-        st.session_state["kw_lead"] = st.text_area(
-            "Ein Begriff pro Zeile (oder Komma-getrennt)",
-            value=st.session_state["kw_lead"],
-            height=110,
-        )
-    with st.expander("Negative Keywords", expanded=False):
-        st.session_state["kw_neg"] = st.text_area(
-            "Ein Begriff pro Zeile (oder Komma-getrennt)",
-            value=st.session_state["kw_neg"],
-            height=110,
-        )
-
-    c_reset, c_dbg = st.columns(2)
-    with c_reset:
-        if st.button("↩︎ Keywords zurücksetzen"):
-            st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
-            st.session_state["kw_lead"] = keywords_to_text(DEFAULT_LEADERSHIP_KEYWORDS)
-            st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
-            st.rerun()
-    with c_dbg:
         debug = st.checkbox("Debug anzeigen", value=False)
 
+        st.divider()
+
+        # Keywords editierbar, aber weggekapselt
+        st.markdown("**Keywords (optional)**")
+        with st.expander("Fokus-Keywords bearbeiten", expanded=False):
+            st.session_state["kw_focus"] = st.text_area(
+                "Ein Begriff pro Zeile (oder Komma-getrennt)",
+                value=st.session_state["kw_focus"],
+                height=150,
+            )
+        with st.expander("Leitung/Führung-Keywords bearbeiten", expanded=False):
+            st.session_state["kw_lead"] = st.text_area(
+                "Ein Begriff pro Zeile (oder Komma-getrennt)",
+                value=st.session_state["kw_lead"],
+                height=110,
+            )
+        with st.expander("Negative Keywords bearbeiten", expanded=False):
+            st.session_state["kw_neg"] = st.text_area(
+                "Ein Begriff pro Zeile (oder Komma-getrennt)",
+                value=st.session_state["kw_neg"],
+                height=110,
+            )
+
+        c_reset, c_dbg = st.columns(2)
+        with c_reset:
+            if st.button("↩︎ Keywords zurücksetzen"):
+                st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
+                st.session_state["kw_lead"] = keywords_to_text(DEFAULT_LEADERSHIP_KEYWORDS)
+                st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
+                st.rerun()
+                
 FOCUS_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_focus"])]
 LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_lead"])]
 NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
