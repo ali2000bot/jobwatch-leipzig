@@ -146,7 +146,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung",
     "assistant", "assistenz", "sekretariat",
     "office", "backoffice", "reception", "empfang",
-    "vorstandsassistenz", "dachdecker", "management assistant", "altenpfleger", "altenpflegehelfer", "staplerfahrer", "restaurantfachmann", 
+    "vorstandsassistenz", "dachdecker", "assistant", "altenpfleger", "altenpflegehelfer", "staplerfahrer", "restaurantfachmann", 
     "umformmechaniker", "gabelstaplerfahrer", "busfahrer", "elektriker", "schweißer", "mechatroniker", "anlagenführer", "mechaniker", 
     "erzieher", "staplerfahrer", "postbote", "schlosser", "produktionshelfer", "geräteführer", "physiotherapeut", "bauhelfer", "sozialpädagog",
     "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter", "gießereihelfer", "sachbearbeitung", "montagehelfer",
@@ -923,11 +923,8 @@ def relevance_score(it: Dict[str, Any], ho_bonus_val: int) -> int:
 def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
     text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
     hard = [
-        "vorstandsassistenz", "management assistant",
-        "assistant", "assistenz", "sekretariat",
-        "insurance", "versicherung",
         # bisherige
-        "vorstandsassistenz", "management assistant",
+        "vorstandsassistenz", "assistant",
         "assistant", "assistenz", "sekretariat",
         "insurance", "versicherung", "steuerfachangestellte", "sachbearbeiter", "gabelstaplerfahrer", 
         "busfahrer", "elektriker", "schweißer", "mechatroniker", "anlagenführer", "mechaniker",
