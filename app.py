@@ -1159,7 +1159,20 @@ with col1:
                 continue
             if name_filter and (name_filter not in org.get("name", "").lower()):
                 continue
-            filtered_orgs.append(org)
+
+            # Zustand der Firma lesen (count/diff)
+            org_name = org.get("name", "")
+            data = company_state.get(org_name, {}) if isinstance(company_state, dict) else {}
+            c = int(data.get("count", 0) or 0)
+            prev = int(data.get("prev_count", 0) or 0)
+            diff = c - prev
+
+            if only_interesting and c <= 0:
+                continue
+            if only_new and diff <= 0:
+                continue
+
+        filtered_orgs.append(org)
 
         st.caption(f"Angezeigte Firmen: {len(filtered_orgs)} von {len(TARGET_ORGS)}")
         st.divider()
