@@ -158,7 +158,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     # Verkauf/Einzelhandel (optional)
     "verkauf", "verkäufer", "kasse", "einzelhandel", "store", "filiale",
     # Lager/Logistik (optional, falls zu viel Rauschen)
-    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
+    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller", "steuerfachangestellter", "sachbearbeiter", 
 ]
 
 # =========================
@@ -926,7 +926,7 @@ def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
         # bisherige
         "vorstandsassistenz", "management assistant",
         "assistant", "assistenz", "sekretariat",
-        "insurance", "versicherung",
+        "insurance", "versicherung", "steuerfachangestellter", "sachbearbeiter", 
 
         # Pflege/Gesundheit
         "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
