@@ -461,79 +461,38 @@ def keywords_to_text(words: List[str]) -> str:
 # -------------------- Profile Queries --------------------
 def build_queries() -> Dict[str, str]:
     """
-    Jobarten / Suchprofile – zugeschnitten auf Thermophysik / Thermoanalyse / Materialcharakterisierung
-    + Leitungsrollen im Labor/Prüfumfeld. Bewusst „technisch“ gehalten, um Rauschen zu reduzieren.
+    BREITERE Jobarten für die BA-Suche.
+    Idee: 'was' nur grob, danach Auswahl über Score/Keywords.
     """
-    q_rd = (
-        "Thermophysik Thermophysikalisch thermophysical "
-        "Thermoanalyse thermal analysis "
-        "Materialcharakterisierung material characterization "
-        "Wärmeleitfähigkeit thermal conductivity "
-        "Temperaturleitfähigkeit diffusivity Diffusivität "
-        "Wärmekapazität heat capacity Cp "
-        "Kalorimetrie calorimetry "
-        "DSC TGA STA DTA DMA TMA Dilatometer Dilatometrie "
-        "LFA laser flash HFM heat flow meter "
-        "Forschung Entwicklung R&D research development "
-        "Werkstoff Materialwissenschaft Physik"
-    )
+    # R&D / Scientist / Engineer – breit
+    q_rd = "Forschung Entwicklung R&D Engineer Scientist Werkstoff Material"
 
-    q_lab_lead = (
-        "Laborleiter Laborleitung Teamleiter Gruppenleiter Abteilungsleiter Bereichsleiter "
-        "Sektionsleiter Section Manager Head of Laboratory Head of Lab "
-        "Leiter Applikationslabor Applikationsleiter Application Lab Manager "
-        "Leiter Prüflabor Prüfleitung "
-        "Thermoanalyse Thermophysik Wärmeleitfähigkeit LFA HFM "
-        "Materialcharakterisierung Analytik"
-    )
+    # Thermoanalyse/Thermophysik – aber nicht mit 20 Gerätenamen überladen
+    q_thermal = "Thermoanalyse Thermophysik Wärmeleitfähigkeit Materialcharakterisierung"
 
-    q_testing_analytics = (
-        "Materialprüfung Werkstoffprüfung Prüflabor "
-        "Thermoanalyse Thermophysik Wärmeleitfähigkeit thermal conductivity "
-        "LFA laser flash HFM heat flow meter "
-        "DSC TGA STA DTA DMA TMA Dilatometer "
-        "Analytik Charakterisierung characterization "
-        "Qualitätssicherung QA QC "
-        "Prüfingenieur Test engineer"
-    )
+    # Labor / Leitung – breit (Leiter-Keywords ziehen gut)
+    q_lead = "Laborleiter Teamleiter Gruppenleiter Abteilungsleiter Bereichsleiter"
 
-    q_app_eng = (
-        "Applikationsingenieur Application Engineer "
-        "Applikationsspezialist Application Specialist "
-        "Messtechnik instrumentierung instrumentation "
-        "Thermoanalyse Thermophysik "
-        "DSC TGA STA DMA TMA Dilatometer "
-        "LFA laser flash HFM heat flow meter "
-        "Kundenschulung training Support Service"
-    )
+    # Prüfen / Testing – breit
+    q_testing = "Materialprüfung Werkstoffprüfung Prüflabor Analytik Qualitäts"
 
-    q_pm_tech = (
-        "Projektmanagement Project Manager "
-        "Technisches Projektmanagement Technical Project Manager "
-        "Programmmanager Program Manager "
-        "Leiter Projekte Lead projects "
-        "F&E Projekte Entwicklungsprojekte "
-        "Instrumentierung Messtechnik "
-        "Thermoanalyse Thermophysik"
-    )
+    # Applikation / Anwendung / Service – breit
+    q_app = "Applikationsingenieur Application Engineer Service Support Messtechnik"
 
-    q_sales_tech = (
-        "Technischer Vertrieb Sales Engineer "
-        "Business Development Key Account "
-        "Account Manager "
-        "Thermoanalyse Thermophysik "
-        "Messtechnik Instrumentierung "
-        "DSC TGA STA DMA TMA Dilatometer "
-        "LFA laser flash HFM heat flow meter"
-    )
+    # Projektmanagement – breit
+    q_pm = "Projektmanagement Project Manager Technical Manager"
+
+    # Technischer Vertrieb / BD – breit, aber nicht zu generisch
+    q_sales = "Sales Engineer Technischer Vertrieb Business Development Key Account"
 
     return {
-        "R&D / Thermophysik & Thermoanalyse": q_rd,
-        "Labor-/Bereichsleitung (Thermal/Material)": q_lab_lead,
-        "Materialprüfung & Analytik (Prüflabor)": q_testing_analytics,
-        "Applikationsingenieur / Anwendung / Service": q_app_eng,
-        "Technisches Projektmanagement": q_pm_tech,
-        "Technischer Vertrieb / Business Dev": q_sales_tech,
+        "R&D (breit)": q_rd,
+        "Thermal/Material (breit)": q_thermal,
+        "Leitung (Labor/Team)": q_lead,
+        "Materialprüfung/Analytik": q_testing,
+        "Applikation/Service": q_app,
+        "Technisches PM": q_pm,
+        "Technischer Vertrieb/BD": q_sales,
     }
 
 # -------------------- Ziel-Org Matching --------------------
@@ -797,12 +756,7 @@ with st.sidebar:
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
-        default=[
-            "Labor-/Bereichsleitung (Thermal/Material)",
-            "R&D / Thermophysik & Thermoanalyse",
-            "Materialprüfung & Analytik (Prüflabor)",
-            "Applikationsingenieur / Anwendung / Service",
-        ],
+        default=["Leitung (Labor/Team)", "Thermal/Material (breit)", "R&D (breit)", "Materialprüfung/Analytik"],
     )
 
     st.divider()
