@@ -909,6 +909,22 @@ def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
         "vorstandsassistenz", "management assistant",
         "assistant", "assistenz", "sekretariat",
         "insurance", "versicherung",
+        # bisherige
+        "vorstandsassistenz", "management assistant",
+        "assistant", "assistenz", "sekretariat",
+        "insurance", "versicherung",
+
+        # Pflege/Gesundheit
+        "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
+
+        # Gastro/Service
+        "kellner", "servicekraft", "koch", "spülkraft", "küche", "restaurant",
+
+        # Reinigung/Facility
+        "reinigung", "reinigungskraft", "gebäudereinigung", "hausmeister",
+
+        # Einzelhandel (optional)
+        "verkäufer", "verkauf", "kasse", "einzelhandel",
     ]
     return any(h in text for h in hard)
 
