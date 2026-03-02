@@ -1172,7 +1172,7 @@ with col1:
             if only_new and diff <= 0:
                 continue
 
-        filtered_orgs.append(org)
+            filtered_orgs.append(org)
 
         st.caption(f"Angezeigte Firmen: {len(filtered_orgs)} von {len(TARGET_ORGS)}")
         st.divider()
