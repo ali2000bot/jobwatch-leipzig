@@ -1,5 +1,5 @@
 import json
-import math
+import math 
 import os
 import hashlib
 from datetime import datetime
@@ -1215,7 +1215,7 @@ with col1:
             headL, headR, headX = st.columns([5, 1.3, 1.1])
             with headL:
                 emoji, age_label = freshness_badge(str(data.get("last_checked") or ""), int(warn_days), int(crit_days))
-                st.markdown(f"### {emoji} {hp}🏢 {org_name}  ·  {age_label}")
+                diff_now = int(new_count) - int(prev_count)  # Achtung: new_count existiert erst NACH number_input
                 st.caption(f"Zuletzt geprüft: {data.get('last_checked') or '—'}")
             with headR:
                 try:
