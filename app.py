@@ -710,7 +710,7 @@ with st.sidebar:
     include_ho = st.checkbox("Homeoffice berücksichtigen", value=False)
     ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 200, 25) if include_ho else 0
 
-    aktualitaet = st.slider("Aktualität (Tage)", 0, 365, 60, 5)
+    aktualitaet = st.slider("Aktualität (Tage)", 1, 365, 60, 5)
 
     queries = build_queries()
     selected_profiles = st.multiselect(
