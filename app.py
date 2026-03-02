@@ -149,7 +149,8 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "vorstandsassistenz", "dachdecker", "management assistant", "altenpfleger", "altenpflegehelfer", "staplerfahrer", "restaurantfachmann", 
     "umformmechaniker", "gabelstaplerfahrer", "busfahrer", "elektriker", "schweißer", "mechatroniker", "anlagenführer", "mechaniker", 
     "erzieher", "staplerfahrer", "postbote", "schlosser", "produktionshelfer", "geräteführer", "physiotherapeut", "bauhelfer", "sozialpädagog",
-    "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter", "gießereihelfer", "sachbearbeitung", "montagehelfer", 
+    "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter", "gießereihelfer", "sachbearbeitung", "montagehelfer",
+    "fertigungsmitarbeiter", 
     # Pflege/Gesundheit
     "altenpfleger", "pflege", "krankenpfleger", "pflegefachkraft", "pflegedienst",
     "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut",
@@ -932,7 +933,7 @@ def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
         "busfahrer", "elektriker", "schweißer", "mechatroniker", "anlagenführer", "mechaniker",
         "erzieher", "staplerfahrer", "postbote", "schlosser", "produktionshelfer", "geräteführer", "physiotherapeut", "bauhelfer",
         "sozialpädagog", "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter", "gießereihelfer", 
-        "sachbearbeitung", "montagehelfer", 
+        "sachbearbeitung", "montagehelfer", "fertigungsmitarbeiter",
 
         # Pflege/Gesundheit
         "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
