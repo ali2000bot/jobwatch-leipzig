@@ -701,15 +701,6 @@ with st.sidebar:
     st.divider()
 
     # -------------------------
-    # 1) Wohnort (ein Feld, Auto-Geocode) – MUSS vorher gesetzt sein
-    #    Erwartet: home_query, home_lat, home_lon, home_label
-    # -------------------------
-    st.subheader("Wohnort")
-    st.caption(f"📍 verwendet: {home_label}")
-
-    st.divider()
-
-    # -------------------------
     # 2) BA-Suche (minimal)
     # -------------------------
     st.subheader("Suche")
