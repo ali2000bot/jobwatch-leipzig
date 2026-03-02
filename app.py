@@ -132,7 +132,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung",
     "assistant", "assistenz", "sekretariat",
     "office", "backoffice", "reception", "empfang",
-    "vorstandsassistenz", "dachdecker", "management assistant",
+    "vorstandsassistenz", "dachdecker", "management assistant", "altenpfleger", "altenpflegehelfer", "staplerfahrer", "restaurantfachmann", 
 ]
 
 # =========================
