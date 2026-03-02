@@ -549,7 +549,45 @@ def leaflet_map_html(
 </body>
 </html>
 """
+@st.cache_data(ttl=7*24*3600, show_spinner=False)
+def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
+    """
+    Geocoding via OSM Nominatim.
+    Returns: (lat, lon, display_name_or_error)
+    """
+    q = (query or "").strip()
+    if not q:
+        return None, None, "Kein Wohnort-Text angegeben."
 
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"q": q, "format": "json", "limit": 1}
+    # Nominatim verlangt einen eindeutigen User-Agent
+    headers = {"User-Agent": "JobWatchLeipzig/1.0 (Streamlit App)"}
+
+    try:
+        r = requests.get(url, params=params, headers=headers, timeout=20)
+    except Exception as e:
+        return None, None, f"Geocode-Request fehlgeschlagen: {type(e).__name__}: {e}"
+
+    if r.status_code != 200:
+        return None, None, f"Geocode HTTP {r.status_code}: {r.text[:200]}"
+
+    try:
+        data = r.json()
+    except Exception:
+        return None, None, "Geocode: Antwort war kein gültiges JSON."
+
+    if not isinstance(data, list) or len(data) == 0:
+        return None, None, "Keine Koordinaten gefunden (bitte genauer: PLZ + Ort oder Straße + Ort)."
+
+    hit = data[0]
+    try:
+        lat = float(hit.get("lat"))
+        lon = float(hit.get("lon"))
+        name = str(hit.get("display_name") or q)
+        return lat, lon, name
+    except Exception:
+        return None, None, "Geocode: Treffer ohne gültige Koordinaten."
 
 # =========================
 # Streamlit App
