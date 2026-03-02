@@ -668,8 +668,7 @@ with st.sidebar:
     ho_umkreis = st.slider("Umkreis Homeoffice (km)", 50, 200, 100, 25)
 
     ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
-    show_score_breakdown = st.checkbox("Score-Aufschlüsselung anzeigen", value=True)
-
+    
     queries = build_queries()
     selected_profiles = st.multiselect("Profile", list(queries.keys()), default=list(queries.keys()))
 
@@ -1050,9 +1049,8 @@ with col1:
                         st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
 
                 # Score-Aufschlüsselung
-                if show_score_breakdown:
-                    st.write("**Score-Aufschlüsselung**")
-                    st.code(" | ".join(parts))
+                st.write("**Score-Aufschlüsselung**")
+                st.code(" | ".join(parts))
 
                 # BA Web Link + Route
                 web_url = jobsuche_web_url(it)
