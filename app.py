@@ -605,12 +605,42 @@ if "kw_neg" not in st.session_state:
 
 with st.sidebar:
     st.header("Wohnort & Entfernung")
-    home_label = st.text_input("Wohnort (Anzeige)", value=DEFAULT_HOME_LABEL)
-    c_home1, c_home2 = st.columns(2)
-    with c_home1:
-        home_lat = st.number_input("Breitengrad", value=float(DEFAULT_HOME_LAT), format="%.6f")
-    with c_home2:
-        home_lon = st.number_input("Längengrad", value=float(DEFAULT_HOME_LON), format="%.6f")
+    # Session Defaults (damit wir lat/lon speichern)
+    if "home_lat" not in st.session_state:
+        st.session_state["home_lat"] = float(DEFAULT_HOME_LAT)
+    if "home_lon" not in st.session_state:
+        st.session_state["home_lon"] = float(DEFAULT_HOME_LON)
+    if "home_query" not in st.session_state:
+        st.session_state["home_query"] = DEFAULT_HOME_LABEL
+    if "home_display" not in st.session_state:
+        st.session_state["home_display"] = DEFAULT_HOME_LABEL
+    home_query = st.text_input("Wohnort (Adresse/PLZ/Ort)", value=st.session_state["home_query"])
+    c_geo1, c_geo2 = st.columns([1, 1])
+    with c_geo1:
+        if st.button("📍 Koordinaten automatisch setzen"):
+            lat, lon, msg = geocode_nominatim(home_query)
+            if lat is None or lon is None:
+                st.error(msg or "Geocoding fehlgeschlagen.")
+            else:
+                st.session_state["home_lat"] = lat
+                st.session_state["home_lon"] = lon
+                st.session_state["home_query"] = home_query
+                st.session_state["home_display"] = msg or home_query
+                st.success(f"Gesetzt: {st.session_state['home_display']} ({lat:.5f}, {lon:.5f})")
+    with c_geo2:
+        if st.button("↩︎ Default (Braunsbedra)"):
+            st.session_state["home_lat"] = float(DEFAULT_HOME_LAT)
+            st.session_state["home_lon"] = float(DEFAULT_HOME_LON)
+            st.session_state["home_query"] = DEFAULT_HOME_LABEL
+            st.session_state["home_display"] = DEFAULT_HOME_LABEL
+            st.success("Wohnort zurückgesetzt.")
+
+    # Wir benutzen in der App ab jetzt diese Werte:
+    home_lat = float(st.session_state["home_lat"])
+    home_lon = float(st.session_state["home_lon"])
+    home_label = str(st.session_state.get("home_display") or home_query)
+    
+    st.caption(f"Aktiver Wohnort: {home_label}")
 
     st.subheader("Farbmarkierung Entfernung")
     near_km = st.slider("Grün bis (km)", 5, 80, 25, 5)
