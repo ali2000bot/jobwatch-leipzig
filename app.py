@@ -603,6 +603,14 @@ if "kw_lead" not in st.session_state:
 if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
+size = 50
+api_key = API_KEY_DEFAULT
+debug = False
+near_km = 25
+mid_km = 60
+speed_kmh = 75
+ho_bonus = 8
+
 with st.sidebar:
     st.header("JobWatch – Einstellungen")
 
