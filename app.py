@@ -134,6 +134,17 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "office", "backoffice", "reception", "empfang",
     "vorstandsassistenz", "dachdecker", "management assistant", "altenpfleger", "altenpflegehelfer", "staplerfahrer", "restaurantfachmann", 
     "umformmechaniker",
+    # Pflege/Gesundheit
+    "altenpfleger", "pflege", "krankenpfleger", "pflegefachkraft", "pflegedienst",
+    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut",
+    # Gastro/Service
+    "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
+    # Reinigung/Housekeeping
+    "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung",
+    # Verkauf/Einzelhandel (optional)
+    "verkauf", "verkäufer", "kasse", "einzelhandel", "store", "filiale",
+    # Lager/Logistik (optional, falls zu viel Rauschen)
+    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
 ]
 
 # =========================
