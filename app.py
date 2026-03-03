@@ -707,14 +707,36 @@ with st.sidebar:
 
     def _auto_geocode():
         q = (st.session_state.get("home_query") or "").strip()
+
+        # 1) nur bei echter Änderung
+        last_q = (st.session_state.get("home_query_last") or "").strip()
+        if q == last_q:
+            return
+        st.session_state["home_query_last"] = q
+
+        # 2) minimale Eingabelänge (verhindert Requests bei "L", "Le", ...)
+        if len(q) < 4:
+            st.session_state["geocode_error"] = "Bitte etwas genauer eingeben (z.B. '06242 Braunsbedra')."
+            return
+
+        # 3) Rate-Limit: max. 1 Request pro 60s
+        import time
+        last_ts = float(st.session_state.get("home_geocode_last_ts") or 0.0)
+        if time.time() - last_ts < 60:
+            st.session_state["geocode_error"] = "Geocoding ist limitiert (429-Schutz). Bitte kurz warten und dann erneut Enter."
+            return
+
+        st.session_state["home_geocode_last_ts"] = time.time()
+
         lat, lon, msg = geocode_nominatim(q)
         if lat is None or lon is None:
             st.session_state["geocode_error"] = msg or "Geocoding fehlgeschlagen."
-        else:
-            st.session_state["home_lat"] = float(lat)
-            st.session_state["home_lon"] = float(lon)
-            st.session_state["home_display"] = msg or q
-            st.session_state["geocode_error"] = ""
+            return
+
+        st.session_state["home_lat"] = float(lat)
+        st.session_state["home_lon"] = float(lon)
+        st.session_state["home_display"] = msg or q
+        st.session_state["geocode_error"] = ""
 
     # Eingabe (kein Button) -> bei Änderung automatisch geocoden
     st.text_input("PLZ/Ort oder Adresse", key="home_query", on_change=_auto_geocode)
