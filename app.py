@@ -626,19 +626,16 @@ def leaflet_map_html(
 """
 @st.cache_data(ttl=7*24*3600, show_spinner=False)
 def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
-    if r.status_code == 429:
-        return None, None, "Geocode HTTP 429 (zu viele Anfragen). Bitte kurz warten und erneut versuchen."
     """
     Geocoding via OSM Nominatim.
     Returns: (lat, lon, display_name_or_error)
     """
     q = (query or "").strip()
     if not q:
-        return None, None, "Kein Wohnort-Text angegeben."
+        return None, None, "Kein Wohnort angegeben."
 
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": q, "format": "json", "limit": 1}
-    # Nominatim verlangt einen eindeutigen User-Agent
     headers = {"User-Agent": "JobWatchLeipzig/1.0 (Streamlit App)"}
 
     try:
@@ -646,6 +643,9 @@ def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Opt
     except Exception as e:
         return None, None, f"Geocode-Request fehlgeschlagen: {type(e).__name__}: {e}"
 
+    # Ab hier ist r garantiert definiert
+    if r.status_code == 429:
+        return None, None, "Geocode HTTP 429 (zu viele Anfragen). Bitte kurz warten und erneut versuchen."
     if r.status_code != 200:
         return None, None, f"Geocode HTTP {r.status_code}: {r.text[:200]}"
 
@@ -655,7 +655,7 @@ def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Opt
         return None, None, "Geocode: Antwort war kein gültiges JSON."
 
     if not isinstance(data, list) or len(data) == 0:
-        return None, None, "Keine Koordinaten gefunden (bitte genauer: PLZ + Ort oder Straße + Ort)."
+        return None, None, "Keine Koordinaten gefunden. Tipp: 'PLZ Ort' eingeben."
 
     hit = data[0]
     try:
