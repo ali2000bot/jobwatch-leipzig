@@ -1077,13 +1077,18 @@ with col1:
 
         raw_markers: List[Dict[str, Any]] = []
         missing_coords = 0
+        geocode_used = 0
 
         for it in items_sorted:
             ll = extract_latlon_from_item(it)
 
             if not ll:
-                loc_text = pretty_location(it)
-                ll = geocode_job_location(loc_text)
+                # Nur geocoden wenn aktiviert
+                if enable_job_geocode and geocode_used < int(max_job_geocodes):
+                    loc_text = pretty_location(it)
+                    ll = geocode_job_location(loc_text)
+                    geocode_used += 1
+
                 if not ll:
                     missing_coords += 1
                     continue
