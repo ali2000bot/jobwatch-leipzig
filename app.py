@@ -626,6 +626,8 @@ def leaflet_map_html(
 """
 @st.cache_data(ttl=7*24*3600, show_spinner=False)
 def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
+    if r.status_code == 429:
+        return None, None, "Geocode HTTP 429 (zu viele Anfragen). Bitte kurz warten und erneut versuchen."
     """
     Geocoding via OSM Nominatim.
     Returns: (lat, lon, display_name_or_error)
