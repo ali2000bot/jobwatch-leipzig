@@ -738,6 +738,11 @@ with st.sidebar:
         st.session_state["home_display"] = msg or q
         st.session_state["geocode_error"] = ""
 
+    if "home_query_last" not in st.session_state:
+        st.session_state["home_query_last"] = ""
+    if "home_geocode_last_ts" not in st.session_state:
+        st.session_state["home_geocode_last_ts"] = 0.0
+    
     # Eingabe (kein Button) -> bei Änderung automatisch geocoden
     st.text_input("PLZ/Ort oder Adresse", key="home_query", on_change=_auto_geocode)
 
