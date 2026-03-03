@@ -781,6 +781,8 @@ with st.sidebar:
     # -------------------------
     with st.expander("Erweitert", expanded=False):
         st.caption("Nur wenn du feintunen oder debuggen willst.")
+        enable_job_geocode = st.checkbox("Fehlende Koordinaten für Karte nachschlagen (langsamer)", value=False)
+        max_job_geocodes = st.slider("Max. Geocoding pro Lauf", 0, 50, 10, 5)
 
         # Darstellung Entfernung / Fahrzeit
         st.markdown("**Entfernung / Fahrzeit**")
