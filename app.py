@@ -746,10 +746,6 @@ with st.sidebar:
     # Eingabe (kein Button) -> bei Änderung automatisch geocoden
     st.text_input("PLZ/Ort oder Adresse", key="home_query", on_change=_auto_geocode)
 
-    # Beim ersten Start einmal geocoden (wenn noch nie erfolgt)
-    if st.session_state.get("home_display") == DEFAULT_HOME_LABEL and st.session_state.get("home_query") == DEFAULT_HOME_LABEL:
-        _auto_geocode()
-
     if st.session_state.get("geocode_error"):
         st.warning(st.session_state["geocode_error"])
     else:
