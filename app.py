@@ -1,5 +1,5 @@
 import json
-import math 
+import math
 import os
 import hashlib
 from datetime import datetime
@@ -12,7 +12,10 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-@st.cache_data(ttl=7*24*3600, show_spinner=False)
+# =========================
+# Geocoding (OSM Nominatim)
+# =========================
+@st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
 def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
     """
     Geocoding via OSM Nominatim.
@@ -30,6 +33,9 @@ def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Opt
         r = requests.get(url, params=params, headers=headers, timeout=20)
     except Exception as e:
         return None, None, f"Geocode-Request fehlgeschlagen: {type(e).__name__}: {e}"
+
+    if r.status_code == 429:
+        return None, None, "Geocode HTTP 429 (zu viele Anfragen). Bitte kurz warten und erneut versuchen."
 
     if r.status_code != 200:
         return None, None, f"Geocode HTTP {r.status_code}: {r.text[:200]}"
@@ -51,19 +57,21 @@ def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Opt
     except Exception:
         return None, None, "Geocode: Treffer ohne gültige Koordinaten."
 
-@st.cache_data(ttl=7*24*3600, show_spinner=False)
+
+@st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
 def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
     """
-    Sehr kleines Geocoding für Job-Orte (PLZ/Ort/Region).
-    Nutzt Nominatim (OSM) und cached Ergebnisse.
+    Kleines Geocoding für Job-Orte (PLZ/Ort/Region).
+    Nutzt Nominatim und cached Ergebnisse.
     """
     q = (query or "").strip()
     if not q:
         return None
-    lat, lon, _msg = geocode_nominatim(q)  # nutzt deine bestehende Funktion
+    lat, lon, _msg = geocode_nominatim(q)
     if lat is None or lon is None:
         return None
     return float(lat), float(lon)
+
 
 # =========================
 # BA Jobsuche (App Endpoint)
@@ -80,7 +88,6 @@ SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
 COMPANY_STATE_FILE = os.path.join(STATE_DIR, "company_monitor.json")
 
 
-# -------------------- Snapshot helpers --------------------
 def ensure_state_dir() -> None:
     os.makedirs(STATE_DIR, exist_ok=True)
 
@@ -99,7 +106,6 @@ def save_snapshot(items: List[Dict[str, Any]]) -> None:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
 
-# -------------------- Firmencheck (manuell, pro Firma) helpers --------------------
 def load_company_state() -> Dict[str, Any]:
     if not os.path.exists(COMPANY_STATE_FILE):
         return {}
@@ -114,7 +120,7 @@ def save_company_state(state: Dict[str, Any]) -> None:
 
 
 # =========================
-# Default Wohnort: 06242 Braunsbedra
+# Default Wohnort
 # =========================
 DEFAULT_HOME_LABEL = "06242 Braunsbedra"
 DEFAULT_HOME_LAT = 51.2861
@@ -146,29 +152,33 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung",
     "assistant", "assistenz", "sekretariat",
     "office", "backoffice", "reception", "empfang",
-    "vorstandsassistenz", "dachdecker", "assistant", "altenpfleger", "altenpflegehelfer", "staplerfahrer", "restaurantfachmann", 
-    "umformmechaniker", "gabelstaplerfahrer", "busfahrer", "elektriker", "schweißer", "mechatroniker", "anlagenführer", "mechaniker", 
-    "erzieher", "staplerfahrer", "postbote", "schlosser", "produktionshelfer", "geräteführer", "physiotherapeut", "bauhelfer", "sozialpädagog",
-    "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter", "gießereihelfer", "sachbearbeitung", "montagehelfer",
-    "fertigungsmitarbeiter", "arbeitsvorbereiter",
+    "vorstandsassistenz", "dachdecker", "assistant", "altenpfleger", "altenpflegehelfer",
+    "staplerfahrer", "restaurantfachmann", "umformmechaniker", "gabelstaplerfahrer",
+    "busfahrer", "elektriker", "schweißer", "mechatroniker", "anlagenführer", "mechaniker",
+    "erzieher", "postbote", "schlosser", "produktionshelfer", "geräteführer",
+    "physiotherapeut", "bauhelfer", "sozialpädagog",
+    "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter",
+    "gießereihelfer", "sachbearbeitung", "montagehelfer", "fertigungsmitarbeiter",
+    "arbeitsvorbereiter",
     # Pflege/Gesundheit
-    "altenpfleger", "pflege", "krankenpfleger", "pflegefachkraft", "pflegedienst",
+    "pflege", "krankenpfleger", "pflegefachkraft", "pflegedienst",
     "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut",
     # Gastro/Service
     "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
     # Reinigung/Housekeeping
     "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung",
-    # Verkauf/Einzelhandel (optional)
+    # Verkauf/Einzelhandel
     "verkauf", "verkäufer", "kasse", "einzelhandel", "store", "filiale",
-    # Lager/Logistik (optional, falls zu viel Rauschen)
-    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller", "steuerfachangestellte", "sachbearbeiter", 
+    # Lager/Logistik
+    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
+    "steuerfachangestellte", "sachbearbeiter",
 ]
 
+
 # =========================
-# Ziel-Organisationen (BEREINIGT, ohne Dubletten) + High Priority
+# Ziel-Organisationen
 # =========================
 TARGET_ORGS: List[Dict[str, Any]] = [
-    # --- Industrie / Chemie / Energie (Region) ---
     {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
     {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
     {"name": "Dow (Schkopau/Böhlen)", "match": ["dow", "olefinverbund"], "url": "https://de.dow.com/de-de/karriere.html"},
@@ -188,40 +198,28 @@ TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "VNG (Leipzig)", "match": ["vng"], "url": "https://karriere.vng.de/"},
     {"name": "Siemens Energy", "match": ["siemens energy"], "url": "https://jobs.siemens-energy.com/de_DE/jobs/Jobs"},
     {"name": "Siemens (allgemein)", "match": ["siemens"], "url": "https://www.siemens.com/de/de/unternehmen/jobs.html"},
-
-    # --- Automotive / Logistik (regional) ---
     {"name": "BMW Werk Leipzig", "match": ["bmw"], "url": "https://www.bmwgroup.jobs/de/de/standorte/werke-in-deutschland/werk-leipzig.html"},
     {"name": "Porsche Leipzig", "match": ["porsche"], "url": "https://www.porsche-leipzig.com/jobs-karriere/"},
     {"name": "DHL Hub Leipzig", "match": ["dhl", "deutsche post", "hub leipzig"], "url": "https://www.dhl.com/de-de/microsites/express/hubs/hub-leipzig/jobs.html"},
     {"name": "Mitteldeutsche Flughafen AG (LEJ)", "match": ["mitteldeutsche flughafen", "flughafen leipzig", "leipzig/halle", "leipzig-halle"], "url": "https://www.mdf-ag.com/karriere/alle-jobs/flughafen-leipzig-halle"},
-
-    # --- Regionale Infrastruktur/Versorger ---
     {"name": "Stadtwerke Leipzig / Leipziger Gruppe", "match": ["stadtwerke leipzig", "leipziger gruppe", "l-gruppe", "l.de"], "url": "https://www.l.de/karriere/stellenangebote/"},
     {"name": "enviaM-Gruppe", "match": ["enviam", "envia", "mitgas"], "url": "https://jobs.enviam-gruppe.de/"},
-
-    # --- Analytik / Prüfen / Zertifizieren ---
     {"name": "GBA Group", "match": ["gba"], "url": "https://www.gba-group.com/karriere/jobs/"},
     {"name": "Eurofins", "match": ["eurofins"], "url": "https://careers.eurofins.com/de"},
     {"name": "SGS", "match": ["sgs"], "url": "https://www.sgs.com/de-de/unternehmen/karriere-bei-sgs/stellenangebote"},
     {"name": "DEKRA", "match": ["dekra"], "url": "https://www.dekra.de/de/karriere/ueberblick/"},
-
-    # --- Forschung / Institute / Uni / HAW ---
     {"name": "UFZ Helmholtz (Leipzig)", "match": ["ufz", "helmholtz-zentrum", "umweltforschung"], "url": "https://www.ufz.de/index.php?de=34275"},
     {"name": "DBFZ Leipzig", "match": ["dbfz", "deutsches biomasseforschungszentrum"], "url": "https://www.dbfz.de/karriere/stellenausschreibungen", "priority": "high"},
     {"name": "Fraunhofer IZI (Leipzig)", "match": ["fraunhofer izi", "izi"], "url": "https://www.izi.fraunhofer.de/de/jobs-karriere.html"},
     {"name": "Fraunhofer IMWS (Halle)", "match": ["fraunhofer imws", "imws", "mikrostruktur", "mikrostruktur von werkstoffen", "halle (saale)"], "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html", "priority": "high"},
     {"name": "Fraunhofer (Jobportal)", "match": ["fraunhofer"], "url": "https://www.fraunhofer.de/de/jobs-und-karriere.html"},
-
     {"name": "Leibniz-Institut für Oberflächenmodifizierung (IOM)", "match": ["leibniz iom", "iom leipzig", "oberflächenmodifizierung", "iom"], "url": "https://www.iom-leipzig.de/de/karriere/", "priority": "high"},
     {"name": "Leibniz IPB (Halle)", "match": ["ipb", "pflanzenbiochemie", "leibniz"], "url": "https://www.ipb-halle.de/karriere/stellenangebote/"},
-
     {"name": "Max-Planck-Gesellschaft (Stellenbörse)", "match": ["max-planck", "max planck", "mpg"], "url": "https://www.mpg.de/stellenboerse"},
     {"name": "Universität Leipzig (Stellen)", "match": ["universität leipzig", "uni leipzig"], "url": "https://www.uni-leipzig.de/universitaet/arbeiten-an-der-universitaet-leipzig/stellenausschreibungen"},
     {"name": "MLU Halle (Stellen)", "match": ["martin-luther-universität", "universität halle", "uni halle", "mlu"], "url": "https://personal.verwaltung.uni-halle.de/jobs/"},
     {"name": "Hochschule Merseburg", "match": ["hochschule merseburg", "hs merseburg"], "url": "https://www.hs-merseburg.de/hochschule/information/stellenausschreibungen/"},
     {"name": "HTWK Leipzig (Stellen)", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
-
-    # --- Materialprüfung / Wärmeleitfähigkeit / Thermophysik ---
     {"name": "MFPA Leipzig GmbH", "match": ["mfpa leipzig", "mfpa", "prüfanstalt", "materialforschungs"], "url": "https://www.mfpa-leipzig.de/", "priority": "high"},
     {"name": "MFPA Leipzig – Wärmeleitfähigkeit (Service)", "match": ["mfpa leipzig", "mfpa"], "url": "https://www.mfpa-leipzig.de/service/pruefung-der-waermeleitfaehigkeit-von-daemmstoffen/"},
     {"name": "Universität Leipzig – Technische Chemie (Equipment)", "match": ["institut für technische chemie", "technical chemistry", "universität leipzig", "uni leipzig"], "url": "https://www.chemie.uni-leipzig.de/en/institute-of-chemical-technology/technical-equipment"},
@@ -353,7 +351,7 @@ def fetch_search(
     wo: str,
     umkreis_km: int,
     was: str,
-    aktualitaet_tage: int,
+    aktualitaet_tage: Optional[int],
     size: int,
     page: int = 1,
     arbeitszeit: Optional[str] = None,
@@ -500,6 +498,7 @@ def build_queries() -> Dict[str, str]:
         "Technischer Vertrieb (breit)": "Sales Engineer Technischer Vertrieb",
     }
 
+
 # -------------------- Ziel-Org Matching --------------------
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
@@ -624,47 +623,7 @@ def leaflet_map_html(
 </body>
 </html>
 """
-@st.cache_data(ttl=7*24*3600, show_spinner=False)
-def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
-    """
-    Geocoding via OSM Nominatim.
-    Returns: (lat, lon, display_name_or_error)
-    """
-    q = (query or "").strip()
-    if not q:
-        return None, None, "Kein Wohnort angegeben."
 
-    url = "https://nominatim.openstreetmap.org/search"
-    params = {"q": q, "format": "json", "limit": 1}
-    headers = {"User-Agent": "JobWatchLeipzig/1.0 (Streamlit App)"}
-
-    try:
-        r = requests.get(url, params=params, headers=headers, timeout=20)
-    except Exception as e:
-        return None, None, f"Geocode-Request fehlgeschlagen: {type(e).__name__}: {e}"
-
-    # Ab hier ist r garantiert definiert
-    if r.status_code == 429:
-        return None, None, "Geocode HTTP 429 (zu viele Anfragen). Bitte kurz warten und erneut versuchen."
-    if r.status_code != 200:
-        return None, None, f"Geocode HTTP {r.status_code}: {r.text[:200]}"
-
-    try:
-        data = r.json()
-    except Exception:
-        return None, None, "Geocode: Antwort war kein gültiges JSON."
-
-    if not isinstance(data, list) or len(data) == 0:
-        return None, None, "Keine Koordinaten gefunden. Tipp: 'PLZ Ort' eingeben."
-
-    hit = data[0]
-    try:
-        lat = float(hit.get("lat"))
-        lon = float(hit.get("lon"))
-        name = str(hit.get("display_name") or q)
-        return lat, lon, name
-    except Exception:
-        return None, None, "Geocode: Treffer ohne gültige Koordinaten."
 
 # =========================
 # Streamlit App
@@ -680,6 +639,7 @@ if "kw_lead" not in st.session_state:
 if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
+# Defaults (werden im Expander überschrieben)
 size = 50
 api_key = API_KEY_DEFAULT
 debug = False
@@ -687,6 +647,8 @@ near_km = 25
 mid_km = 60
 speed_kmh = 75
 ho_bonus = 8
+enable_job_geocode = False
+max_job_geocodes = 0
 
 with st.sidebar:
     st.header("JobWatch – Einstellungen")
@@ -707,25 +669,34 @@ with st.sidebar:
     if "geocode_error" not in st.session_state:
         st.session_state["geocode_error"] = ""
 
+    # Merker: nur bei Erfolg setzen
+    if "home_query_last_ok" not in st.session_state:
+        st.session_state["home_query_last_ok"] = ""
+    if "home_query_last_try" not in st.session_state:
+        st.session_state["home_query_last_try"] = ""
+    if "home_geocode_last_ts" not in st.session_state:
+        st.session_state["home_geocode_last_ts"] = 0.0
+
     def _auto_geocode():
         q = (st.session_state.get("home_query") or "").strip()
 
-        # 1) nur bei echter Änderung
-        last_q = (st.session_state.get("home_query_last") or "").strip()
-        if q == last_q:
+        # nur wenn es noch nicht erfolgreich geocoded wurde
+        last_ok = (st.session_state.get("home_query_last_ok") or "").strip()
+        if q == last_ok:
             return
-        st.session_state["home_query_last"] = q
 
-        # 2) minimale Eingabelänge (verhindert Requests bei "L", "Le", ...)
+        # Merke nur den letzten Versuch (nicht "ok")
+        st.session_state["home_query_last_try"] = q
+
         if len(q) < 4:
             st.session_state["geocode_error"] = "Bitte etwas genauer eingeben (z.B. '06242 Braunsbedra')."
             return
 
-        # 3) Rate-Limit: max. 1 Request pro 60s
+        # Rate-Limit: max. 1 Request pro 60s
         import time
         last_ts = float(st.session_state.get("home_geocode_last_ts") or 0.0)
         if time.time() - last_ts < 60:
-            st.session_state["geocode_error"] = "Geocoding ist limitiert (429-Schutz). Bitte kurz warten und dann erneut Enter."
+            st.session_state["geocode_error"] = "Geocoding ist limitiert (429-Schutz). Bitte kurz warten und dann erneut versuchen."
             return
 
         st.session_state["home_geocode_last_ts"] = time.time()
@@ -739,14 +710,13 @@ with st.sidebar:
         st.session_state["home_lon"] = float(lon)
         st.session_state["home_display"] = msg or q
         st.session_state["geocode_error"] = ""
+        st.session_state["home_query_last_ok"] = q
 
-    if "home_query_last" not in st.session_state:
-        st.session_state["home_query_last"] = ""
-    if "home_geocode_last_ts" not in st.session_state:
-        st.session_state["home_geocode_last_ts"] = 0.0
-    
-    # Eingabe (kein Button) -> bei Änderung automatisch geocoden
     st.text_input("PLZ/Ort oder Adresse", key="home_query", on_change=_auto_geocode)
+
+    # Optional: Retry (wenn 429/Fehler war und derselbe Text nochmal geocoded werden soll)
+    if st.session_state.get("geocode_error") and st.button("↻ Wohnort jetzt erneut geocoden", key="home_retry"):
+        _auto_geocode()
 
     if st.session_state.get("geocode_error"):
         st.warning(st.session_state["geocode_error"])
@@ -762,7 +732,7 @@ with st.sidebar:
     st.divider()
 
     # -------------------------
-    # 2) BA-Suche (minimal)
+    # BA-Suche (minimal)
     # -------------------------
     st.subheader("Suche")
     wo = home_query  # BA-Ort = Wohnort (kein extra Feld)
@@ -774,9 +744,8 @@ with st.sidebar:
     aktualitaet_option = st.selectbox(
         "Aktualität",
         ["7 Tage", "30 Tage", "60 Tage", "180 Tage", "Alle"],
-        index=2  # 60 Tage Default
+        index=2,
     )
-
     if aktualitaet_option == "Alle":
         aktualitaet = None
     else:
@@ -792,7 +761,7 @@ with st.sidebar:
     st.divider()
 
     # -------------------------
-    # 3) Relevanz-Filter (minimal)
+    # Relevanz-Filter (minimal)
     # -------------------------
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
@@ -802,16 +771,14 @@ with st.sidebar:
     st.divider()
 
     # -------------------------
-    # 4) Erweitert (alles Technische wegklappen)
+    # Erweitert
     # -------------------------
     with st.expander("Erweitert", expanded=False):
         st.caption("Nur wenn du feintunen oder debuggen willst.")
+
         enable_job_geocode = st.checkbox("Fehlende Koordinaten für Karte nachschlagen (langsamer)", value=False)
         max_job_geocodes = st.slider("Max. Geocoding pro Lauf", 0, 50, 10, 5)
-        enable_job_geocode = False
-        max_job_geocodes = 0
 
-        # Darstellung Entfernung / Fahrzeit
         st.markdown("**Entfernung / Fahrzeit**")
         near_km = st.slider("Grün bis (km)", 5, 80, 25, 5)
         mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
@@ -819,22 +786,18 @@ with st.sidebar:
 
         st.divider()
 
-        # Score Tuning
         st.markdown("**Score-Tuning**")
         ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
 
         st.divider()
 
-        # Treffer pro Seite / API Key (nur falls nötig)
         st.markdown("**Technik**")
         size = st.selectbox("Treffer pro Seite", [25, 50, 100], index=1)
         api_key = st.text_input("X-API-Key (nur bei Problemen)", value=API_KEY_DEFAULT)
-
         debug = st.checkbox("Debug anzeigen", value=False)
 
         st.divider()
 
-        # Keywords editierbar, aber weggekapselt
         st.markdown("**Keywords (optional)**")
         with st.expander("Fokus-Keywords bearbeiten", expanded=False):
             st.session_state["kw_focus"] = st.text_area(
@@ -855,14 +818,12 @@ with st.sidebar:
                 height=110,
             )
 
-        c_reset, c_dbg = st.columns(2)
-        with c_reset:
-            if st.button("↩︎ Keywords zurücksetzen"):
-                st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
-                st.session_state["kw_lead"] = keywords_to_text(DEFAULT_LEADERSHIP_KEYWORDS)
-                st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
-                st.rerun()
-                
+        if st.button("↩︎ Keywords zurücksetzen"):
+            st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
+            st.session_state["kw_lead"] = keywords_to_text(DEFAULT_LEADERSHIP_KEYWORDS)
+            st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
+            st.rerun()
+
 FOCUS_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_focus"])]
 LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_lead"])]
 NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
@@ -886,7 +847,7 @@ with col2:
 
 
 # =========================
-# ⭐ Strengere Stern-Logik
+# Stern-Logik
 # =========================
 def looks_leadership_strict(it: Dict[str, Any]) -> bool:
     text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
@@ -951,28 +912,7 @@ def relevance_score(it: Dict[str, Any], ho_bonus_val: int) -> int:
 
 def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
     text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
-    hard = [
-        # bisherige
-        "vorstandsassistenz", "assistant",
-        "assistant", "assistenz", "sekretariat",
-        "insurance", "versicherung", "steuerfachangestellte", "sachbearbeiter", "gabelstaplerfahrer", 
-        "busfahrer", "elektriker", "schweißer", "mechatroniker", "anlagenführer", "mechaniker",
-        "erzieher", "staplerfahrer", "postbote", "schlosser", "produktionshelfer", "geräteführer", "physiotherapeut", "bauhelfer",
-        "sozialpädagog", "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter", "gießereihelfer", 
-        "sachbearbeitung", "montagehelfer", "fertigungsmitarbeiter", "arbeitsvorbereiter",
-
-        # Pflege/Gesundheit
-        "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
-
-        # Gastro/Service
-        "kellner", "servicekraft", "koch", "spülkraft", "küche", "restaurant",
-
-        # Reinigung/Facility
-        "reinigung", "reinigungskraft", "gebäudereinigung", "hausmeister",
-
-        # Einzelhandel (optional)
-        "verkäufer", "verkauf", "kasse", "einzelhandel",
-    ]
+    hard = DEFAULT_NEGATIVE_KEYWORDS[:]  # nutze Liste als "Hard"-Filter
     return any(h in text for h in hard)
 
 
@@ -995,7 +935,7 @@ def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
 
 
 # =========================
-# Tabs: BA-Suche + Firmencheck (manuell)
+# Tabs
 # =========================
 with col1:
     tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
@@ -1005,8 +945,9 @@ with col1:
         if not selected_profiles:
             st.warning("Bitte mindestens ein Profil auswählen.")
             st.stop()
-            
+
         wo = home_query
+
         with st.spinner("Suche läuft…"):
             all_items: List[Dict[str, Any]] = []
             errs: List[str] = []
@@ -1015,7 +956,7 @@ with col1:
             for name in selected_profiles:
                 q = queries[name]
 
-                items_local, e1 = fetch_search(api_key, wo, int(umkreis), q, int(aktualitaet), int(size), page=1, arbeitszeit=None)
+                items_local, e1 = fetch_search(api_key, wo, int(umkreis), q, aktualitaet, int(size), page=1, arbeitszeit=None)
                 if e1:
                     errs.append(f"{name} (vor Ort): {e1}")
                 for it in items_local:
@@ -1024,7 +965,7 @@ with col1:
                 all_items.extend(items_local)
 
                 if include_ho:
-                    items_ho, e2 = fetch_search(api_key, wo, int(ho_umkreis), q, int(aktualitaet), int(size), page=1, arbeitszeit="ho")
+                    items_ho, e2 = fetch_search(api_key, wo, int(ho_umkreis), q, aktualitaet, int(size), page=1, arbeitszeit="ho")
                     if e2:
                         errs.append(f"{name} (homeoffice): {e2}")
                     for it in items_ho:
@@ -1053,7 +994,7 @@ with col1:
         if only_focus:
             items_now = [it for it in items_now if relevance_score(it, int(ho_bonus)) >= int(min_score)]
 
-        # Snapshot compare (nutze _key)
+        # Snapshot compare
         prev_items = snap.get("items", [])
         prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items}
         now_keys: Set[str] = {x.get("_key") or item_key(x) for x in items_now}
@@ -1110,7 +1051,6 @@ with col1:
             ll = extract_latlon_from_item(it)
 
             if not ll:
-                # Nur geocoden wenn aktiviert
                 if enable_job_geocode and geocode_used < int(max_job_geocodes):
                     loc_text = pretty_location(it)
                     ll = geocode_job_location(loc_text)
@@ -1136,41 +1076,29 @@ with col1:
                 }
             )
 
-        # ---------
-        # Gruppieren nach Koordinaten
-        # ---------
+        # Gruppieren nach Koordinaten (damit Marker nicht "verschwinden" bei identischem Ort)
         groups = defaultdict(list)
-
         for m in raw_markers:
-            key = (round(m["lat"], 6), round(m["lon"], 6))  # Rundung verhindert Mini-Abweichungen
+            key = (round(m["lat"], 6), round(m["lon"], 6))
             groups[key].append(m)
 
-        markers = []
-
-        for (lat, lon), group in groups.items():
+        markers: List[Dict[str, Any]] = []
+        for (_lat, _lon), group in groups.items():
             if len(group) == 1:
                 markers.append(group[0])
             else:
-                idxs = sorted([g["idx"] for g in group if g["idx"] > 0])
+                idxs = sorted([g["idx"] for g in group if isinstance(g.get("idx"), int) and g["idx"] > 0])
                 idx_label = f"{idxs[0]}–{idxs[-1]}" if idxs else "?"
-
-                # wir nehmen repräsentativ das erste Element
                 base = group[0].copy()
                 base["idx"] = idx_label
                 base["title"] = f"{len(group)} Treffer an diesem Ort"
                 markers.append(base)
 
-        if debug:
-            st.info(f"Marker nach Gruppierung: {len(markers)} | ursprüngliche Marker: {len(raw_markers)}")
-        if debug:
-            st.info(f"Marker: {len(markers)} | ohne Koordinaten (auch nach Geocode): {missing_coords}")
+        st.caption(f"Treffer gesamt: {len(items_sorted)} | Marker auf Karte: {len(markers)}")
 
         if debug:
-            st.info(
-                f"Debug: items_sorted={len(items_sorted)} | marker={len(markers)} | ho_bonus={ho_bonus} | target_orgs={len(TARGET_ORGS)}"
-            )
-            st.info(f"Treffer gesamt: {len(items_sorted)} | mit Koordinaten: {len(markers)} | ohne Koordinaten: {len(items_sorted)-len(markers)}")
-        st.caption(f"Treffer gesamt: {len(items_sorted)} | Marker auf Karte: {len(markers)}")
+            st.info(f"Debug: items_sorted={len(items_sorted)} | raw_marker={len(raw_markers)} | grouped_marker={len(markers)} | missing_coords={missing_coords}")
+
         if markers:
             st.write("### Karte")
             components.html(
@@ -1193,13 +1121,9 @@ with col1:
             bucket = distance_bucket(dist, int(near_km), int(mid_km))
             emo = distance_emoji(bucket)
 
-            # ⭐ (streng)
             star = "⭐ " if looks_leadership_strict(it) else ""
-
-            # Homeoffice icon
             ho_tag = " 🏠" if is_homeoffice_item(it) else ""
 
-            # Zielorganisation marker
             org = match_target_org(item_company(it))
             if org:
                 target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
@@ -1241,17 +1165,12 @@ with col1:
                 ]
                 render_fact_grid(facts)
 
-                # Karriereseite (Ziel-Organisation)
                 if org:
                     st.write("**Karriereseite (Ziel-Organisation)**")
                     try:
                         st.link_button("🏢 Karriereseite öffnen", org["url"])
                     except Exception:
                         st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
-
-                # Score-Aufschlüsselung
-                st.write("**Score-Aufschlüsselung**")
-                st.code(" | ".join(parts))
 
                 # BA Web Link + Route
                 web_url = jobsuche_web_url(it)
@@ -1274,7 +1193,6 @@ with col1:
 
                 st.divider()
 
-                # Details (wenn verfügbar)
                 api_url = details_url_api(it)
                 if not api_url:
                     st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
@@ -1306,33 +1224,25 @@ with col1:
                 else:
                     st.info("Keine ausführliche Beschreibung im Detail-Response gefunden. Nutze ggf. den BA-Link oben.")
 
-    # -------------------- TAB 2: Firmencheck (manuell, pro Firma) --------------------
+    # -------------------- TAB 2: Firmencheck (manuell) --------------------
     with tab_company:
         st.subheader("Firmencheck (manuell, pro Firma)")
         st.caption("Öffne die Karriereseite, trage Anzahl + Notizen ein und speichere 'Heute geprüft'.")
 
         company_state = load_company_state()
         today = datetime.now().strftime("%Y-%m-%d")
-        
-        # --- Bewertungslogik: "überfällig" nach Tagen ---
-        use_sliders = st.checkbox("Schwellen per Slider einstellen", value=True, key="fc_use_sliders")
 
+        use_sliders = st.checkbox("Schwellen per Slider einstellen", value=True, key="fc_use_sliders")
         if use_sliders:
             warn_days = st.slider("Gelb ab X Tagen ohne Prüfung", 1, 60, 7, 1, key="fc_warn_days")
             crit_days = st.slider("Rot ab X Tagen ohne Prüfung", 2, 120, 14, 1, key="fc_crit_days")
         else:
-            # feste Werte (fallback)
             warn_days = 7
             crit_days = 14
-
-        # Sicherheit: crit muss >= warn sein
         if crit_days < warn_days:
             crit_days = warn_days
 
         def days_since(date_str: str) -> Optional[int]:
-            """
-            Erwartet YYYY-MM-DD. Gibt Anzahl Tage seit Datum zurück, oder None.
-            """
             s = (date_str or "").strip()
             if not s:
                 return None
@@ -1343,9 +1253,6 @@ with col1:
                 return None
 
         def freshness_badge(last_checked: str, warn: int, crit: int) -> Tuple[str, str]:
-            """
-            Return (emoji, label)
-            """
             ds = days_since(last_checked)
             if ds is None:
                 return "🔴", "nie geprüft"
@@ -1354,34 +1261,25 @@ with col1:
             if ds >= warn:
                 return "🟡", f"{ds} Tage"
             return "🟢", f"{ds} Tage"
-        
-        # --- Firmencheck: Filter / Suche / Export ---
+
         st.markdown("### Übersicht & Tools")
 
         only_high = st.checkbox("Nur High-Priority (🔥) anzeigen", value=False, key="fc_only_high")
         name_filter = st.text_input("Firma suchen (Teilstring)", value="", key="fc_name_filter").strip().lower()
         only_interesting = st.checkbox("Nur Firmen mit ⭐ interessanten Stellen", value=False, key="fc_only_interesting")
         only_new = st.checkbox("Nur Firmen mit 🟢 +neu seit letzter Prüfung", value=False, key="fc_only_new")
-        
-        # Hilfs-Map: org_name -> org (für priority/url)
-        org_by_name: Dict[str, Dict[str, Any]] = {o["name"]: o for o in TARGET_ORGS}
 
-        # Übersicht berechnen
         checked_today = 0
-        checked_any = 0
         overdue = 0
         total_positive = 0
-      
+
         for org in TARGET_ORGS:
             org_name = org["name"]
             data = company_state.get(org_name, {})
             last_checked = str(data.get("last_checked") or "")
-            if last_checked:
-                checked_any += 1
             if last_checked == today:
                 checked_today += 1
 
-            # Überfällig = Gelb oder Rot nach Tagen-Logik
             emoji, _label = freshness_badge(last_checked, int(warn_days), int(crit_days))
             if emoji in ("🟡", "🔴"):
                 overdue += 1
@@ -1399,45 +1297,35 @@ with col1:
         cD.metric("Σ +neu (seit letzter Prüfung)", total_positive)
 
         st.divider()
-               
-        # Export vorbereiten
+
         export_payload = {
             "exported_at": datetime.now().isoformat(timespec="seconds"),
             "today": today,
             "items": []
         }
-
-        # CSV (ohne pandas)
         csv_lines = ["name,url,priority,last_checked,count,prev_count,diff,notes"]
-        
-        def org_sort_key(o: Dict[str, Any]) -> Tuple[int, int, str]:
-            # 1) High-Priority zuerst
-            pr = 0 if o.get("priority") == "high" else 1
 
-            # 2) Überfälligkeit / nie geprüft zuerst
+        def org_sort_key(o: Dict[str, Any]) -> Tuple[int, int, str]:
+            pr = 0 if o.get("priority") == "high" else 1
             org_name = o.get("name", "")
             data = company_state.get(org_name, {})
             last_checked = str(data.get("last_checked") or "")
             ds = days_since(last_checked)
-            # nie geprüft => ganz nach oben
             if ds is None:
                 overdue_rank = 0
                 ds_rank = 10**9
             else:
-                # rot/gelb -> weiter oben
                 overdue_rank = 1 if ds >= int(warn_days) else 2
-                ds_rank = -ds  # je älter, desto weiter oben innerhalb der Gruppe
-
+                ds_rank = -ds
             return (pr, overdue_rank, ds_rank, org_name)
 
-        filtered_orgs = []
+        filtered_orgs: List[Dict[str, Any]] = []
         for org in sorted(TARGET_ORGS, key=org_sort_key):
             if only_high and org.get("priority") != "high":
                 continue
             if name_filter and (name_filter not in org.get("name", "").lower()):
                 continue
 
-            # Zustand der Firma lesen (count/diff)
             org_name = org.get("name", "")
             data = company_state.get(org_name, {}) if isinstance(company_state, dict) else {}
             c = int(data.get("count", 0) or 0)
@@ -1459,12 +1347,7 @@ with col1:
             url = org["url"]
 
             if org_name not in company_state:
-                company_state[org_name] = {
-                    "last_checked": "",
-                    "count": 0,
-                    "prev_count": 0,
-                    "notes": ""
-                }
+                company_state[org_name] = {"last_checked": "", "count": 0, "prev_count": 0, "notes": ""}
 
             data = company_state[org_name]
             prev_count = int(data.get("prev_count", 0))
@@ -1472,7 +1355,6 @@ with col1:
             priority = org.get("priority", "")
             last_checked = str(data.get("last_checked") or "")
             notes_saved = str(data.get("notes") or "")
-
             diff_saved = saved_count - prev_count
 
             export_payload["items"].append({
@@ -1486,7 +1368,6 @@ with col1:
                 "notes": notes_saved,
             })
 
-            # CSV-Zeile (quotes minimal sicher machen)
             def _csv_safe(s: str) -> str:
                 s = (s or "").replace('"', '""').replace("\n", " ").replace("\r", " ")
                 return f'"{s}"'
@@ -1503,11 +1384,9 @@ with col1:
             ]))
 
             hp = "🔥 " if org.get("priority") == "high" else ""
-
             headL, headR, headX = st.columns([5, 1.3, 1.1])
             with headL:
                 emoji, age_label = freshness_badge(str(data.get("last_checked") or ""), int(warn_days), int(crit_days))
-                diff_saved = saved_count - prev_count
                 diff_tag = f" · 🟢 +{diff_saved}" if diff_saved > 0 else (f" · 🔴 {diff_saved}" if diff_saved < 0 else "")
                 count_tag = f" · ⭐ {saved_count} interessant" if saved_count > 0 else ""
                 st.markdown(f"### {emoji} {hp}🏢 {org_name}{count_tag}{diff_tag}  ·  {age_label}")
@@ -1566,6 +1445,7 @@ with col1:
                 st.success("Notizen gespeichert.")
 
             st.divider()
+
         st.markdown("### Export")
         json_bytes = json.dumps(export_payload, ensure_ascii=False, indent=2).encode("utf-8")
         csv_bytes = ("\n".join(csv_lines)).encode("utf-8")
