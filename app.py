@@ -2,8 +2,10 @@ import json
 import math
 import os
 import hashlib
+import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Set, Tuple
+from collections import defaultdict
 
 import requests
 import streamlit as st
@@ -12,9 +14,90 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# =========================
-# Geocoding (OSM Nominatim)
-# =========================
+# ============================================================
+# Persistenter State-Ordner (immer neben app.py)
+# ============================================================
+APP_DIR = os.path.dirname(os.path.abspath(__file__))
+STATE_DIR = os.path.join(APP_DIR, ".jobwatch_state")
+SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
+COMPANY_STATE_FILE = os.path.join(STATE_DIR, "company_monitor.json")
+HIDDEN_JOBS_FILE = os.path.join(STATE_DIR, "hidden_jobs.json")
+
+
+def ensure_state_dir() -> None:
+    os.makedirs(STATE_DIR, exist_ok=True)
+
+
+# -------------------- Snapshot helpers --------------------
+def load_snapshot() -> Dict[str, Any]:
+    if not os.path.exists(SNAPSHOT_FILE):
+        return {"timestamp": None, "items": []}
+    with open(SNAPSHOT_FILE, "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except Exception:
+            return {"timestamp": None, "items": []}
+
+
+def save_snapshot(items: List[Dict[str, Any]]) -> None:
+    ensure_state_dir()
+    payload = {"timestamp": datetime.now().isoformat(timespec="seconds"), "items": items}
+    with open(SNAPSHOT_FILE, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+
+# -------------------- Firmencheck state helpers --------------------
+def load_company_state() -> Dict[str, Any]:
+    if not os.path.exists(COMPANY_STATE_FILE):
+        return {}
+    with open(COMPANY_STATE_FILE, "r", encoding="utf-8") as f:
+        try:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+
+def save_company_state(state: Dict[str, Any]) -> None:
+    ensure_state_dir()
+    with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+
+# -------------------- Hidden jobs helpers --------------------
+def load_hidden_jobs() -> Dict[str, Any]:
+    """
+    { "hidden": ["ba:123...", "hx:abcd..."], "updated_at": "..." }
+    """
+    if not os.path.exists(HIDDEN_JOBS_FILE):
+        return {"hidden": [], "updated_at": None}
+    with open(HIDDEN_JOBS_FILE, "r", encoding="utf-8") as f:
+        try:
+            data = json.load(f)
+        except Exception:
+            return {"hidden": [], "updated_at": None}
+    if not isinstance(data, dict):
+        return {"hidden": [], "updated_at": None}
+    if "hidden" not in data or not isinstance(data["hidden"], list):
+        data["hidden"] = []
+    if "updated_at" not in data:
+        data["updated_at"] = None
+    return data
+
+
+def save_hidden_jobs(hidden_keys: Set[str]) -> None:
+    ensure_state_dir()
+    payload = {
+        "hidden": sorted(list(hidden_keys)),
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+    }
+    with open(HIDDEN_JOBS_FILE, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+
+# ============================================================
+# Geocoding (Wohnort + optional Job-Orte)
+# ============================================================
 @st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
 def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
     """
@@ -23,7 +106,7 @@ def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Opt
     """
     q = (query or "").strip()
     if not q:
-        return None, None, "Kein Wohnort angegeben."
+        return None, None, "Kein Ort angegeben."
 
     url = "https://nominatim.openstreetmap.org/search"
     params = {"q": q, "format": "json", "limit": 1}
@@ -36,7 +119,6 @@ def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Opt
 
     if r.status_code == 429:
         return None, None, "Geocode HTTP 429 (zu viele Anfragen). Bitte kurz warten und erneut versuchen."
-
     if r.status_code != 200:
         return None, None, f"Geocode HTTP {r.status_code}: {r.text[:200]}"
 
@@ -60,10 +142,6 @@ def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Opt
 
 @st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
 def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
-    """
-    Kleines Geocoding für Job-Orte (PLZ/Ort/Region).
-    Nutzt Nominatim und cached Ergebnisse.
-    """
     q = (query or "").strip()
     if not q:
         return None
@@ -73,164 +151,15 @@ def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
     return float(lat), float(lon)
 
 
-# =========================
+# ============================================================
 # BA Jobsuche (App Endpoint)
-# =========================
+# ============================================================
 BASE = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service"
 SEARCH_URL = f"{BASE}/pc/v4/app/jobs"
 API_KEY_DEFAULT = "jobboerse-jobsuche"
 
-# =========================
-# Snapshot + Firmencheck state
-# =========================
-STATE_DIR = ".jobwatch_state"
-SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
-COMPANY_STATE_FILE = os.path.join(STATE_DIR, "company_monitor.json")
 
-
-def ensure_state_dir() -> None:
-    os.makedirs(STATE_DIR, exist_ok=True)
-
-
-def load_snapshot() -> Dict[str, Any]:
-    if not os.path.exists(SNAPSHOT_FILE):
-        return {"timestamp": None, "items": []}
-    with open(SNAPSHOT_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_snapshot(items: List[Dict[str, Any]]) -> None:
-    ensure_state_dir()
-    payload = {"timestamp": datetime.now().isoformat(timespec="seconds"), "items": items}
-    with open(SNAPSHOT_FILE, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-
-
-def load_company_state() -> Dict[str, Any]:
-    if not os.path.exists(COMPANY_STATE_FILE):
-        return {}
-    with open(COMPANY_STATE_FILE, "r", encoding="utf-8") as f:
-        return json.load(f)
-
-
-def save_company_state(state: Dict[str, Any]) -> None:
-    ensure_state_dir()
-    with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
-
-
-# =========================
-# Default Wohnort
-# =========================
-DEFAULT_HOME_LABEL = "06242 Braunsbedra"
-DEFAULT_HOME_LAT = 51.2861
-DEFAULT_HOME_LON = 11.8900
-
-# =========================
-# Keywords (Defaults)
-# =========================
-DEFAULT_FOCUS_KEYWORDS = [
-    "thermoanalyse", "thermophysik", "thermal analysis", "thermophysical",
-    "dsc", "tga", "lfa", "dilatometrie", "dilatometer", "sta", "dma", "tma",
-    "wärmeleitfähigkeit", "thermal conductivity", "diffusivität", "diffusivity",
-    "kalorimetrie", "calorimetry", "cp", "wärmekapazität", "heat capacity",
-    "materialcharakterisierung", "material characterization",
-    "analytik", "instrumentierung", "messgerät", "labor",
-    "werkstoff", "werkstoffe", "polymer", "keramik", "metall",
-    "f&e", "forschung", "entwicklung", "r&d", "research", "development",
-    "verfahrenstechnik", "thermodynamik", "wärmeübertragung", "kältetechnik",
-    "thermische simulation", "physik", "physics",
-    "wärmetechnik", "brandprüfung", "laser flash",
-]
-DEFAULT_LEADERSHIP_KEYWORDS = [
-    "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
-    "leiter", "head", "lead", "director", "manager", "principal",
-    "betriebsstättenleiter", "standortleiter",
-    "sektionsleiter", "section manager",
-]
-DEFAULT_NEGATIVE_KEYWORDS = [
-    "insurance", "versicherung",
-    "assistant", "assistenz", "sekretariat",
-    "office", "backoffice", "reception", "empfang",
-    "vorstandsassistenz", "dachdecker", "assistant", "altenpfleger", "altenpflegehelfer",
-    "staplerfahrer", "restaurantfachmann", "umformmechaniker", "gabelstaplerfahrer",
-    "busfahrer", "elektriker", "schweißer", "mechatroniker", "anlagenführer", "mechaniker",
-    "erzieher", "postbote", "schlosser", "produktionshelfer", "geräteführer",
-    "physiotherapeut", "bauhelfer", "sozialpädagog",
-    "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter",
-    "gießereihelfer", "sachbearbeitung", "montagehelfer", "fertigungsmitarbeiter",
-    "arbeitsvorbereiter", "maler",
-    # Pflege/Gesundheit
-    "pflege", "krankenpfleger", "pflegefachkraft", "pflegedienst",
-    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut",
-    # Gastro/Service
-    "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
-    # Reinigung/Housekeeping
-    "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung",
-    # Verkauf/Einzelhandel
-    "verkauf", "verkäufer", "kasse", "einzelhandel", "store", "filiale",
-    # Lager/Logistik
-    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
-    "steuerfachangestellte", "sachbearbeiter",
-]
-
-
-# =========================
-# Ziel-Organisationen
-# =========================
-TARGET_ORGS: List[Dict[str, Any]] = [
-    {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
-    {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
-    {"name": "Dow (Schkopau/Böhlen)", "match": ["dow", "olefinverbund"], "url": "https://de.dow.com/de-de/karriere.html"},
-    {"name": "Trinseo (Schkopau)", "match": ["trinseo"], "url": "https://www.trinseo.com/careers"},
-    {"name": "DOMO / Caproleuna", "match": ["domo", "caproleuna"], "url": "https://www.domochemicals.com/de/stellenangebote"},
-    {"name": "UPM Biochemicals (Leuna)", "match": ["upm"], "url": "https://www.upmbiochemicals.com/de/karriere/"},
-    {"name": "ADDINOL (Leuna)", "match": ["addinol"], "url": "https://addinol.de/unternehmen/karriere/"},
-    {"name": "Arkema", "match": ["arkema"], "url": "https://www.arkema.com/germany/de/careers/"},
-    {"name": "Eastman", "match": ["eastman"], "url": "https://www.eastman.com/en/careers"},
-    {"name": "Innospec", "match": ["innospec"], "url": "https://www.inno-spec.de/karriere/"},
-    {"name": "Shell (Catalysts/Leuna)", "match": ["shell", "catalysts"], "url": "https://www.shell.de/ueber-uns/karriere.html"},
-    {"name": "Linde", "match": ["linde"], "url": "https://de.lindecareers.com/"},
-    {"name": "Air Liquide", "match": ["air liquide"], "url": "https://de.airliquide.com/karriere"},
-    {"name": "BASF", "match": ["basf"], "url": "https://www.basf.com/global/de/careers"},
-    {"name": "Wacker Chemie", "match": ["wacker"], "url": "https://www.wacker.com/cms/de-de/careers/overview.html"},
-    {"name": "Verbio (Leipzig)", "match": ["verbio"], "url": "https://www.verbio.de/karriere/"},
-    {"name": "VNG (Leipzig)", "match": ["vng"], "url": "https://karriere.vng.de/"},
-    {"name": "Siemens Energy", "match": ["siemens energy"], "url": "https://jobs.siemens-energy.com/de_DE/jobs/Jobs"},
-    {"name": "Siemens (allgemein)", "match": ["siemens"], "url": "https://www.siemens.com/de/de/unternehmen/jobs.html"},
-    {"name": "BMW Werk Leipzig", "match": ["bmw"], "url": "https://www.bmwgroup.jobs/de/de/standorte/werke-in-deutschland/werk-leipzig.html"},
-    {"name": "Porsche Leipzig", "match": ["porsche"], "url": "https://www.porsche-leipzig.com/jobs-karriere/"},
-    {"name": "DHL Hub Leipzig", "match": ["dhl", "deutsche post", "hub leipzig"], "url": "https://www.dhl.com/de-de/microsites/express/hubs/hub-leipzig/jobs.html"},
-    {"name": "Mitteldeutsche Flughafen AG (LEJ)", "match": ["mitteldeutsche flughafen", "flughafen leipzig", "leipzig/halle", "leipzig-halle"], "url": "https://www.mdf-ag.com/karriere/alle-jobs/flughafen-leipzig-halle"},
-    {"name": "Stadtwerke Leipzig / Leipziger Gruppe", "match": ["stadtwerke leipzig", "leipziger gruppe", "l-gruppe", "l.de"], "url": "https://www.l.de/karriere/stellenangebote/"},
-    {"name": "enviaM-Gruppe", "match": ["enviam", "envia", "mitgas"], "url": "https://jobs.enviam-gruppe.de/"},
-    {"name": "GBA Group", "match": ["gba"], "url": "https://www.gba-group.com/karriere/jobs/"},
-    {"name": "Eurofins", "match": ["eurofins"], "url": "https://careers.eurofins.com/de"},
-    {"name": "SGS", "match": ["sgs"], "url": "https://www.sgs.com/de-de/unternehmen/karriere-bei-sgs/stellenangebote"},
-    {"name": "DEKRA", "match": ["dekra"], "url": "https://www.dekra.de/de/karriere/ueberblick/"},
-    {"name": "UFZ Helmholtz (Leipzig)", "match": ["ufz", "helmholtz-zentrum", "umweltforschung"], "url": "https://www.ufz.de/index.php?de=34275"},
-    {"name": "DBFZ Leipzig", "match": ["dbfz", "deutsches biomasseforschungszentrum"], "url": "https://www.dbfz.de/karriere/stellenausschreibungen", "priority": "high"},
-    {"name": "Fraunhofer IZI (Leipzig)", "match": ["fraunhofer izi", "izi"], "url": "https://www.izi.fraunhofer.de/de/jobs-karriere.html"},
-    {"name": "Fraunhofer IMWS (Halle)", "match": ["fraunhofer imws", "imws", "mikrostruktur", "mikrostruktur von werkstoffen", "halle (saale)"], "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html", "priority": "high"},
-    {"name": "Fraunhofer (Jobportal)", "match": ["fraunhofer"], "url": "https://www.fraunhofer.de/de/jobs-und-karriere.html"},
-    {"name": "Leibniz-Institut für Oberflächenmodifizierung (IOM)", "match": ["leibniz iom", "iom leipzig", "oberflächenmodifizierung", "iom"], "url": "https://www.iom-leipzig.de/de/karriere/", "priority": "high"},
-    {"name": "Leibniz IPB (Halle)", "match": ["ipb", "pflanzenbiochemie", "leibniz"], "url": "https://www.ipb-halle.de/karriere/stellenangebote/"},
-    {"name": "Max-Planck-Gesellschaft (Stellenbörse)", "match": ["max-planck", "max planck", "mpg"], "url": "https://www.mpg.de/stellenboerse"},
-    {"name": "Universität Leipzig (Stellen)", "match": ["universität leipzig", "uni leipzig"], "url": "https://www.uni-leipzig.de/universitaet/arbeiten-an-der-universitaet-leipzig/stellenausschreibungen"},
-    {"name": "MLU Halle (Stellen)", "match": ["martin-luther-universität", "universität halle", "uni halle", "mlu"], "url": "https://personal.verwaltung.uni-halle.de/jobs/"},
-    {"name": "Hochschule Merseburg", "match": ["hochschule merseburg", "hs merseburg"], "url": "https://www.hs-merseburg.de/hochschule/information/stellenausschreibungen/"},
-    {"name": "HTWK Leipzig (Stellen)", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
-    {"name": "MFPA Leipzig GmbH", "match": ["mfpa leipzig", "mfpa", "prüfanstalt", "materialforschungs"], "url": "https://www.mfpa-leipzig.de/", "priority": "high"},
-    {"name": "MFPA Leipzig – Wärmeleitfähigkeit (Service)", "match": ["mfpa leipzig", "mfpa"], "url": "https://www.mfpa-leipzig.de/service/pruefung-der-waermeleitfaehigkeit-von-daemmstoffen/"},
-    {"name": "Universität Leipzig – Technische Chemie (Equipment)", "match": ["institut für technische chemie", "technical chemistry", "universität leipzig", "uni leipzig"], "url": "https://www.chemie.uni-leipzig.de/en/institute-of-chemical-technology/technical-equipment"},
-    {"name": "MLU Halle – Thermal analysis (Geo/MinGeo)", "match": ["geo.uni-halle", "thermalanalysis", "mlu", "uni halle", "martin-luther"], "url": "https://geo.uni-halle.de/en/mingeochem/laboratories/thermalanalysis/"},
-    {"name": "HTWK Leipzig – MNZ Werkstoffprüfung", "match": ["mnz", "htwk"], "url": "https://mnz.htwk-leipzig.de/forschung/analytisches-zentrum/analysemethoden/werkstoffpruefung/"},
-    {"name": "TZO Leipzig – Labor Umwelterprobung & Werkstoffprüfung", "match": ["tzo leipzig", "luw"], "url": "https://tzoleipzig.de/labor-fuer-umwelterprobung/"},
-]
-
-
-# -------------------- BA API helpers --------------------
-def headers(api_key: str) -> Dict[str, str]:
+def ba_headers(api_key: str) -> Dict[str, str]:
     return {
         "User-Agent": "Jobsuche/2.9.2 (de.arbeitsagentur.jobboerse; build:1077) Streamlit",
         "X-API-Key": api_key,
@@ -375,7 +304,7 @@ def fetch_search(
     try:
         r = requests.get(
             SEARCH_URL,
-            headers=headers(api_key),
+            headers=ba_headers(api_key),
             params=params,
             timeout=25,
             verify=False,
@@ -397,7 +326,7 @@ def fetch_search(
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
     try:
-        r = requests.get(url, headers=headers(api_key), timeout=25, verify=False)
+        r = requests.get(url, headers=ba_headers(api_key), timeout=25, verify=False)
     except Exception as e:
         return None, f"Details-Request-Fehler: {type(e).__name__}: {e}"
 
@@ -410,7 +339,9 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
         return None, "Details: Antwort war kein gültiges JSON."
 
 
-# -------------------- Distance + travel time --------------------
+# ============================================================
+# Distance + travel time
+# ============================================================
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     r = 6371.0088
     phi1 = math.radians(lat1)
@@ -473,10 +404,52 @@ def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float,
     )
 
 
-# -------------------- Keyword helpers --------------------
+# ============================================================
+# Keyword helpers + defaults
+# ============================================================
+DEFAULT_HOME_LABEL = "06242 Braunsbedra"
+DEFAULT_HOME_LAT = 51.2861
+DEFAULT_HOME_LON = 11.8900
+
+DEFAULT_FOCUS_KEYWORDS = [
+    "thermoanalyse", "thermophysik", "thermal analysis", "thermophysical",
+    "dsc", "tga", "lfa", "hfm", "heat flow meter", "laser flash", "laser flash analysis",
+    "wärmeleitfähigkeit", "thermal conductivity", "diffusivität", "diffusivity",
+    "kalorimetrie", "calorimetry", "wärmekapazität", "heat capacity",
+    "materialcharakterisierung", "material characterization",
+    "analytik", "instrumentierung", "messgerät", "labor",
+    "werkstoff", "werkstoffe", "polymer", "keramik", "metall",
+    "f&e", "forschung", "entwicklung", "r&d", "research", "development",
+    "verfahrenstechnik", "thermodynamik", "wärmeübertragung",
+    "thermische simulation", "physik", "physics",
+]
+
+DEFAULT_LEADERSHIP_KEYWORDS = [
+    "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
+    "leiter", "head", "lead", "director", "manager", "principal",
+    "sektionsleiter", "section manager",
+]
+
+DEFAULT_NEGATIVE_KEYWORDS = [
+    # Pflege/Gesundheit
+    "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
+    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut",
+    # Gastro/Service
+    "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
+    # Reinigung/Facility
+    "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung",
+    # Lager/Logistik/Produktion (wenn zu viel Rauschen)
+    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
+    "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer",
+    "maschinenbediener", "produktionsmitarbeiter", "montagehelfer",
+    # Büro/sonstiges Rauschen
+    "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
+    "insurance", "versicherung",
+]
+
 def parse_keywords(text: str) -> List[str]:
     raw: List[str] = []
-    for line in text.splitlines():
+    for line in (text or "").splitlines():
         raw.extend([p.strip() for p in line.split(",")])
     return [x for x in raw if x]
 
@@ -485,21 +458,77 @@ def keywords_to_text(words: List[str]) -> str:
     return "\n".join(words)
 
 
-# -------------------- Profile Queries --------------------
+# ============================================================
+# Jobarten / Profile (breit)
+# ============================================================
 def build_queries() -> Dict[str, str]:
     """
-    Sehr breite BA-Suche.
-    Filterung erfolgt über Score + Keywords im Anschluss.
+    Breit suchen: BA 'was' eher kurz halten.
+    Relevanz steuern wir danach über Score/Keywords.
     """
     return {
-        "Breit (alle technischen Stellen)": "",
-        "Leitung (breit)": "Leiter Teamleiter Laborleiter Bereichsleiter",
-        "Projektmanagement (breit)": "Projektmanager Project Manager",
-        "Technischer Vertrieb (breit)": "Sales Engineer Technischer Vertrieb",
+        "Breit (ohne Suchtext)": "",
+        "Leitung (breit)": "Leiter Teamleiter Laborleiter Gruppenleiter Abteilungsleiter Bereichsleiter Head Director",
+        "Projektmanagement": "Projektmanager Project Manager Program Manager Technical Project",
+        "Technischer Vertrieb": "Sales Engineer Technischer Vertrieb Key Account Business Development",
+        "R&D / Entwicklung": "Forschung Entwicklung R&D Engineer Scientist",
     }
 
 
-# -------------------- Ziel-Org Matching --------------------
+# ============================================================
+# Ziel-Organisationen (aus deinem letzten Stand)
+# ============================================================
+TARGET_ORGS: List[Dict[str, Any]] = [
+    {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
+    {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
+    {"name": "Dow (Schkopau/Böhlen)", "match": ["dow", "olefinverbund"], "url": "https://de.dow.com/de-de/karriere.html"},
+    {"name": "Trinseo (Schkopau)", "match": ["trinseo"], "url": "https://www.trinseo.com/careers"},
+    {"name": "DOMO / Caproleuna", "match": ["domo", "caproleuna"], "url": "https://www.domochemicals.com/de/stellenangebote"},
+    {"name": "UPM Biochemicals (Leuna)", "match": ["upm"], "url": "https://www.upmbiochemicals.com/de/karriere/"},
+    {"name": "ADDINOL (Leuna)", "match": ["addinol"], "url": "https://addinol.de/unternehmen/karriere/"},
+    {"name": "Arkema", "match": ["arkema"], "url": "https://www.arkema.com/germany/de/careers/"},
+    {"name": "Eastman", "match": ["eastman"], "url": "https://www.eastman.com/en/careers"},
+    {"name": "Innospec", "match": ["innospec"], "url": "https://www.inno-spec.de/karriere/"},
+    {"name": "Shell (Catalysts/Leuna)", "match": ["shell", "catalysts"], "url": "https://www.shell.de/ueber-uns/karriere.html"},
+    {"name": "Linde", "match": ["linde"], "url": "https://de.lindecareers.com/"},
+    {"name": "Air Liquide", "match": ["air liquide"], "url": "https://de.airliquide.com/karriere"},
+    {"name": "BASF", "match": ["basf"], "url": "https://www.basf.com/global/de/careers"},
+    {"name": "Wacker Chemie", "match": ["wacker"], "url": "https://www.wacker.com/cms/de-de/careers/overview.html"},
+    {"name": "Verbio (Leipzig)", "match": ["verbio"], "url": "https://www.verbio.de/karriere/"},
+    {"name": "VNG (Leipzig)", "match": ["vng"], "url": "https://karriere.vng.de/"},
+    {"name": "Siemens Energy", "match": ["siemens energy"], "url": "https://jobs.siemens-energy.com/de_DE/jobs/Jobs"},
+    {"name": "Siemens (allgemein)", "match": ["siemens"], "url": "https://www.siemens.com/de/de/unternehmen/jobs.html"},
+    {"name": "BMW Werk Leipzig", "match": ["bmw"], "url": "https://www.bmwgroup.jobs/de/de/standorte/werke-in-deutschland/werk-leipzig.html"},
+    {"name": "Porsche Leipzig", "match": ["porsche"], "url": "https://www.porsche-leipzig.com/jobs-karriere/"},
+    {"name": "DHL Hub Leipzig", "match": ["dhl", "deutsche post", "hub leipzig"], "url": "https://www.dhl.com/de-de/microsites/express/hubs/hub-leipzig/jobs.html"},
+    {"name": "Mitteldeutsche Flughafen AG (LEJ)", "match": ["mitteldeutsche flughafen", "flughafen leipzig", "leipzig/halle", "leipzig-halle"], "url": "https://www.mdf-ag.com/karriere/alle-jobs/flughafen-leipzig-halle"},
+    {"name": "Stadtwerke Leipzig / Leipziger Gruppe", "match": ["stadtwerke leipzig", "leipziger gruppe", "l-gruppe", "l.de"], "url": "https://www.l.de/karriere/stellenangebote/"},
+    {"name": "enviaM-Gruppe", "match": ["enviam", "envia", "mitgas"], "url": "https://jobs.enviam-gruppe.de/"},
+    {"name": "GBA Group", "match": ["gba"], "url": "https://www.gba-group.com/karriere/jobs/"},
+    {"name": "Eurofins", "match": ["eurofins"], "url": "https://careers.eurofins.com/de"},
+    {"name": "SGS", "match": ["sgs"], "url": "https://www.sgs.com/de-de/unternehmen/karriere-bei-sgs/stellenangebote"},
+    {"name": "DEKRA", "match": ["dekra"], "url": "https://www.dekra.de/de/karriere/ueberblick/"},
+    {"name": "UFZ Helmholtz (Leipzig)", "match": ["ufz", "helmholtz-zentrum", "umweltforschung"], "url": "https://www.ufz.de/index.php?de=34275"},
+    {"name": "DBFZ Leipzig", "match": ["dbfz", "deutsches biomasseforschungszentrum"], "url": "https://www.dbfz.de/karriere/stellenausschreibungen", "priority": "high"},
+    {"name": "Fraunhofer IZI (Leipzig)", "match": ["fraunhofer izi", "izi"], "url": "https://www.izi.fraunhofer.de/de/jobs-karriere.html"},
+    {"name": "Fraunhofer IMWS (Halle)", "match": ["fraunhofer imws", "imws", "mikrostruktur", "mikrostruktur von werkstoffen", "halle (saale)"], "url": "https://www.imws.fraunhofer.de/de/schnelleinstieg-fuer-bewerber/jobs-am-imws.html", "priority": "high"},
+    {"name": "Fraunhofer (Jobportal)", "match": ["fraunhofer"], "url": "https://www.fraunhofer.de/de/jobs-und-karriere.html"},
+    {"name": "Leibniz-Institut für Oberflächenmodifizierung (IOM)", "match": ["leibniz iom", "iom leipzig", "oberflächenmodifizierung", "iom"], "url": "https://www.iom-leipzig.de/de/karriere/", "priority": "high"},
+    {"name": "Leibniz IPB (Halle)", "match": ["ipb", "pflanzenbiochemie", "leibniz"], "url": "https://www.ipb-halle.de/karriere/stellenangebote/"},
+    {"name": "Max-Planck-Gesellschaft (Stellenbörse)", "match": ["max-planck", "max planck", "mpg"], "url": "https://www.mpg.de/stellenboerse"},
+    {"name": "Universität Leipzig (Stellen)", "match": ["universität leipzig", "uni leipzig"], "url": "https://www.uni-leipzig.de/universitaet/arbeiten-an-der-universitaet-leipzig/stellenausschreibungen"},
+    {"name": "MLU Halle (Stellen)", "match": ["martin-luther-universität", "universität halle", "uni halle", "mlu"], "url": "https://personal.verwaltung.uni-halle.de/jobs/"},
+    {"name": "Hochschule Merseburg", "match": ["hochschule merseburg", "hs merseburg"], "url": "https://www.hs-merseburg.de/hochschule/information/stellenausschreibungen/"},
+    {"name": "HTWK Leipzig (Stellen)", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
+    {"name": "MFPA Leipzig GmbH", "match": ["mfpa leipzig", "mfpa", "prüfanstalt", "materialforschungs"], "url": "https://www.mfpa-leipzig.de/", "priority": "high"},
+    {"name": "MFPA Leipzig – Wärmeleitfähigkeit (Service)", "match": ["mfpa leipzig", "mfpa"], "url": "https://www.mfpa-leipzig.de/service/pruefung-der-waermeleitfaehigkeit-von-daemmstoffen/"},
+    {"name": "Universität Leipzig – Technische Chemie (Equipment)", "match": ["institut für technische chemie", "technical chemistry", "universität leipzig", "uni leipzig"], "url": "https://www.chemie.uni-leipzig.de/en/institute-of-chemical-technology/technical-equipment"},
+    {"name": "MLU Halle – Thermal analysis (Geo/MinGeo)", "match": ["geo.uni-halle", "thermalanalysis", "mlu", "uni halle", "martin-luther"], "url": "https://geo.uni-halle.de/en/mingeochem/laboratories/thermalanalysis/"},
+    {"name": "HTWK Leipzig – MNZ Werkstoffprüfung", "match": ["mnz", "htwk"], "url": "https://mnz.htwk-leipzig.de/forschung/analytisches-zentrum/analysemethoden/werkstoffpruefung/"},
+    {"name": "TZO Leipzig – Labor Umwelterprobung & Werkstoffprüfung", "match": ["tzo leipzig", "luw"], "url": "https://tzoleipzig.de/labor-fuer-umwelterprobung/"},
+]
+
+
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
     if not c.strip():
@@ -510,7 +539,9 @@ def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-# -------------------- Leaflet map: numbered pins --------------------
+# ============================================================
+# Leaflet map: numbered pins (grouped label supported like "3–5")
+# ============================================================
 def leaflet_map_html(
     home_lat: float,
     home_lon: float,
@@ -554,6 +585,7 @@ def leaflet_map_html(
       color: #111;
       text-shadow: 0 1px 0 rgba(255,255,255,0.85);
       pointer-events: none;
+      white-space: nowrap;
     }}
   </style>
 </head>
@@ -572,7 +604,7 @@ def leaflet_map_html(
   }}
 
   function numberedIcon(color, numText) {{
-    const html = `<div class="pinwrap">${{pinSvg(color)}}<div class="pinnum">${{numText}}</div></div>`;
+    const html = `<div class="pinwrap">${{pinSvg(color)}}<div class="pinnum">${{numText || ""}}</div></div>`;
     return L.divIcon({{
       className: '',
       html: html,
@@ -599,7 +631,7 @@ def leaflet_map_html(
     const title = (m.title || '').replace(/</g,'&lt;');
     const company = (m.company || '').replace(/</g,'&lt;');
     const dist = (m.dist_km != null) ? (Math.round(m.dist_km*10)/10) : null;
-    const idx = m.idx || '';
+    const idx = (m.idx || '').toString();
 
     let color = "#c62828";
     if (m.pin === "green") color = "#2e7d32";
@@ -625,13 +657,102 @@ def leaflet_map_html(
 """
 
 
-# =========================
+# ============================================================
+# Score / Relevanz
+# ============================================================
+def looks_leadership_strict(it: Dict[str, Any]) -> bool:
+    text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
+    strict_terms = [
+        "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
+        " head of ", "director",
+    ]
+    if " leiter " in f" {text} ":
+        return True
+    return any(term in text for term in strict_terms)
+
+
+def is_homeoffice_item(it: Dict[str, Any]) -> bool:
+    b = str(it.get("_bucket", "")).lower()
+    if "homeoffice" in b:
+        return True
+    az = str(it.get("arbeitszeit", "")).lower()
+    return az == "ho"
+
+
+def score_breakdown(
+    it: Dict[str, Any],
+    focus_keywords: List[str],
+    leadership_keywords: List[str],
+    negative_keywords: List[str],
+    ho_bonus_val: int,
+) -> Tuple[int, List[str]]:
+    text = " ".join(
+        [
+            str(item_title(it)),
+            str(it.get("kurzbeschreibung", "")),
+            str(item_company(it)),
+            str(pretty_location(it)),
+        ]
+    ).lower()
+
+    score = 0
+    parts: List[str] = []
+
+    for k in focus_keywords:
+        if k and k in text:
+            score += 10
+            parts.append(f"+10 {k}")
+
+    for k in leadership_keywords:
+        if k and k in text:
+            score += 6
+            parts.append(f"+6 {k}")
+
+    for k in negative_keywords:
+        if k and k in text:
+            score -= 12
+            parts.append(f"−12 {k}")
+
+    if is_homeoffice_item(it) and ho_bonus_val > 0:
+        score += int(ho_bonus_val)
+        parts.append(f"+{int(ho_bonus_val)} homeoffice")
+
+    if not parts:
+        parts = ["(keine Keyword-Treffer)"]
+
+    return score, parts
+
+
+def is_probably_irrelevant(it: Dict[str, Any], negative_keywords: List[str]) -> bool:
+    text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
+    return any(h in text for h in negative_keywords if h)
+
+
+def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
+    rows = [(k, v) for (k, v) in rows if v is not None and str(v).strip() != ""]
+    if not rows:
+        return
+    n = len(rows)
+    half = (n + 1) // 2
+    left = rows[:half]
+    right = rows[half:]
+
+    c1, c2 = st.columns(2)
+    with c1:
+        for k, v in left:
+            st.markdown(f"**{k}:** {v}")
+    with c2:
+        for k, v in right:
+            st.markdown(f"**{k}:** {v}")
+
+
+# ============================================================
 # Streamlit App
-# =========================
+# ============================================================
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("Raum Leipzig – Jobs finden & vergleichen")
 
-# Keyword Session defaults
+# Session defaults for keywords
 if "kw_focus" not in st.session_state:
     st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
 if "kw_lead" not in st.session_state:
@@ -639,7 +760,7 @@ if "kw_lead" not in st.session_state:
 if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
-# Defaults (werden im Expander überschrieben)
+# Defaults (werden in Sidebar überschrieben)
 size = 50
 api_key = API_KEY_DEFAULT
 debug = False
@@ -647,15 +768,17 @@ near_km = 25
 mid_km = 60
 speed_kmh = 75
 ho_bonus = 8
-enable_job_geocode = False
-max_job_geocodes = 0
 
+# Load snapshot once (right column uses it too)
+snap = load_snapshot()
+
+# Sidebar
 with st.sidebar:
     st.header("JobWatch – Einstellungen")
 
-    # =========================
+    # -------------------------
     # Wohnort (1 Feld, Auto-Geocode)
-    # =========================
+    # -------------------------
     st.subheader("Wohnort")
 
     if "home_query" not in st.session_state:
@@ -668,37 +791,30 @@ with st.sidebar:
         st.session_state["home_display"] = DEFAULT_HOME_LABEL
     if "geocode_error" not in st.session_state:
         st.session_state["geocode_error"] = ""
-
-    # Merker: nur bei Erfolg setzen
-    if "home_query_last_ok" not in st.session_state:
-        st.session_state["home_query_last_ok"] = ""
-    if "home_query_last_try" not in st.session_state:
-        st.session_state["home_query_last_try"] = ""
+    if "home_query_last" not in st.session_state:
+        st.session_state["home_query_last"] = ""
     if "home_geocode_last_ts" not in st.session_state:
         st.session_state["home_geocode_last_ts"] = 0.0
 
     def _auto_geocode():
         q = (st.session_state.get("home_query") or "").strip()
 
-        # nur wenn es noch nicht erfolgreich geocoded wurde
-        last_ok = (st.session_state.get("home_query_last_ok") or "").strip()
-        if q == last_ok:
+        # 1) nur bei echter Änderung
+        last_q = (st.session_state.get("home_query_last") or "").strip()
+        if q == last_q:
             return
+        st.session_state["home_query_last"] = q
 
-        # Merke nur den letzten Versuch (nicht "ok")
-        st.session_state["home_query_last_try"] = q
-
+        # 2) minimale Eingabelänge (verhindert Requests bei "L", "Le", ...)
         if len(q) < 4:
             st.session_state["geocode_error"] = "Bitte etwas genauer eingeben (z.B. '06242 Braunsbedra')."
             return
 
-        # Rate-Limit: max. 1 Request pro 60s
-        import time
+        # 3) Rate-Limit: max. 1 Request pro 60s
         last_ts = float(st.session_state.get("home_geocode_last_ts") or 0.0)
         if time.time() - last_ts < 60:
-            st.session_state["geocode_error"] = "Geocoding ist limitiert (429-Schutz). Bitte kurz warten und dann erneut versuchen."
+            st.session_state["geocode_error"] = "Geocoding ist limitiert (429-Schutz). Bitte kurz warten und dann erneut Enter."
             return
-
         st.session_state["home_geocode_last_ts"] = time.time()
 
         lat, lon, msg = geocode_nominatim(q)
@@ -710,20 +826,14 @@ with st.sidebar:
         st.session_state["home_lon"] = float(lon)
         st.session_state["home_display"] = msg or q
         st.session_state["geocode_error"] = ""
-        st.session_state["home_query_last_ok"] = q
 
     st.text_input("PLZ/Ort oder Adresse", key="home_query", on_change=_auto_geocode)
-
-    # Optional: Retry (wenn 429/Fehler war und derselbe Text nochmal geocoded werden soll)
-    if st.session_state.get("geocode_error") and st.button("↻ Wohnort jetzt erneut geocoden", key="home_retry"):
-        _auto_geocode()
 
     if st.session_state.get("geocode_error"):
         st.warning(st.session_state["geocode_error"])
     else:
         st.caption(f"📍 verwendet: {st.session_state.get('home_display')}")
 
-    # Werte für den Rest der App
     home_query = str(st.session_state.get("home_query") or DEFAULT_HOME_LABEL)
     home_lat = float(st.session_state.get("home_lat") or DEFAULT_HOME_LAT)
     home_lon = float(st.session_state.get("home_lon") or DEFAULT_HOME_LON)
@@ -735,11 +845,11 @@ with st.sidebar:
     # BA-Suche (minimal)
     # -------------------------
     st.subheader("Suche")
-    wo = home_query  # BA-Ort = Wohnort (kein extra Feld)
+    wo = home_query  # BA-Ort = Wohnort
 
-    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 100, 150], index=1)
-    include_ho = st.checkbox("Homeoffice berücksichtigen", value=True)
-    ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
+    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
+    include_ho = st.checkbox("Homeoffice berücksichtigen", value=False)
+    ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 200, 25) if include_ho else 0
 
     aktualitaet_option = st.selectbox(
         "Aktualität",
@@ -755,18 +865,21 @@ with st.sidebar:
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
-        default=["Breit (alle technischen Stellen)"],
+        default=["Breit (ohne Suchtext)"],
     )
 
     st.divider()
 
     # -------------------------
-    # Relevanz-Filter (minimal)
+    # Filter + Hidden Jobs
     # -------------------------
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
     min_score = st.slider("Mindest-Relevanz", 0, 80, 10, 1)
     hide_irrelevant = st.checkbox("Offensichtlich unpassende Treffer ausblenden", value=True)
+
+    hide_marked = st.checkbox("Bereits ausgeblendete Jobs verbergen", value=True)
+    show_hidden_manage = st.checkbox("Ausblend-Liste verwalten", value=False)
 
     st.divider()
 
@@ -785,19 +898,16 @@ with st.sidebar:
         speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
         st.divider()
-
         st.markdown("**Score-Tuning**")
         ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
 
         st.divider()
-
         st.markdown("**Technik**")
         size = st.selectbox("Treffer pro Seite", [25, 50, 100], index=1)
         api_key = st.text_input("X-API-Key (nur bei Problemen)", value=API_KEY_DEFAULT)
         debug = st.checkbox("Debug anzeigen", value=False)
 
         st.divider()
-
         st.markdown("**Keywords (optional)**")
         with st.expander("Fokus-Keywords bearbeiten", expanded=False):
             st.session_state["kw_focus"] = st.text_area(
@@ -824,6 +934,7 @@ with st.sidebar:
             st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
             st.rerun()
 
+# Keywords lists
 FOCUS_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_focus"])]
 LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_lead"])]
 NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
@@ -832,7 +943,6 @@ NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"
 col1, col2 = st.columns([6, 1], gap="large")
 
 with col2:
-    snap = load_snapshot()
     st.subheader("Snapshot")
     st.write(snap.get("timestamp") or "— noch keiner gespeichert")
 
@@ -845,116 +955,56 @@ with col2:
             os.remove(SNAPSHOT_FILE)
         st.success("Snapshot gelöscht. Seite neu laden.")
 
-
-# =========================
-# Stern-Logik
-# =========================
-def looks_leadership_strict(it: Dict[str, Any]) -> bool:
-    text = " ".join([str(item_title(it)), str(it.get("kurzbeschreibung", ""))]).lower()
-    strict_terms = [
-        "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
-        " head of ", "director",
-    ]
-    if " leiter " in f" {text} ":
-        return True
-    return any(term in text for term in strict_terms)
+    st.divider()
+    st.subheader("Ziel-Organisationen")
+    st.caption("Karriereseiten (manueller Check).")
+    with st.expander("Liste anzeigen / öffnen", expanded=False):
+        for org in TARGET_ORGS:
+            try:
+                st.link_button(f"🏢 {org['name']}", org["url"])
+            except Exception:
+                st.markdown(f"[🏢 {org['name']}]({org['url']})")
 
 
-def is_homeoffice_item(it: Dict[str, Any]) -> bool:
-    b = str(it.get("_bucket", "")).lower()
-    if "homeoffice" in b:
-        return True
-    az = str(it.get("arbeitszeit", "")).lower()
-    return az == "ho"
-
-
-def score_breakdown(it: Dict[str, Any], ho_bonus_val: int) -> Tuple[int, List[str]]:
-    text = " ".join(
-        [
-            str(item_title(it)),
-            str(it.get("kurzbeschreibung", "")),
-            str(item_company(it)),
-            str(pretty_location(it)),
-        ]
-    ).lower()
-
-    score = 0
-    parts: List[str] = []
-
-    for k in FOCUS_KEYWORDS:
-        if k and k in text:
-            score += 10
-            parts.append(f"+10 {k}")
-
-    for k in LEADERSHIP_KEYWORDS:
-        if k and k in text:
-            score += 6
-            parts.append(f"+6 {k}")
-
-    for k in NEGATIVE_KEYWORDS:
-        if k and k in text:
-            score -= 12
-            parts.append(f"−12 {k}")
-
-    if is_homeoffice_item(it) and ho_bonus_val > 0:
-        score += int(ho_bonus_val)
-        parts.append(f"+{int(ho_bonus_val)} homeoffice")
-
-    if not parts:
-        parts = ["(keine Keyword-Treffer)"]
-    return score, parts
-
-
-def relevance_score(it: Dict[str, Any], ho_bonus_val: int) -> int:
-    s, _ = score_breakdown(it, ho_bonus_val)
-    return s
-
-
-def is_probably_irrelevant(it: Dict[str, Any]) -> bool:
-    text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
-    hard = DEFAULT_NEGATIVE_KEYWORDS[:]  # nutze Liste als "Hard"-Filter
-    return any(h in text for h in hard)
-
-
-def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
-    rows = [(k, v) for (k, v) in rows if v is not None and str(v).strip() != ""]
-    if not rows:
-        return
-    n = len(rows)
-    half = (n + 1) // 2
-    left = rows[:half]
-    right = rows[half:]
-
-    c1, c2 = st.columns(2)
-    with c1:
-        for k, v in left:
-            st.markdown(f"**{k}:** {v}")
-    with c2:
-        for k, v in right:
-            st.markdown(f"**{k}:** {v}")
-
-
-# =========================
-# Tabs
-# =========================
+# ============================================================
+# Tabs: BA-Suche + Firmencheck (manuell)
+# ============================================================
 with col1:
     tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
 
     # -------------------- TAB 1: BA-Suche --------------------
     with tab_ba:
         if not selected_profiles:
-            st.warning("Bitte mindestens ein Profil auswählen.")
+            st.warning("Bitte mindestens eine Jobart auswählen.")
             st.stop()
+
+        # Hidden jobs state
+        _hidden_data = load_hidden_jobs()
+        hidden_keys: Set[str] = set(_hidden_data.get("hidden", []))
+
+        if show_hidden_manage:
+            st.subheader("🙈 Ausblend-Liste")
+            st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
+            cHM1, cHM2 = st.columns([1.2, 3.8])
+            with cHM1:
+                if st.button("🧹 Alle löschen"):
+                    save_hidden_jobs(set())
+                    st.success("Ausblend-Liste geleert.")
+                    st.rerun()
+            with cHM2:
+                if hidden_keys:
+                    st.code("\n".join(sorted(hidden_keys)))
+            st.divider()
 
         wo = home_query
 
         with st.spinner("Suche läuft…"):
             all_items: List[Dict[str, Any]] = []
             errs: List[str] = []
-            queries = build_queries()
+            qmap = build_queries()
 
             for name in selected_profiles:
-                q = queries[name]
+                q = qmap.get(name, "")
 
                 items_local, e1 = fetch_search(api_key, wo, int(umkreis), q, aktualitaet, int(size), page=1, arbeitszeit=None)
                 if e1:
@@ -988,41 +1038,49 @@ with col1:
                 it["_key"] = k
                 items_now.append(it)
 
+        # Hidden filter
+        if hide_marked:
+            items_now = [it for it in items_now if (it.get("_key") or item_key(it)) not in hidden_keys]
+
         # Filter
         if hide_irrelevant:
-            items_now = [it for it in items_now if not is_probably_irrelevant(it)]
+            items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
+
         if only_focus:
-            items_now = [it for it in items_now if relevance_score(it, int(ho_bonus)) >= int(min_score)]
+            items_now = [
+                it for it in items_now
+                if score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))[0] >= int(min_score)
+            ]
 
         # Snapshot compare
         prev_items = snap.get("items", [])
-        prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items}
+        prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items if isinstance(x, dict)}
         now_keys: Set[str] = {x.get("_key") or item_key(x) for x in items_now}
         new_keys = now_keys - prev_keys
 
         # Sort: HighPriority -> Entfernung -> neu -> Score
         def sort_key(it: Dict[str, Any]):
             org = match_target_org(item_company(it))
-            priority_rank = 0
-            if org and org.get("priority") == "high":
-                priority_rank = -1
+            priority_rank = -1 if (org and org.get("priority") == "high") else 0
 
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
             dist_rank = dist if dist is not None else 999999.0
 
             is_new_rank = 0 if (it.get("_key") in new_keys) else 1
-            score = relevance_score(it, int(ho_bonus))
+
+            score = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))[0]
             return (priority_rank, dist_rank, is_new_rank, -score, item_title(it).lower())
 
         items_sorted = sorted(items_now, key=sort_key)
 
-        # Nummerierung: IMMER (1..N)
+        # Nummerierung
         for i, it in enumerate(items_sorted, start=1):
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
         st.caption(f"Neu seit Snapshot: {len(new_keys)}")
 
+        # High-Priority Section
         st.divider()
         st.write("## 🔥 High-Priority Treffer")
         hp_items = [
@@ -1030,22 +1088,25 @@ with col1:
             if (match_target_org(item_company(it)) and match_target_org(item_company(it)).get("priority") == "high")
         ]
         if hp_items:
-            for it in hp_items:
+            for it in hp_items[:15]:
                 st.write(f"• {item_title(it)} – {item_company(it)}")
         else:
             st.info("Aktuell keine High-Priority Treffer.")
 
+        # Save snapshot
         if st.session_state.get("save_snapshot_requested"):
             save_snapshot(items_sorted)
             st.session_state["save_snapshot_requested"] = False
             st.success("Snapshot gespeichert.")
 
-        # Marker bauen (nur Treffer mit Koordinaten)
-        from collections import defaultdict
-
+        # Build markers (with grouping same coords)
         raw_markers: List[Dict[str, Any]] = []
         missing_coords = 0
         geocode_used = 0
+
+        # If variables not defined (when "Erweitert" never opened), set defaults:
+        enable_job_geocode = bool(locals().get("enable_job_geocode", False))
+        max_job_geocodes = int(locals().get("max_job_geocodes", 0))
 
         for it in items_sorted:
             ll = extract_latlon_from_item(it)
@@ -1076,7 +1137,6 @@ with col1:
                 }
             )
 
-        # Gruppieren nach Koordinaten (damit Marker nicht "verschwinden" bei identischem Ort)
         groups = defaultdict(list)
         for m in raw_markers:
             key = (round(m["lat"], 6), round(m["lon"], 6))
@@ -1094,10 +1154,10 @@ with col1:
                 base["title"] = f"{len(group)} Treffer an diesem Ort"
                 markers.append(base)
 
-        st.caption(f"Treffer gesamt: {len(items_sorted)} | Marker auf Karte: {len(markers)}")
-
         if debug:
-            st.info(f"Debug: items_sorted={len(items_sorted)} | raw_marker={len(raw_markers)} | grouped_marker={len(markers)} | missing_coords={missing_coords}")
+            st.info(f"Marker nach Gruppierung: {len(markers)} | ursprüngliche Marker: {len(raw_markers)} | ohne Koordinaten: {missing_coords}")
+
+        st.caption(f"Treffer gesamt: {len(items_sorted)} | Marker auf Karte: {len(markers)}")
 
         if markers:
             st.write("### Karte")
@@ -1113,8 +1173,9 @@ with col1:
             idx = int(it.get("_idx", 0) or 0)
             k = it.get("_key") or item_key(it)
             is_new = (k in new_keys)
+            is_hidden = (k in hidden_keys)
 
-            score, parts = score_breakdown(it, int(ho_bonus))
+            score, parts = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))
 
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
             t_min = travel_time_minutes(dist, float(speed_kmh))
@@ -1125,10 +1186,9 @@ with col1:
             ho_tag = " 🏠" if is_homeoffice_item(it) else ""
 
             org = match_target_org(item_company(it))
+            target_tag = ""
             if org:
                 target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
-            else:
-                target_tag = ""
 
             num_txt = f"{idx:02d}" if idx > 0 else "??"
             dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
@@ -1148,6 +1208,22 @@ with col1:
             with st.expander(label):
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                 st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
+
+                # ---- Hide/Unhide controls ----
+                cH1, cH2 = st.columns([1.4, 6.6])
+                with cH1:
+                    if not is_hidden:
+                        if st.button("🙈 Ausblenden", key=f"hide_{k}"):
+                            hidden_keys.add(k)
+                            save_hidden_jobs(hidden_keys)
+                            st.rerun()
+                    else:
+                        if st.button("👁️ Einblenden", key=f"unhide_{k}"):
+                            hidden_keys.discard(k)
+                            save_hidden_jobs(hidden_keys)
+                            st.rerun()
+                with cH2:
+                    st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
 
                 rid = item_id_raw(it) or "—"
                 facts = [
@@ -1172,7 +1248,10 @@ with col1:
                     except Exception:
                         st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
 
-                # BA Web Link + Route
+                # Score-Aufschlüsselung bleibt hier als Info (ohne extra Checkbox)
+                st.write("**Score-Aufschlüsselung**")
+                st.code(" | ".join(parts))
+
                 web_url = jobsuche_web_url(it)
                 ll = extract_latlon_from_item(it)
                 if web_url or ll:
@@ -1224,7 +1303,7 @@ with col1:
                 else:
                     st.info("Keine ausführliche Beschreibung im Detail-Response gefunden. Nutze ggf. den BA-Link oben.")
 
-    # -------------------- TAB 2: Firmencheck (manuell) --------------------
+    # -------------------- TAB 2: Firmencheck (manuell, pro Firma) --------------------
     with tab_company:
         st.subheader("Firmencheck (manuell, pro Firma)")
         st.caption("Öffne die Karriereseite, trage Anzahl + Notizen ein und speichere 'Heute geprüft'.")
@@ -1262,8 +1341,8 @@ with col1:
                 return "🟡", f"{ds} Tage"
             return "🟢", f"{ds} Tage"
 
+        # Übersicht
         st.markdown("### Übersicht & Tools")
-
         only_high = st.checkbox("Nur High-Priority (🔥) anzeigen", value=False, key="fc_only_high")
         name_filter = st.text_input("Firma suchen (Teilstring)", value="", key="fc_name_filter").strip().lower()
         only_interesting = st.checkbox("Nur Firmen mit ⭐ interessanten Stellen", value=False, key="fc_only_interesting")
@@ -1298,14 +1377,10 @@ with col1:
 
         st.divider()
 
-        export_payload = {
-            "exported_at": datetime.now().isoformat(timespec="seconds"),
-            "today": today,
-            "items": []
-        }
+        export_payload = {"exported_at": datetime.now().isoformat(timespec="seconds"), "today": today, "items": []}
         csv_lines = ["name,url,priority,last_checked,count,prev_count,diff,notes"]
 
-        def org_sort_key(o: Dict[str, Any]) -> Tuple[int, int, str]:
+        def org_sort_key(o: Dict[str, Any]) -> Tuple[int, int, int, str]:
             pr = 0 if o.get("priority") == "high" else 1
             org_name = o.get("name", "")
             data = company_state.get(org_name, {})
@@ -1319,7 +1394,7 @@ with col1:
                 ds_rank = -ds
             return (pr, overdue_rank, ds_rank, org_name)
 
-        filtered_orgs: List[Dict[str, Any]] = []
+        filtered_orgs = []
         for org in sorted(TARGET_ORGS, key=org_sort_key):
             if only_high and org.get("priority") != "high":
                 continue
@@ -1355,40 +1430,48 @@ with col1:
             priority = org.get("priority", "")
             last_checked = str(data.get("last_checked") or "")
             notes_saved = str(data.get("notes") or "")
+
             diff_saved = saved_count - prev_count
 
-            export_payload["items"].append({
-                "name": org_name,
-                "url": url,
-                "priority": priority,
-                "last_checked": last_checked,
-                "count": saved_count,
-                "prev_count": prev_count,
-                "diff": diff_saved,
-                "notes": notes_saved,
-            })
+            export_payload["items"].append(
+                {
+                    "name": org_name,
+                    "url": url,
+                    "priority": priority,
+                    "last_checked": last_checked,
+                    "count": saved_count,
+                    "prev_count": prev_count,
+                    "diff": diff_saved,
+                    "notes": notes_saved,
+                }
+            )
 
             def _csv_safe(s: str) -> str:
                 s = (s or "").replace('"', '""').replace("\n", " ").replace("\r", " ")
                 return f'"{s}"'
 
-            csv_lines.append(",".join([
-                _csv_safe(org_name),
-                _csv_safe(url),
-                _csv_safe(priority),
-                _csv_safe(last_checked),
-                str(saved_count),
-                str(prev_count),
-                str(diff_saved),
-                _csv_safe(notes_saved),
-            ]))
+            csv_lines.append(
+                ",".join(
+                    [
+                        _csv_safe(org_name),
+                        _csv_safe(url),
+                        _csv_safe(priority),
+                        _csv_safe(last_checked),
+                        str(saved_count),
+                        str(prev_count),
+                        str(diff_saved),
+                        _csv_safe(notes_saved),
+                    ]
+                )
+            )
 
             hp = "🔥 " if org.get("priority") == "high" else ""
+            emoji, age_label = freshness_badge(str(data.get("last_checked") or ""), int(warn_days), int(crit_days))
+            diff_tag = f" · 🟢 +{diff_saved}" if diff_saved > 0 else (f" · 🔴 {diff_saved}" if diff_saved < 0 else "")
+            count_tag = f" · ⭐ {saved_count} interessant" if saved_count > 0 else ""
+
             headL, headR, headX = st.columns([5, 1.3, 1.1])
             with headL:
-                emoji, age_label = freshness_badge(str(data.get("last_checked") or ""), int(warn_days), int(crit_days))
-                diff_tag = f" · 🟢 +{diff_saved}" if diff_saved > 0 else (f" · 🔴 {diff_saved}" if diff_saved < 0 else "")
-                count_tag = f" · ⭐ {saved_count} interessant" if saved_count > 0 else ""
                 st.markdown(f"### {emoji} {hp}🏢 {org_name}{count_tag}{diff_tag}  ·  {age_label}")
                 st.caption(f"Zuletzt geprüft: {data.get('last_checked') or '—'}")
             with headR:
