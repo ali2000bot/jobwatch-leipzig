@@ -159,7 +159,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "physiotherapeut", "bauhelfer", "sozialpädagog",
     "minijob", "junior", "juristisch", "maschinenbediener", "produktionsmitarbeiter",
     "gießereihelfer", "sachbearbeitung", "montagehelfer", "fertigungsmitarbeiter",
-    "arbeitsvorbereiter",
+    "arbeitsvorbereiter", "maler",
     # Pflege/Gesundheit
     "pflege", "krankenpfleger", "pflegefachkraft", "pflegedienst",
     "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut",
