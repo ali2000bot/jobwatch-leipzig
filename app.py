@@ -1043,24 +1043,36 @@ with col1:
 
         wo = home_query
 
+        # Live-UI
+        live_status = st.empty()
+        live_progress = st.progress(0)
+        live_hint = st.empty()
+        
         with st.spinner("Suche läuft…"):
             all_items: List[Dict[str, Any]] = []
             errs: List[str] = []
             qmap = build_queries()
 
-            MAX_PAGES = 100   # holt bis zu 100 Seiten je Jobart (kannst du später auch als UI-Select machen)
-            MAX_RESULTS = 2000
+            total_limit = int(max_results)
+            pages_limit = int(max_pages)
+            done_pages = 0
+            expected_pages = max(1, len(selected_profiles) * pages_limit * (2 if include_ho else 1))
 
             for name in selected_profiles:
                 q = qmap.get(name, "")
 
-                # -------------------------
-                # Vor Ort
-                # -------------------------
-                for page in range(1, int(max_pages) + 1):
-
-                    if len(all_items) >= int(max_results):
+                # -------- Vor Ort --------
+                for page in range(1, pages_limit + 1):
+                    if len(all_items) >= total_limit:
                         break
+
+                    done_pages += 1
+                    pct = min(1.0, done_pages / expected_pages)
+
+                    live_status.markdown(
+                        f"**Live:** Profil **{name}** · Vor Ort · Seite **{page}/{pages_limit}** · Treffer **{len(all_items)}/{total_limit}**"
+                    )
+                    live_progress.progress(int(pct * 100))
 
                     items_local, e1 = fetch_search(
                         api_key, wo, int(umkreis), q, aktualitaet, int(size),
@@ -1074,6 +1086,8 @@ with col1:
                     if not items_local:
                         break
 
+                    live_hint.caption(f"Letzte Seite: +{len(items_local)} Treffer")
+
                     for it in items_local:
                         it["_profile"] = name
                         it["_bucket"] = f"Vor Ort ({umkreis} km)"
@@ -1082,14 +1096,19 @@ with col1:
                     if len(items_local) < int(size):
                         break
 
-                # -------------------------
-                # Homeoffice
-                # -------------------------
+                # -------- Homeoffice --------
                 if include_ho:
-                    for page in range(1, int(max_pages) + 1):
-
-                        if len(all_items) >= int(max_results):
+                    for page in range(1, pages_limit + 1):
+                        if len(all_items) >= total_limit:
                             break
+
+                        done_pages += 1
+                        pct = min(1.0, done_pages / expected_pages)
+
+                        live_status.markdown(
+                            f"**Live:** Profil **{name}** · Homeoffice · Seite **{page}/{pages_limit}** · Treffer **{len(all_items)}/{total_limit}**"
+                        )
+                        live_progress.progress(int(pct * 100))
 
                         items_ho, e2 = fetch_search(
                             api_key, wo, int(ho_umkreis), q, aktualitaet, int(size),
@@ -1103,6 +1122,8 @@ with col1:
                         if not items_ho:
                             break
 
+                        live_hint.caption(f"Letzte Seite (HO): +{len(items_ho)} Treffer")
+
                         for it in items_ho:
                             it["_profile"] = name
                             it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
@@ -1110,6 +1131,9 @@ with col1:
 
                         if len(items_ho) < int(size):
                             break
+
+        live_progress.progress(100)
+        live_status.success(f"Fertig. Roh-Treffer: {len(all_items)}")
         
         if errs:
             st.error("Fehler / Hinweise")
