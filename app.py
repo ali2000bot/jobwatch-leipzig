@@ -441,7 +441,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     # Lager/Logistik/Produktion (wenn zu viel Rauschen)
     "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
     "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer",
-    "maschinenbediener", "produktionsmitarbeiter", "montagehelfer",
+    "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer", 
     # Büro/sonstiges Rauschen
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
     "insurance", "versicherung",
