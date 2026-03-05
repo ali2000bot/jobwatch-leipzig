@@ -1123,6 +1123,9 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
+        if len(all_items) >= MAX_RESULTS:
+            st.warning("Suche wurde bei 1000 Treffern gestoppt.")
+            
         st.caption(f"Neu seit Snapshot: {len(new_keys)}")
 
         # High-Priority Section
