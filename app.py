@@ -1157,6 +1157,39 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
+        st.divider()
+        with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
+            if not favorites:
+                st.info("Noch keine gemerkten Stellen.")
+            else:
+                # sortiert nach Zeitpunkt
+                fav_items = []
+                for it in items_sorted:
+                    k = it.get("_key") or item_key(it)
+                    if k in favorites:
+                        fav_items.append((k, it))
+
+                if not fav_items:
+                    st.warning("Es sind Favoriten gespeichert, aber sie sind in der aktuellen Suche nicht enthalten.")
+                    st.caption("Tipp: Favoriten bleiben gespeichert – erscheinen aber nur, wenn sie wieder gefunden werden.")
+                else:
+                    for k, it in fav_items:
+                        note = (favorites.get(k, {}) or {}).get("note", "")
+                        when = (favorites.get(k, {}) or {}).get("added_at", "")
+                        st.markdown(
+                            f"**{item_title(it)}**  \n"
+                            f"{item_company(it)} · {pretty_location(it)}  \n"
+                            f"{('📝 ' + note) if note else ''}  \n"
+                            f"{('🕒 ' + when) if when else ''}"
+                        )
+                        web_url = jobsuche_web_url(it)
+                        if web_url:
+                            try:
+                                st.link_button("🔗 BA öffnen", web_url, key=f"fav_link_{k}")
+                            except Exception:
+       
+                        st.markdown(f"[🔗 BA öffnen]({web_url})")
+                st.divider()
         if len(all_items) >= MAX_RESULTS:
             st.warning("Suche wurde bei 2000 Treffern gestoppt.")
             
