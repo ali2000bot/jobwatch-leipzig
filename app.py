@@ -1007,7 +1007,7 @@ with col1:
             qmap = build_queries()
 
             MAX_PAGES = 100   # holt bis zu 100 Seiten je Jobart (kannst du später auch als UI-Select machen)
-            MAX_RESULTS = 1000
+            MAX_RESULTS = 2000
 
             for name in selected_profiles:
                 q = qmap.get(name, "")
