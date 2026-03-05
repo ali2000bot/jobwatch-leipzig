@@ -928,7 +928,7 @@ with st.sidebar:
         st.caption("Nur wenn du feintunen oder debuggen willst.")
 
         st.markdown("**Suche-Breite**")
-        max_pages = st.slider("Max. Seiten pro Jobart", 1, 100, 20, 1)
+        max_pages = st.slider("Max. Seiten pro Jobart", 1, 100, 100, 1)
         max_results = st.slider("Stopp bei max. Treffern", 100, 2000, 2000, 100)
 
         enable_job_geocode = st.checkbox("Fehlende Koordinaten für Karte nachschlagen (langsamer)", value=False)
