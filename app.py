@@ -1223,7 +1223,7 @@ with col1:
                                 st.markdown(f"[🔗 BA öffnen]({web_url})")
                         st.divider()
  
-        if len(all_items) >= MAX_RESULTS:
+        if len(all_items) >= int(max_results):
             st.warning("Suche wurde bei 2000 Treffern gestoppt.")
             
         st.caption(f"Neu seit Snapshot: {len(new_keys)}")
