@@ -1276,8 +1276,9 @@ with col1:
             num_txt = f"{idx:02d}" if idx > 0 else "??"
             dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
-            label = f"{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{ho_tag}{target_tag}"
-
+            pin = "📌 " if fav else ""
+            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{ho_tag}{target_tag}"
+            
             meta_text = " | ".join(
                 [
                     f"Score: {score}",
