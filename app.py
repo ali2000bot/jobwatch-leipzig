@@ -446,7 +446,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     # Büro/sonstiges Rauschen
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter", 
-    "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz",
+    "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent", 
 ]
 
 def parse_keywords(text: str) -> List[str]:
