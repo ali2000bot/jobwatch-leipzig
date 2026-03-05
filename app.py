@@ -1292,6 +1292,31 @@ with col1:
             with st.expander(label):
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                 st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
+                # --- Favorit togglen + Notiz ---
+                cFav1, cFav2 = st.columns([1.2, 3.8])
+                with cFav1:
+                    if not fav:
+                        if st.button("📌 Merken", key=f"fav_add_{k}"):
+                            favorites[k] = {
+                                "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                "note": favorites.get(k, {}).get("note", "")
+                            }
+                            save_favorites(favorites)
+                            st.rerun()
+                    else:
+                        if st.button("🗑️ Entfernen", key=f"fav_del_{k}"):
+                            favorites.pop(k, None)
+                            save_favorites(favorites)
+                            st.rerun()
+
+                with cFav2:
+                    if fav:
+                        note_key = f"fav_note_{k}"
+                        note_val = (favorites.get(k, {}) or {}).get("note", "")
+                        new_note = st.text_input("Notiz (optional)", value=note_val, key=note_key)
+                        if new_note != note_val:
+                            favorites[k]["note"] = new_note
+                            save_favorites(favorites)
 
                 # ---- Hide/Unhide controls ----
                 cH1, cH2 = st.columns([1.4, 6.6])
