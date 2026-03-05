@@ -442,10 +442,11 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
     "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer",
     "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer", 
+    "schweißer", "bauleiter", 
     # Büro/sonstiges Rauschen
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter", 
-    "personalreferent", "junior", "bürosachbearbeitung", "referent",
+    "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz",
 ]
 
 def parse_keywords(text: str) -> List[str]:
@@ -849,7 +850,7 @@ with st.sidebar:
     wo = home_query  # BA-Ort = Wohnort
 
     umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
-    include_ho = st.checkbox("Homeoffice berücksichtigen", value=True)
+    include_ho = st.checkbox("Homeoffice berücksichtigen", value=False)
     ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
 
     aktualitaet_option = st.selectbox(
