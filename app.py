@@ -22,6 +22,7 @@ STATE_DIR = os.path.join(APP_DIR, ".jobwatch_state")
 SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
 COMPANY_STATE_FILE = os.path.join(STATE_DIR, "company_monitor.json")
 HIDDEN_JOBS_FILE = os.path.join(STATE_DIR, "hidden_jobs.json")
+FAVORITES_FILE = os.path.join(STATE_DIR, "favorites.json")
 
 
 def ensure_state_dir() -> None:
@@ -57,12 +58,41 @@ def load_company_state() -> Dict[str, Any]:
         except Exception:
             return {}
 
-
+# ---------------- Favoriten ---------------------
 def save_company_state(state: Dict[str, Any]) -> None:
     ensure_state_dir()
     with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
+def load_favorites() -> Dict[str, Any]:
+    """
+    Struktur:
+    {
+      "<job_key>": {
+        "added_at": "YYYY-MM-DD HH:MM",
+        "note": "... optional ..."
+      },
+      ...
+    }
+    """
+    if not os.path.exists(FAVORITES_FILE):
+        return {}
+    try:
+        with open(FAVORITES_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def save_favorites(favs: Dict[str, Any]) -> None:
+    ensure_state_dir()
+    with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
+        json.dump(favs, f, ensure_ascii=False, indent=2)
+
+
+def is_favorited(job_key: str, favs: Dict[str, Any]) -> bool:
+    return bool(job_key) and job_key in favs
 
 # -------------------- Hidden jobs helpers --------------------
 def load_hidden_jobs() -> Dict[str, Any]:
