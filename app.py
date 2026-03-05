@@ -932,6 +932,7 @@ with st.sidebar:
         max_pages = st.slider("Max. Seiten pro Jobart", 1, 100, 100, 1)
         max_results = st.slider("Stopp bei max. Treffern", 100, 2000, 2000, 100)
         st.caption(f"Maximal mögliche Jobs: {int(max_pages)*size}")
+        st.caption(f"Technisches Maximum: {int(max_pages)*size} | App-Limit: {int(max_results)}")
 
         enable_job_geocode = st.checkbox("Fehlende Koordinaten für Karte nachschlagen (langsamer)", value=False)
         max_job_geocodes = st.slider("Max. Geocoding pro Lauf", 0, 50, 10, 5)
