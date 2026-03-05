@@ -1004,7 +1004,7 @@ with col1:
             errs: List[str] = []
             qmap = build_queries()
 
-            MAX_PAGES = 10   # holt bis zu 10 Seiten je Jobart (kannst du später auch als UI-Select machen)
+            MAX_PAGES = 100   # holt bis zu 100 Seiten je Jobart (kannst du später auch als UI-Select machen)
             for name in selected_profiles:
                 q = qmap.get(name, "")
             
