@@ -1004,26 +1004,58 @@ with col1:
             errs: List[str] = []
             qmap = build_queries()
 
+            MAX_PAGES = 10   # holt bis zu 10 Seiten je Jobart (kannst du später auch als UI-Select machen)
             for name in selected_profiles:
                 q = qmap.get(name, "")
+            
+                # -------------------------
+                # Vor Ort: mehrere Seiten
+                # -------------------------
+                for page in range(1, MAX_PAGES + 1):
+                    items_local, e1 = fetch_search(
+                        api_key, wo, int(umkreis), q, aktualitaet, int(size),
+                        page=page, arbeitszeit=None
+                    )
+                    if e1:
+                        errs.append(f"{name} (vor Ort) Seite {page}: {e1}")
+                        break
 
-                items_local, e1 = fetch_search(api_key, wo, int(umkreis), q, aktualitaet, int(size), page=1, arbeitszeit=None)
-                if e1:
-                    errs.append(f"{name} (vor Ort): {e1}")
-                for it in items_local:
-                    it["_profile"] = name
-                    it["_bucket"] = f"Vor Ort ({umkreis} km)"
-                all_items.extend(items_local)
+                    if not items_local:
+                        break
 
-                if include_ho:
-                    items_ho, e2 = fetch_search(api_key, wo, int(ho_umkreis), q, aktualitaet, int(size), page=1, arbeitszeit="ho")
-                    if e2:
-                        errs.append(f"{name} (homeoffice): {e2}")
-                    for it in items_ho:
+                    for it in items_local:
                         it["_profile"] = name
-                        it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
-                    all_items.extend(items_ho)
+                        it["_bucket"] = f"Vor Ort ({umkreis} km)"
+                    all_items.extend(items_local)
 
+                    # Wenn weniger als "size" zurückkommt, ist meist Schluss
+                    if len(items_local) < int(size):
+                        break
+
+                # -------------------------
+                # Homeoffice: mehrere Seiten
+                # -------------------------
+                if include_ho:
+                    for page in range(1, MAX_PAGES + 1):
+                        items_ho, e2 = fetch_search(
+                            api_key, wo, int(ho_umkreis), q, aktualitaet, int(size),
+                            page=page, arbeitszeit="ho"
+                        )
+                        if e2:
+                            errs.append(f"{name} (homeoffice) Seite {page}: {e2}")
+                            break
+
+                        if not items_ho:
+                            break
+
+                        for it in items_ho:
+                            it["_profile"] = name
+                            it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
+                        all_items.extend(items_ho)
+
+                        if len(items_ho) < int(size):
+                            break
+        
         if errs:
             st.error("Fehler / Hinweise")
             for e in errs:
