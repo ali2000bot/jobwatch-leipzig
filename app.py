@@ -443,7 +443,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer",
     "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer", 
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
-    "metallhelfer", "metallbauer", 
+    "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant",
     # Büro/sonstiges Rauschen
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter", 
