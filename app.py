@@ -1125,7 +1125,7 @@ with col1:
 
         st.subheader(f"Treffer: {len(items_sorted)}")
         if len(all_items) >= MAX_RESULTS:
-            st.warning("Suche wurde bei 1000 Treffern gestoppt.")
+            st.warning("Suche wurde bei 2000 Treffern gestoppt.")
             
         st.caption(f"Neu seit Snapshot: {len(new_keys)}")
 
