@@ -942,6 +942,11 @@ with st.sidebar:
         mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
         speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
+        max_distance_filter = st.slider(
+            "Maximale Entfernung anzeigen (km)",
+            20, 300, 150, 10
+        )
+
         st.divider()
         st.markdown("**Score-Tuning**")
         ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
@@ -1185,6 +1190,15 @@ with col1:
             score = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))[0]
             return (priority_rank, dist_rank, is_new_rank, -score, item_title(it).lower())
 
+        # Entfernungslimit anwenden
+        items_now_filtered = []
+        for it in items_now:
+            dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+            if dist is None or dist <= float(max_distance_filter):
+                items_now_filtered.append(it)
+
+        items_now = items_now_filtered
+        
         items_sorted = sorted(items_now, key=sort_key)
 
         # Nummerierung
@@ -1192,6 +1206,7 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
+        st.caption(f"Entfernungslimit aktiv: {max_distance_filter} km")
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
