@@ -180,6 +180,7 @@ def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
         return None
     return float(lat), float(lon)
 
+favorites = load_favorites()
 
 # ============================================================
 # BA Jobsuche (App Endpoint)
@@ -806,7 +807,6 @@ ho_bonus = 8
 
 # Load snapshot once (right column uses it too)
 snap = load_snapshot()
-favorites = load_favorites()
 
 # Sidebar
 with st.sidebar:
