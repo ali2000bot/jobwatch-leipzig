@@ -1186,10 +1186,10 @@ with col1:
                         if web_url:
                             try:
                                 st.link_button("🔗 BA öffnen", web_url, key=f"fav_link_{k}")
-                            except Exception:
-       
-                        st.markdown(f"[🔗 BA öffnen]({web_url})")
-                st.divider()
+                            except Exception:   
+                                st.markdown(f"[🔗 BA öffnen]({web_url})")
+                        st.divider()
+ 
         if len(all_items) >= MAX_RESULTS:
             st.warning("Suche wurde bei 2000 Treffern gestoppt.")
             
