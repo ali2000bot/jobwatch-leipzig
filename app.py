@@ -433,7 +433,8 @@ DEFAULT_LEADERSHIP_KEYWORDS = [
 DEFAULT_NEGATIVE_KEYWORDS = [
     # Pflege/Gesundheit
     "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
-    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut",
+    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut", "betreuungskraft", 
+    "zahntechniker", "zahntechnikerin", 
     # Gastro/Service
     "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
     # Reinigung/Facility
