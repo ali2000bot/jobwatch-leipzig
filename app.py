@@ -442,7 +442,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
     "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer",
     "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer", 
-    "schweißer", "bauleiter", 
+    "schweißer", "bauleiter", "polymerchemiker", "chemiker", 
     # Büro/sonstiges Rauschen
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter", 
