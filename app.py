@@ -798,7 +798,7 @@ if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
 # Defaults (werden in Sidebar überschrieben)
-size = 50
+size = 100
 api_key = API_KEY_DEFAULT
 debug = False
 near_km = 25
@@ -946,7 +946,7 @@ with st.sidebar:
 
         st.divider()
         st.markdown("**Technik**")
-        size = st.selectbox("Treffer pro Seite", [25, 50, 100], index=1)
+    
         api_key = st.text_input("X-API-Key (nur bei Problemen)", value=API_KEY_DEFAULT)
         debug = st.checkbox("Debug anzeigen", value=False)
 
