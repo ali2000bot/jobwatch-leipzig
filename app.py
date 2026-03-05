@@ -806,6 +806,7 @@ ho_bonus = 8
 
 # Load snapshot once (right column uses it too)
 snap = load_snapshot()
+favorites = load_favorites()
 
 # Sidebar
 with st.sidebar:
