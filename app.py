@@ -444,12 +444,12 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer",
     "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer", 
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
-    "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant",
+    "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter", 
     # Büro/sonstiges Rauschen
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter", 
     "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent", 
-    "facharzt", "integrationshelfer", 
+    "facharzt", "integrationshelfer", "empfangsleiter", 
 ]
 
 def parse_keywords(text: str) -> List[str]:
