@@ -804,6 +804,8 @@ near_km = 25
 mid_km = 60
 speed_kmh = 75
 ho_bonus = 8
+max_pages = 100
+max_results = 1000
 
 # Load snapshot once (right column uses it too)
 snap = load_snapshot()
@@ -1024,6 +1026,8 @@ with col1:
 
         if show_hidden_manage:
             st.subheader("🙈 Ausblend-Liste")
+            if len(all_items) >= int(max_results):
+                st.warning(f"Suche wurde bei {int(max_results)} Treffern gestoppt (Erweitert → Stopp-Limit).")
             st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
             cHM1, cHM2 = st.columns([1.2, 3.8])
             with cHM1:
@@ -1052,9 +1056,9 @@ with col1:
                 # -------------------------
                 # Vor Ort
                 # -------------------------
-                for page in range(1, MAX_PAGES + 1):
+                for page in range(1, int(max_pages) + 1):
 
-                    if len(all_items) >= MAX_RESULTS:
+                    if len(all_items) >= int(max_results):
                         break
 
                     items_local, e1 = fetch_search(
@@ -1081,9 +1085,9 @@ with col1:
                 # Homeoffice
                 # -------------------------
                 if include_ho:
-                    for page in range(1, MAX_PAGES + 1):
+                    for page in range(1, int(max_pages) + 1):
 
-                        if len(all_items) >= MAX_RESULTS:
+                        if len(all_items) >= int(max_results):
                             break
 
                         items_ho, e2 = fetch_search(
