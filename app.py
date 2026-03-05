@@ -1256,6 +1256,7 @@ with col1:
             k = it.get("_key") or item_key(it)
             is_new = (k in new_keys)
             is_hidden = (k in hidden_keys)
+            fav = is_favorited(k, favorites)
 
             score, parts = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))
 
