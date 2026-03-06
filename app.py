@@ -963,8 +963,7 @@ with st.sidebar:
         umkreis = int(max_distance_filter)
         st.divider()
         st.markdown("**Score-Tuning**")
-        ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
-
+        ho_bonus = 0
         st.divider()
         st.markdown("**Technik**")
     
@@ -1403,7 +1402,6 @@ with col1:
                     ("Nr.", num_txt),
                     ("Distanz", dist_txt),
                     ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
-                    ("Homeoffice", "Ja (Bonus aktiv)" if is_homeoffice_item(it) else "—"),
                     ("Ziel-Organisation", org["name"] if org else "—"),
                     ("Arbeitgeber", item_company(it) or "—"),
                     ("Ort", pretty_location(it)),
