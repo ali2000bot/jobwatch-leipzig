@@ -886,7 +886,7 @@ with st.sidebar:
     st.subheader("Suche")
     wo = home_query  # BA-Ort = Wohnort
 
-    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
+    # umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
     include_ho = st.checkbox("Homeoffice berücksichtigen", value=False)
     ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
 
@@ -946,7 +946,7 @@ with st.sidebar:
             "Maximale Entfernung anzeigen (km)",
             20, 300, 150, 10
         )
-
+        umkreis = int(max_distance_filter)
         st.divider()
         st.markdown("**Score-Tuning**")
         ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
