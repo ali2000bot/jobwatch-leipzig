@@ -587,11 +587,9 @@ def leaflet_map_html(
     max_distance_km: float,
     height_px: int = 520,
 ) -> str:
-    
     radius_m = int(max_distance_km * 1000)
-    
     markers_json = json.dumps(markers, ensure_ascii=False)
-    
+
     return f"""
 <!doctype html>
 <html>
@@ -666,14 +664,15 @@ def leaflet_map_html(
   const homeIcon = numberedIcon("#1565c0", "");
   const homeMarker = L.marker([{home_lat}, {home_lon}], {{icon: homeIcon}}).addTo(fg);
   homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
+
   // Pendelradius-Kreis
-  L.circle([home_lat, home_lon], {
+  L.circle([{home_lat}, {home_lon}], {{
     radius: {radius_m},
     color: "#1565c0",
     weight: 2,
     fillColor: "#1565c0",
     fillOpacity: 0.08
-  }).addTo(map);
+  }}).addTo(map);
 
   markers.forEach(m => {{
     const lat = m.lat, lon = m.lon;
@@ -690,7 +689,7 @@ def leaflet_map_html(
 
     const popup =
       '<b>' + idx + ') ' + title + '</b><br/>' + company
-      + (dist!=null ? '<br/>Dist: ' + dist + ' km' : '');
+      + (dist != null ? '<br/>Dist: ' + dist + ' km' : '');
 
     L.marker([lat, lon], {{icon: icon}}).addTo(fg).bindPopup(popup);
   }});
@@ -704,7 +703,6 @@ def leaflet_map_html(
 </body>
 </html>
 """
-
 
 # ============================================================
 # Score / Relevanz
