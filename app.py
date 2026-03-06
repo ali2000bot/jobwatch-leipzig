@@ -1044,6 +1044,7 @@ with col1:
         # Hidden jobs state
         _hidden_data = load_hidden_jobs()
         hidden_keys: Set[str] = set(_hidden_data.get("hidden", []))
+        favorites = load_favorites()
 
         if show_hidden_manage:
             st.subheader("🙈 Ausblend-Liste")
@@ -1325,14 +1326,13 @@ with col1:
         st.divider()
         st.write("### Ergebnisse")
         for it in items_sorted:
-
             idx = int(it.get("_idx", 0) or 0)
             k = it.get("_key") or item_key(it)
 
             # neu seit Snapshot
             is_new = (k in new_keys)
 
-            # Favorit
+            # Favorit / Hidden
             fav = is_favorited(k, favorites)
             pin = "📌 " if fav else ""
             is_hidden = (k in hidden_keys)
@@ -1377,16 +1377,33 @@ with col1:
             ])
 
             with st.expander(label):
-
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                 st.markdown(
                     badge + f' <span style="color:#666;">{meta_text}</span>',
                     unsafe_allow_html=True,
                 )
-                # Ausblenden / Einblenden
-                cHide1, cHide2 = st.columns([1.2, 3.8])
 
-                with cHide1:
+                # -------------------------
+                # Favorit + Ausblenden
+                # -------------------------
+                cA, cB, cC, cD = st.columns([1.2, 1.4, 1.2, 4.2])
+
+                with cA:
+                    if fav:
+                        if st.button("🗑️ Merker", key=f"unfav_{k}"):
+                            favorites.pop(k, None)
+                            save_favorites(favorites)
+                            st.rerun()
+                    else:
+                        if st.button("📌 Merken", key=f"fav_{k}"):
+                            favorites[k] = {
+                                "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                "note": favorites.get(k, {}).get("note", ""),
+                            }
+                            save_favorites(favorites)
+                            st.rerun()
+
+                with cB:
                     if not is_hidden:
                         if st.button("🙈 Ausblenden", key=f"hide_{k}"):
                             hidden_keys.add(k)
@@ -1398,15 +1415,31 @@ with col1:
                             save_hidden_jobs(hidden_keys)
                             st.rerun()
 
-                with cHide2:
-                    st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
-                
+                with cC:
+                    if org:
+                        try:
+                            st.link_button("🏢 Firma", org["url"], key=f"org_{k}")
+                        except Exception:
+                            st.markdown(f"[🏢 Firma]({org['url']})")
+
+                with cD:
+                    st.caption("Favoriten und ausgeblendete Jobs bleiben für spätere Suchen gespeichert.")
+
+                # Favoriten-Notiz
+                if fav:
+                    note_key = f"fav_note_{k}"
+                    note_val = (favorites.get(k, {}) or {}).get("note", "")
+                    new_note = st.text_input("Notiz (optional)", value=note_val, key=note_key)
+                    if new_note != note_val:
+                        favorites[k]["note"] = new_note
+                        save_favorites(favorites)
+
                 rid = item_id_raw(it) or "—"
 
                 facts = [
                     ("Nr.", num_txt),
                     ("Distanz", dist_txt),
-                    ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min else "—"),
+                    ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
                     ("Ziel-Organisation", org["name"] if org else "—"),
                     ("Arbeitgeber", item_company(it) or "—"),
                     ("Ort", pretty_location(it)),
@@ -1415,44 +1448,24 @@ with col1:
                     ("Score", str(score)),
                     ("RefNr/BA-ID", rid),
                 ]
-
                 render_fact_grid(facts)
 
-                # Favorit Button
-                col_fav1, col_fav2 = st.columns([1, 4])
-
-                with col_fav1:
-                    if fav:
-                        if st.button("❌ Favorit entfernen", key=f"unfav_{k}"):
-                            favorites.remove(k)
-                            save_favorites(favorites)
-                            st.rerun()
-                    else:
-                        if st.button("📌 Merken", key=f"fav_{k}"):
-                            favorites.add(k)
-                            save_favorites(favorites)
-                            st.rerun()
-
-                # Karriereseite
-                if org:
-                    st.write("**Karriereseite (Ziel-Organisation)**")
-                    st.link_button("🏢 Karriereseite öffnen", org["url"])
-
-                # Score Details
                 st.write("**Score-Aufschlüsselung**")
                 st.code(" | ".join(parts))
 
-                # BA Web Link
+                # BA Web Link + Route
                 web_url = jobsuche_web_url(it)
                 ll = extract_latlon_from_item(it)
 
                 if web_url or ll:
-
                     cL, cR = st.columns(2)
 
                     with cL:
                         if web_url:
-                            st.link_button("🔗 In BA Jobsuche öffnen", web_url)
+                            try:
+                                st.link_button("🔗 In BA Jobsuche öffnen", web_url, key=f"ba_{k}")
+                            except Exception:
+                                st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
 
                     with cR:
                         if ll:
@@ -1462,11 +1475,14 @@ with col1:
                                 float(ll[0]),
                                 float(ll[1]),
                             )
-                            st.link_button("🚗 Route in Google Maps", gdir)
+                            try:
+                                st.link_button("🚗 Route in Google Maps", gdir, key=f"route_{k}")
+                            except Exception:
+                                st.markdown(f"[🚗 Route in Google Maps]({gdir})")
 
                 st.divider()
 
-        
+                # Details
                 api_url = details_url_api(it)
                 if not api_url:
                     st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
@@ -1480,6 +1496,7 @@ with col1:
                     st.error(derr)
                     st.info("Wenn Details per API nicht gehen: nutze den BA-Link oben.")
                     continue
+
                 if not details:
                     st.info("Keine Details erhalten.")
                     continue
@@ -1497,7 +1514,8 @@ with col1:
                     st.write(desc)
                 else:
                     st.info("Keine ausführliche Beschreibung im Detail-Response gefunden. Nutze ggf. den BA-Link oben.")
-
+        
+    
     # -------------------- TAB 2: Firmencheck (manuell, pro Firma) --------------------
     with tab_company:
         st.subheader("Firmencheck (manuell, pro Firma)")
