@@ -899,7 +899,7 @@ with st.sidebar:
 
     max_distance_filter = st.slider(
         "Maximale Entfernung (km)",
-        10, 200, 80, 5
+        10, 200, 45, 5
     )
     st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
     # gleicher Wert wird für BA-Suche verwendet
