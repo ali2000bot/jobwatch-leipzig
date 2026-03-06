@@ -1382,7 +1382,24 @@ with col1:
                     badge + f' <span style="color:#666;">{meta_text}</span>',
                     unsafe_allow_html=True,
                 )
+                # Ausblenden / Einblenden
+                cHide1, cHide2 = st.columns([1.2, 3.8])
 
+                with cHide1:
+                    if not is_hidden:
+                        if st.button("🙈 Ausblenden", key=f"hide_{k}"):
+                            hidden_keys.add(k)
+                            save_hidden_jobs(hidden_keys)
+                            st.rerun()
+                    else:
+                        if st.button("👁️ Einblenden", key=f"unhide_{k}"):
+                            hidden_keys.discard(k)
+                            save_hidden_jobs(hidden_keys)
+                            st.rerun()
+
+                with cHide2:
+                    st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
+                
                 rid = item_id_raw(it) or "—"
 
                 facts = [
