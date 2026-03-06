@@ -584,8 +584,10 @@ def leaflet_map_html(
     home_lon: float,
     home_label: str,
     markers: List[Dict[str, Any]],
+    max_distance_km: float,
     height_px: int = 520,
 ) -> str:
+
     markers_json = json.dumps(markers, ensure_ascii=False)
 
     return f"""
