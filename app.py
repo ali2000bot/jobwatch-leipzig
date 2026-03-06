@@ -1194,10 +1194,28 @@ with col1:
         items_now_filtered = []
         for it in items_now:
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-            if dist is None or dist <= float(max_distance_filter):
+
+            if dist is None:
+                items_now_filtered.append(it)
+                continue
+
+            if dist <= float(max_distance_filter):
+                items_now_filtered.append(it)
+                continue
+
+            if include_ho and is_homeoffice_item(it):
                 items_now_filtered.append(it)
 
         items_now = items_now_filtered
+
+        # alt
+        #items_now_filtered = []
+        #for it in items_now:
+        #    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        #    if dist is None or dist <= float(max_distance_filter):
+        #        items_now_filtered.append(it)
+
+        #items_now = items_now_filtered
         
         items_sorted = sorted(items_now, key=sort_key)
 
