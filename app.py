@@ -1337,7 +1337,13 @@ with col1:
             pin = "📌 " if fav else ""
 
             # Score
-            score, parts = score_breakdown(it, int(ho_bonus))
+            score, parts = score_breakdown(
+                it,
+                FOCUS_KEYWORDS,
+                LEADERSHIP_KEYWORDS,
+                NEGATIVE_KEYWORDS,
+                int(ho_bonus),
+            )
 
             # Entfernung
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
