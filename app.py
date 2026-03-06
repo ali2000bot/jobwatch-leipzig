@@ -957,8 +957,8 @@ with st.sidebar:
         max_job_geocodes = st.slider("Max. Geocoding pro Lauf", 0, 50, 10, 5)
 
         st.markdown("**Entfernung / Fahrzeit**")
-        near_km = st.slider("Grün bis (km)", 5, 80, 25, 5)
-        mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
+        near_km = st.slider("Grün bis (km)", 5, 80, 10, 5)
+        mid_km = st.slider("Gelb bis (km)", 10, 150, 35, 5)
         speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
         umkreis = int(max_distance_filter)
