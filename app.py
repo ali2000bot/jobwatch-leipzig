@@ -884,10 +884,19 @@ with st.sidebar:
     # BA-Suche (minimal)
     # -------------------------
     st.subheader("Suche")
-    wo = home_query  # BA-Ort = Wohnort
 
-    # umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
+    wo = home_query
+
+    max_distance_filter = st.slider(
+        "Maximale Entfernung (km)",
+        10, 200, 80, 5
+    )
+
+    # gleicher Wert wird für BA-Suche verwendet
+    umkreis = int(max_distance_filter)
+
     include_ho = st.checkbox("Homeoffice berücksichtigen", value=False)
+    
     ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
 
     aktualitaet_option = st.selectbox(
