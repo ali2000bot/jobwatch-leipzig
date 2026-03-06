@@ -1077,7 +1077,7 @@ with col1:
             total_limit = int(max_results)
             pages_limit = int(max_pages)
             done_pages = 0
-            expected_pages = max(1, len(selected_profiles) * pages_limit * (2 if include_ho else 1))
+            expected_pages = max(1, len(selected_profiles) * pages_limit)
 
             for name in selected_profiles:
                 q = qmap.get(name, "")
@@ -1180,22 +1180,10 @@ with col1:
 
             if dist <= float(max_distance_filter):
                 items_now_filtered.append(it)
-                continue
-
-            if include_ho and is_homeoffice_item(it):
-                items_now_filtered.append(it)
 
         items_now = items_now_filtered
-
-        # alt
-        #items_now_filtered = []
-        #for it in items_now:
-        #    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-        #    if dist is None or dist <= float(max_distance_filter):
-        #        items_now_filtered.append(it)
-
-        #items_now = items_now_filtered
         
+               
         items_sorted = sorted(items_now, key=sort_key)
 
         # Nummerierung
