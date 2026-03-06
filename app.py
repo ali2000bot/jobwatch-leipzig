@@ -1340,6 +1340,8 @@ with col1:
             emo = distance_emoji(bucket)
 
             star = "⭐ " if looks_leadership_strict(it) else ""
+            pin = "📌 " if fav else ""
+            fav = is_favorited(k, favorites)
             label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{target_tag}"
             
             meta_text = " | ".join(
