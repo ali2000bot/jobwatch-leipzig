@@ -1117,41 +1117,6 @@ with col1:
                     if len(items_local) < int(size):
                         break
 
-                # -------- Homeoffice --------
-                if include_ho:
-                    for page in range(1, pages_limit + 1):
-                        if len(all_items) >= total_limit:
-                            break
-
-                        done_pages += 1
-                        pct = min(1.0, done_pages / expected_pages)
-
-                        live_status.markdown(
-                            f"**Live:** Profil **{name}** · Homeoffice · Seite **{page}/{pages_limit}** · Treffer **{len(all_items)}/{total_limit}**"
-                        )
-                        live_progress.progress(int(pct * 100))
-
-                        items_ho, e2 = fetch_search(
-                            api_key, wo, int(ho_umkreis), q, aktualitaet, int(size),
-                            page=page, arbeitszeit="ho"
-                        )
-
-                        if e2:
-                            errs.append(f"{name} (homeoffice) Seite {page}: {e2}")
-                            break
-
-                        if not items_ho:
-                            break
-
-                        live_hint.caption(f"Letzte Seite (HO): +{len(items_ho)} Treffer")
-
-                        for it in items_ho:
-                            it["_profile"] = name
-                            it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
-                            all_items.append(it)
-
-                        if len(items_ho) < int(size):
-                            break
 
         live_progress.progress(100)
         live_status.success(f"Fertig. Roh-Treffer: {len(all_items)}")
