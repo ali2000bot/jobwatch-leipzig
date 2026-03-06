@@ -587,9 +587,11 @@ def leaflet_map_html(
     max_distance_km: float,
     height_px: int = 520,
 ) -> str:
-
+    
+    radius_m = int(max_distance_km * 1000)
+    
     markers_json = json.dumps(markers, ensure_ascii=False)
-
+    
     return f"""
 <!doctype html>
 <html>
@@ -666,7 +668,7 @@ def leaflet_map_html(
   homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
   // Pendelradius-Kreis
   L.circle([home_lat, home_lon], {
-    radius: MAX_RADIUS_METERS,
+    radius: {radius_m},
     color: "#1565c0",
     weight: 2,
     fillColor: "#1565c0",
