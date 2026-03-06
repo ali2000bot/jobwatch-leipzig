@@ -1341,18 +1341,7 @@ with col1:
             emo = distance_emoji(bucket)
 
             star = "⭐ " if looks_leadership_strict(it) else ""
-            ho_tag = " 🏠" if is_homeoffice_item(it) else ""
-
-            org = match_target_org(item_company(it))
-            target_tag = ""
-            if org:
-                target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
-
-            num_txt = f"{idx:02d}" if idx > 0 else "??"
-            dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
-
-            pin = "📌 " if fav else ""
-            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{ho_tag}{target_tag}"
+            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{target_tag}"
             
             meta_text = " | ".join(
                 [
