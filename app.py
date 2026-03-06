@@ -1,3 +1,7 @@
+
+
+
+Teammitglieder einladen
 import json
 import math
 import os
@@ -634,16 +638,16 @@ def leaflet_map_html(
   const markers = {markers_json};
 
   function pinSvg(color) {{
-    return `
+    return 
       <svg class="pinsvg" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">
         <path d="M13 0C5.8 0 0 5.8 0 13c0 10.2 13 25 13 25s13-14.8 13-25C26 5.8 20.2 0 13 0z" fill="${{color}}"/>
         <circle cx="13" cy="13" r="5.2" fill="white" opacity="0.95"/>
       </svg>
-    `;
+    ;
   }}
 
   function numberedIcon(color, numText) {{
-    const html = `<div class="pinwrap">${{pinSvg(color)}}<div class="pinnum">${{numText || ""}}</div></div>`;
+    const html = <div class="pinwrap">${{pinSvg(color)}}<div class="pinnum">${{numText || ""}}</div></div>;
     return L.divIcon({{
       className: '',
       html: html,
@@ -1761,3 +1765,190 @@ with col1:
                 file_name=f"firmencheck_{today}.csv",
                 mime="text/csv",
             )
+
+Ich sehe in deinem Streamlit-Code ein paar konkrete Problemstellen, die sehr wahrscheinlich zu Fehlern oder unerwartetem Verhalten führen.
+
+Der wichtigste akute Bug ist hier:
+
+if show_hidden_manage:
+    st.subheader("🙈 Ausblend-Liste")
+    if len(all_items) >= int(max_results):
+        st.warning(...)
+all_items wird an dieser Stelle noch gar nicht angelegt. Es entsteht erst später im with st.spinner("Suche läuft…"):-Block. Sobald show_hidden_manage=True ist, bekommst du sehr wahrscheinlich einen NameError oder UnboundLocalError.
+
+So sollte das aussehen:
+
+if show_hidden_manage:
+    st.subheader("🙈 Ausblend-Liste")
+    st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
+Und die Prüfung auf len(all_items) gehört erst nach der Suche.
+
+Der zweite große Punkt: Du deaktivierst TLS-Prüfung an mehreren Stellen:
+
+verify=False
+urllib3.disable_warnings(...)
+Das funktioniert zwar oft praktisch, ist aber unsauber und potenziell riskant. Falls die BA-API ohne Zertifikatsprobleme erreichbar ist, solltest du verify=False entfernen.
+
+In diesen Funktionen:
+
+fetch_search(...)
+fetch_details(...)
+besser:
+
+r = requests.get(
+    SEARCH_URL,
+    headers=ba_headers(api_key),
+    params=params,
+    timeout=25,
+)
+Dann noch ein Logikpunkt bei der Entfernung:
+
+dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+
+if dist is None:
+    items_now_filtered.append(it)
+    continue
+Jobs ohne Koordinaten rutschen damit immer durch den Distanzfilter. Das kann gewollt sein, führt aber dazu, dass auch weit entfernte Stellen sichtbar bleiben, nur weil keine Koordinaten mitgeliefert wurden. Falls du wirklich hart auf Radius filtern willst, dann eher:
+
+if dist is None:
+    continue
+oder nur dann behalten, wenn enable_job_geocode aktiv war und trotzdem nichts gefunden wurde.
+
+Ein weiterer Fehlerkandidat ist die Reihenfolge bei Favoriten im Merkliste-Block:
+
+for it in items_sorted:
+    ...
+items_sorted enthält nur die aktuelle Suche. Gespeicherte Favoriten, die gerade nicht im Suchlauf vorkommen, erscheinen deshalb nicht. Du hast das schon mit der Warnung angedeutet, aber funktional ist die Merkliste damit eher eine „Favoriten innerhalb der aktuellen Ergebnisliste“. Falls du echte persistente Favoriten willst, musst du zusätzlich die gespeicherten Metadaten mit abspeichern, nicht nur den Key.
+
+Zum Score-System: score_breakdown addiert für jeden Keyword-Treffer stumpf Punkte. Das kann sehr stark eskalieren, weil alle Treffer gleich gewichtet sind und Mehrfachkontexte nicht begrenzt werden. Praktisch führt das oft zu überhöhten Scores bei langen Beschreibungen. Solider wäre eine Deckelung:
+
+focus_hits = 0
+for k in focus_keywords:
+    if k and k in text:
+        score += 10
+        focus_hits += 1
+        parts.append(f"+10 {k}")
+        if focus_hits >= 5:
+            break
+Dann noch ein UI-/Strukturproblem: Du lädst favorites = load_favorites() einmal global und später nochmal innerhalb der Tabs. Das ist nicht kaputt, aber unnötig verwirrend. Ich würde das globale
+
+favorites = load_favorites()
+entfernen und nur lokal dort laden, wo es gebraucht wird.
+
+Bei match_target_org(company) kann es Fehlklassifikationen geben, weil du sehr kurze Match-Strings hast, zum Beispiel:
+
+{"name": "GBA Group", "match": ["gba"]}
+{"name": "BASF", "match": ["basf"]}
+{"name": "Fraunhofer IZI (Leipzig)", "match": ["fraunhofer izi", "izi"]}
+"izi" ist sehr kurz und könnte zufällig woanders auftauchen. Besser wären strengere Regeln, etwa Wortgrenzen oder normalisierte Vollnamen.
+
+Noch eine echte Robustheitslücke: fetch_search ist mit @st.cache_data(ttl=300) dekoriert. Du übergibst api_key, wo, umkreis_km, was, aktualitaet_tage, size, page, arbeitszeit. Das ist okay, aber weil du live mehrere Seiten und Profile abfragst, kann das Cache-Verhalten bei Debugging verwirrend wirken. Technisch kein Bug, aber du solltest wissen, dass veraltete Suchergebnisse bis zu 5 Minuten hängen bleiben können.
+
+Mein Fazit:
+
+all_items vor Definition in show_hidden_manage ist der dringlichste Fix.
+
+verify=False rausnehmen.
+
+Distanzfilter für Jobs ohne Koordinaten bewusst entscheiden.
+
+Favoritenmodell überdenken, falls die Merkliste unabhängig von der aktuellen Suche sein soll.
+
+Score und Firmen-Matching robuster machen.
+
+Ich kann dir den Code auch direkt bereinigt und mit den wichtigsten Fixes als überarbeitete Version zurückgeben.
+
+
+ja bitte
+
+Jobwatch Leipzig Revised App
+· python
+        return data["stellenangebote"]
+    emb = data.get("_embedded") or {}
+    if isinstance(emb, dict) and isinstance(emb.get("jobs"), list):
+        return emb["jobs"]
+    if isinstance(data.get("jobs"), list):
+        return data["jobs"]
+    return []
+
+
+def item_id_raw(it: Dict[str, Any]) -> str:
+    v = it.get("refnr") or it.get("refNr") or it.get("hashId") or it.get("hashID") or ""
+    return str(v).strip() if v is not None else ""
+
+
+def item_title(it: Dict[str, Any]) -> str:
+    v = it.get("titel") or it.get("beruf") or it.get("title") or "Ohne Titel"
+    return str(v)
+
+
+def item_company(it: Dict[str, Any]) -> str:
+    v = it.get("arbeitgeber") or it.get("arbeitgeberName") or it.get("unternehmen") or ""
+    return str(v)
+
+
+def pretty_location(it: Dict[str, Any]) -> str:
+    loc = it.get("arbeitsort") or it.get("ort") or it.get("wo")
+    if isinstance(loc, str):
+        return loc
+    if isinstance(loc, dict):
+        ort = (loc.get("ort") or "").strip()
+        region = (loc.get("region") or "").strip()
+        land = (loc.get("land") or "").strip()
+        parts = [p for p in [ort, region, land] if p]
+        return ", ".join(parts) if parts else "—"
+    if loc is None:
+        return "—"
+    try:
+        return json.dumps(loc, ensure_ascii=False)
+    except Exception:
+        return str(loc)
+
+
+def item_key(it: Dict[str, Any]) -> str:
+    rid = item_id_raw(it)
+    if rid:
+        return f"ba:{rid}"
+    base = (item_title(it) + "|" + item_company(it) + "|" + pretty_location(it)).strip().lower()
+    h = hashlib.sha1(base.encode("utf-8", errors="ignore")).hexdigest()[:16]
+    return f"hx:{h}"
+
+
+def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]]:
+    loc = it.get("arbeitsort") or {}
+    if isinstance(loc, dict):
+        coords = loc.get("koordinaten") or {}
+        if isinstance(coords, dict):
+            lat = coords.get("lat")
+            lon = coords.get("lon")
+            try:
+                if lat is not None and lon is not None:
+                    return float(lat), float(lon)
+            except Exception:
+                pass
+
+    coords2 = it.get("koordinaten")
+    if isinstance(coords2, dict):
+        lat = coords2.get("lat")
+        lon = coords2.get("lon")
+        try:
+            if lat is not None and lon is not None:
+                return float(lat), float(lon)
+        except Exception:
+            pass
+
+    return None
+
+
+def details_url_api(it: Dict[str, Any]) -> Optional[str]:
+    links = it.get("_links") or {}
+    for k in ["details", "jobdetails"]:
+        v = links.get(k)
+        if isinstance(v, dict) and isinstance(v.get("href"), str):
+            href = v["href"]
+            return href if href.startswith("http") else (BASE + href)
+    return None
+
+
+
+ChatGPT generiert immer noch eine Reaktion…
