@@ -905,10 +905,9 @@ with st.sidebar:
     # gleicher Wert wird für BA-Suche verwendet
     umkreis = int(max_distance_filter)
 
-    include_ho = st.checkbox("Homeoffice berücksichtigen", value=True)
+    include_ho = False
+    ho_umkreis = 0
     
-    ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
-
     aktualitaet_option = st.selectbox(
         "Aktualität",
         ["7 Tage", "30 Tage", "60 Tage", "180 Tage", "Alle"],
