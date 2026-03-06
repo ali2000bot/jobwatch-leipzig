@@ -891,7 +891,7 @@ with st.sidebar:
         "Maximale Entfernung (km)",
         10, 200, 80, 5
     )
-
+    st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
     # gleicher Wert wird für BA-Suche verwendet
     umkreis = int(max_distance_filter)
 
