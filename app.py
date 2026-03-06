@@ -905,7 +905,7 @@ with st.sidebar:
     # gleicher Wert wird für BA-Suche verwendet
     umkreis = int(max_distance_filter)
 
-    include_ho = st.checkbox("Homeoffice berücksichtigen", value=True)
+    # include_ho = st.checkbox("Homeoffice berücksichtigen", value=True)
     
     # ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
 
