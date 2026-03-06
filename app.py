@@ -1335,6 +1335,7 @@ with col1:
             # Favorit
             fav = is_favorited(k, favorites)
             pin = "📌 " if fav else ""
+            is_hidden = (k in hidden_keys)
 
             # Score
             score, parts = score_breakdown(
