@@ -662,6 +662,14 @@ def leaflet_map_html(
   const homeIcon = numberedIcon("#1565c0", "");
   const homeMarker = L.marker([{home_lat}, {home_lon}], {{icon: homeIcon}}).addTo(fg);
   homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
+  // Pendelradius-Kreis
+  L.circle([home_lat, home_lon], {
+    radius: MAX_RADIUS_METERS,
+    color: "#1565c0",
+    weight: 2,
+    fillColor: "#1565c0",
+    fillOpacity: 0.08
+  }).addTo(map);
 
   markers.forEach(m => {{
     const lat = m.lat, lon = m.lon;
@@ -951,10 +959,6 @@ with st.sidebar:
         mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
         speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
-        max_distance_filter = st.slider(
-            "Maximale Entfernung anzeigen (km)",
-            20, 300, 150, 10
-        )
         umkreis = int(max_distance_filter)
         st.divider()
         st.markdown("**Score-Tuning**")
@@ -1233,7 +1237,7 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
-        st.caption(f"Entfernungslimit aktiv: {max_distance_filter} km")
+        
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
