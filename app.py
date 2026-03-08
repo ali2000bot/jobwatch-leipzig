@@ -58,11 +58,13 @@ def load_company_state() -> Dict[str, Any]:
         except Exception:
             return {}
 
+
 # ---------------- Favoriten ---------------------
 def save_company_state(state: Dict[str, Any]) -> None:
     ensure_state_dir()
     with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
+
 
 def load_favorites() -> Dict[str, Any]:
     """
@@ -93,6 +95,7 @@ def save_favorites(favs: Dict[str, Any]) -> None:
 
 def is_favorited(job_key: str, favs: Dict[str, Any]) -> bool:
     return bool(job_key) and job_key in favs
+
 
 # -------------------- Hidden jobs helpers --------------------
 def load_hidden_jobs() -> Dict[str, Any]:
@@ -179,6 +182,7 @@ def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
     if lat is None or lon is None:
         return None
     return float(lat), float(lon)
+
 
 favorites = load_favorites()
 
@@ -462,27 +466,23 @@ DEFAULT_LEADERSHIP_KEYWORDS = [
 ]
 
 DEFAULT_NEGATIVE_KEYWORDS = [
-    # Pflege/Gesundheit
     "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
-    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut", "betreuungskraft", 
-    "zahntechniker", "zahntechnikerin", 
-    # Gastro/Service
+    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut", "betreuungskraft",
+    "zahntechniker", "zahntechnikerin",
     "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
-    # Reinigung/Facility
     "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung",
-    # Lager/Logistik/Produktion (wenn zu viel Rauschen)
     "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
     "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer",
-    "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer", 
+    "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer",
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
-    "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter", 
+    "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
     "lackierer",
-    # Büro/sonstiges Rauschen
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
-    "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter", 
-    "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent", 
-    "facharzt", "integrationshelfer", "empfangsleiter", 
+    "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
+    "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
+    "facharzt", "integrationshelfer", "empfangsleiter",
 ]
+
 
 def parse_keywords(text: str) -> List[str]:
     raw: List[str] = []
@@ -513,7 +513,7 @@ def build_queries() -> Dict[str, str]:
 
 
 # ============================================================
-# Ziel-Organisationen (aus deinem letzten Stand)
+# Ziel-Organisationen
 # ============================================================
 TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
@@ -577,7 +577,7 @@ def match_target_org(company: str) -> Optional[Dict[str, Any]]:
 
 
 # ============================================================
-# Leaflet map: numbered pins (grouped label supported like "3–5")
+# Leaflet map
 # ============================================================
 def leaflet_map_html(
     home_lat: float,
@@ -665,7 +665,6 @@ def leaflet_map_html(
   const homeMarker = L.marker([{home_lat}, {home_lon}], {{icon: homeIcon}}).addTo(fg);
   homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
 
-  // Pendelradius-Kreis
   L.circle([{home_lat}, {home_lon}], {{
     radius: {radius_m},
     color: "#1565c0",
@@ -703,6 +702,7 @@ def leaflet_map_html(
 </body>
 </html>
 """
+
 
 # ============================================================
 # Score / Relevanz
@@ -799,7 +799,6 @@ def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
 st.title("Raum Leipzig – Jobs finden & vergleichen")
 
-# Session defaults for keywords
 if "kw_focus" not in st.session_state:
     st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
 if "kw_lead" not in st.session_state:
@@ -807,27 +806,21 @@ if "kw_lead" not in st.session_state:
 if "kw_neg" not in st.session_state:
     st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
 
-# Defaults (werden in Sidebar überschrieben)
 size = 100
 api_key = API_KEY_DEFAULT
 debug = False
 near_km = 25
 mid_km = 60
 speed_kmh = 75
-ho_bonus = 8
+ho_bonus = 0
 max_pages = 100
 max_results = 1000
 
-# Load snapshot once (right column uses it too)
 snap = load_snapshot()
 
-# Sidebar
 with st.sidebar:
     st.header("JobWatch – Einstellungen")
 
-    # -------------------------
-    # Wohnort (1 Feld, Auto-Geocode)
-    # -------------------------
     st.subheader("Wohnort")
 
     if "home_query" not in st.session_state:
@@ -848,18 +841,15 @@ with st.sidebar:
     def _auto_geocode():
         q = (st.session_state.get("home_query") or "").strip()
 
-        # 1) nur bei echter Änderung
         last_q = (st.session_state.get("home_query_last") or "").strip()
         if q == last_q:
             return
         st.session_state["home_query_last"] = q
 
-        # 2) minimale Eingabelänge (verhindert Requests bei "L", "Le", ...)
         if len(q) < 4:
             st.session_state["geocode_error"] = "Bitte etwas genauer eingeben (z.B. '06242 Braunsbedra')."
             return
 
-        # 3) Rate-Limit: max. 1 Request pro 60s
         last_ts = float(st.session_state.get("home_geocode_last_ts") or 0.0)
         if time.time() - last_ts < 60:
             st.session_state["geocode_error"] = "Geocoding ist limitiert (429-Schutz). Bitte kurz warten und dann erneut Enter."
@@ -890,9 +880,6 @@ with st.sidebar:
 
     st.divider()
 
-    # -------------------------
-    # BA-Suche (minimal)
-    # -------------------------
     st.subheader("Suche")
 
     wo = home_query
@@ -902,12 +889,7 @@ with st.sidebar:
         10, 200, 80, 5
     )
     st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
-    # gleicher Wert wird für BA-Suche verwendet
     umkreis = int(max_distance_filter)
-
-    include_ho = st.checkbox("Homeoffice berücksichtigen", value=True)
-    
-    ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
 
     aktualitaet_option = st.selectbox(
         "Aktualität",
@@ -928,9 +910,6 @@ with st.sidebar:
 
     st.divider()
 
-    # -------------------------
-    # Filter + Hidden Jobs
-    # -------------------------
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
     min_score = st.slider("Mindest-Relevanz", 0, 80, 6, 1)
@@ -941,9 +920,6 @@ with st.sidebar:
 
     st.divider()
 
-    # -------------------------
-    # Erweitert
-    # -------------------------
     with st.expander("Erweitert", expanded=False):
         st.caption("Nur wenn du feintunen oder debuggen willst.")
 
@@ -964,11 +940,11 @@ with st.sidebar:
         umkreis = int(max_distance_filter)
         st.divider()
         st.markdown("**Score-Tuning**")
-        ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
+        ho_bonus = 0
 
         st.divider()
         st.markdown("**Technik**")
-    
+
         api_key = st.text_input("X-API-Key (nur bei Problemen)", value=API_KEY_DEFAULT)
         debug = st.checkbox("Debug anzeigen", value=False)
 
@@ -999,12 +975,10 @@ with st.sidebar:
             st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
             st.rerun()
 
-# Keywords lists
 FOCUS_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_focus"])]
 LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_lead"])]
 NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
 
-# Layout: links Hauptfläche, rechts Snapshot-Spalte
 col1, col2 = st.columns([6, 1], gap="large")
 
 with col2:
@@ -1031,13 +1005,9 @@ with col2:
                 st.markdown(f"[🏢 {org['name']}]({org['url']})")
 
 
-# ============================================================
-# Tabs: BA-Suche + Firmencheck (manuell)
-# ============================================================
 with col1:
     tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
 
-    # -------------------- TAB 1: BA-Suche --------------------
     with tab_ba:
         if not selected_profiles:
             st.warning("Bitte mindestens eine Jobart auswählen.")
@@ -1045,7 +1015,6 @@ with col1:
 
         all_items: List[Dict[str, Any]] = []
 
-        # Hidden jobs state
         _hidden_data = load_hidden_jobs()
         hidden_keys: Set[str] = set(_hidden_data.get("hidden", []))
 
@@ -1064,26 +1033,24 @@ with col1:
             st.divider()
 
         wo = home_query
-    
-        # Live-UI
+
         live_status = st.empty()
         live_progress = st.progress(0)
         live_hint = st.empty()
-        
+
         with st.spinner("Suche läuft…"):
-            all_items: List[Dict[str, Any]] = []
+            all_items = []
             errs: List[str] = []
             qmap = build_queries()
 
             total_limit = int(max_results)
             pages_limit = int(max_pages)
             done_pages = 0
-            expected_pages = max(1, len(selected_profiles) * pages_limit * (2 if include_ho else 1))
+            expected_pages = max(1, len(selected_profiles) * pages_limit)
 
             for name in selected_profiles:
                 q = qmap.get(name, "")
 
-                # -------- Vor Ort --------
                 for page in range(1, pages_limit + 1):
                     if len(all_items) >= total_limit:
                         break
@@ -1092,7 +1059,7 @@ with col1:
                     pct = min(1.0, done_pages / expected_pages)
 
                     live_status.markdown(
-                        f"**Live:** Profil **{name}** · Vor Ort · Seite **{page}/{pages_limit}** · Treffer **{len(all_items)}/{total_limit}**"
+                        f"**Live:** Profil **{name}** · Seite **{page}/{pages_limit}** · Treffer **{len(all_items)}/{total_limit}**"
                     )
                     live_progress.progress(int(pct * 100))
 
@@ -1102,7 +1069,7 @@ with col1:
                     )
 
                     if e1:
-                        errs.append(f"{name} (vor Ort) Seite {page}: {e1}")
+                        errs.append(f"{name} Seite {page}: {e1}")
                         break
 
                     if not items_local:
@@ -1118,54 +1085,17 @@ with col1:
                     if len(items_local) < int(size):
                         break
 
-                # -------- Homeoffice --------
-                if include_ho:
-                    for page in range(1, pages_limit + 1):
-                        if len(all_items) >= total_limit:
-                            break
-
-                        done_pages += 1
-                        pct = min(1.0, done_pages / expected_pages)
-
-                        live_status.markdown(
-                            f"**Live:** Profil **{name}** · Homeoffice · Seite **{page}/{pages_limit}** · Treffer **{len(all_items)}/{total_limit}**"
-                        )
-                        live_progress.progress(int(pct * 100))
-
-                        items_ho, e2 = fetch_search(
-                            api_key, wo, int(ho_umkreis), q, aktualitaet, int(size),
-                            page=page, arbeitszeit="ho"
-                        )
-
-                        if e2:
-                            errs.append(f"{name} (homeoffice) Seite {page}: {e2}")
-                            break
-
-                        if not items_ho:
-                            break
-
-                        live_hint.caption(f"Letzte Seite (HO): +{len(items_ho)} Treffer")
-
-                        for it in items_ho:
-                            it["_profile"] = name
-                            it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
-                            all_items.append(it)
-
-                        if len(items_ho) < int(size):
-                            break
-
         live_progress.progress(100)
         live_status.success(f"Fertig. Roh-Treffer: {len(all_items)}")
 
         if len(all_items) >= int(max_results):
             st.warning(f"Suche wurde bei {int(max_results)} Treffern gestoppt (Erweitert → Stopp-Limit).")
-        
+
         if errs:
             st.error("Fehler / Hinweise")
             for e in errs:
                 st.code(e)
-        
-        # Dedup nach robuster ID
+
         items_now: List[Dict[str, Any]] = []
         seen: Set[str] = set()
         for it in all_items:
@@ -1175,11 +1105,9 @@ with col1:
                 it["_key"] = k
                 items_now.append(it)
 
-        # Hidden filter
         if hide_marked:
             items_now = [it for it in items_now if (it.get("_key") or item_key(it)) not in hidden_keys]
 
-        # Filter
         if hide_irrelevant:
             items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
@@ -1189,13 +1117,11 @@ with col1:
                 if score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))[0] >= int(min_score)
             ]
 
-        # Snapshot compare
         prev_items = snap.get("items", [])
         prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items if isinstance(x, dict)}
         now_keys: Set[str] = {x.get("_key") or item_key(x) for x in items_now}
         new_keys = now_keys - prev_keys
 
-        # Sort: HighPriority -> Entfernung -> neu -> Score
         def sort_key(it: Dict[str, Any]):
             org = match_target_org(item_company(it))
             priority_rank = -1 if (org and org.get("priority") == "high") else 0
@@ -1208,7 +1134,6 @@ with col1:
             score = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))[0]
             return (priority_rank, dist_rank, is_new_rank, -score, item_title(it).lower())
 
-        # Entfernungslimit anwenden
         items_now_filtered = []
         for it in items_now:
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
@@ -1219,36 +1144,20 @@ with col1:
 
             if dist <= float(max_distance_filter):
                 items_now_filtered.append(it)
-                continue
-
-            if include_ho and is_homeoffice_item(it):
-                items_now_filtered.append(it)
 
         items_now = items_now_filtered
-
-        # alt
-        #items_now_filtered = []
-        #for it in items_now:
-        #    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-        #    if dist is None or dist <= float(max_distance_filter):
-        #        items_now_filtered.append(it)
-
-        #items_now = items_now_filtered
-        
         items_sorted = sorted(items_now, key=sort_key)
 
-        # Nummerierung
         for i, it in enumerate(items_sorted, start=1):
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
-        
+
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
                 st.info("Noch keine gemerkten Stellen.")
             else:
-                # sortiert nach Zeitpunkt
                 fav_items = []
                 for it in items_sorted:
                     k = it.get("_key") or item_key(it)
@@ -1272,16 +1181,12 @@ with col1:
                         if web_url:
                             try:
                                 st.link_button("🔗 BA öffnen", web_url, key=f"fav_link_{k}")
-                            except Exception:   
+                            except Exception:
                                 st.markdown(f"[🔗 BA öffnen]({web_url})")
                         st.divider()
- 
-        # if len(all_items) >= int(max_results):
-        #    st.warning("Suche wurde bei 2000 Treffern gestoppt.")
-            
+
         st.caption(f"Neu seit Snapshot: {len(new_keys)}")
 
-        # High-Priority Section
         st.divider()
         st.write("## 🔥 High-Priority Treffer")
         hp_items = [
@@ -1294,18 +1199,15 @@ with col1:
         else:
             st.info("Aktuell keine High-Priority Treffer.")
 
-        # Save snapshot
         if st.session_state.get("save_snapshot_requested"):
             save_snapshot(items_sorted)
             st.session_state["save_snapshot_requested"] = False
             st.success("Snapshot gespeichert.")
 
-        # Build markers (with grouping same coords)
         raw_markers: List[Dict[str, Any]] = []
         missing_coords = 0
         geocode_used = 0
 
-        # If variables not defined (when "Erweitert" never opened), set defaults:
         enable_job_geocode = bool(locals().get("enable_job_geocode", False))
         max_job_geocodes = int(locals().get("max_job_geocodes", 0))
 
@@ -1392,7 +1294,6 @@ with col1:
             emo = distance_emoji(bucket)
 
             star = "⭐ " if looks_leadership_strict(it) else ""
-            ho_tag = " 🏠" if is_homeoffice_item(it) else ""
 
             org = match_target_org(item_company(it))
             target_tag = ""
@@ -1403,8 +1304,8 @@ with col1:
             dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
             pin = "📌 " if fav else ""
-            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{ho_tag}{target_tag}"
-            
+            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{target_tag}"
+
             meta_text = " | ".join(
                 [
                     f"Score: {score}",
@@ -1418,7 +1319,7 @@ with col1:
             with st.expander(label):
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                 st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
-                # --- Favorit togglen + Notiz ---
+
                 cFav1, cFav2 = st.columns([1.2, 3.8])
                 with cFav1:
                     if not fav:
@@ -1444,7 +1345,6 @@ with col1:
                             favorites[k]["note"] = new_note
                             save_favorites(favorites)
 
-                # ---- Hide/Unhide controls ----
                 cH1, cH2 = st.columns([1.4, 6.6])
                 with cH1:
                     if not is_hidden:
@@ -1465,7 +1365,6 @@ with col1:
                     ("Nr.", num_txt),
                     ("Distanz", dist_txt),
                     ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
-                    ("Homeoffice", "Ja (Bonus aktiv)" if is_homeoffice_item(it) else "—"),
                     ("Ziel-Organisation", org["name"] if org else "—"),
                     ("Arbeitgeber", item_company(it) or "—"),
                     ("Ort", pretty_location(it)),
@@ -1483,7 +1382,6 @@ with col1:
                     except Exception:
                         st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
 
-                # Score-Aufschlüsselung bleibt hier als Info (ohne extra Checkbox)
                 st.write("**Score-Aufschlüsselung**")
                 st.code(" | ".join(parts))
 
@@ -1538,7 +1436,6 @@ with col1:
                 else:
                     st.info("Keine ausführliche Beschreibung im Detail-Response gefunden. Nutze ggf. den BA-Link oben.")
 
-    # -------------------- TAB 2: Firmencheck (manuell, pro Firma) --------------------
     with tab_company:
         st.subheader("Firmencheck (manuell, pro Firma)")
         st.caption("Öffne die Karriereseite, trage Anzahl + Notizen ein und speichere 'Heute geprüft'.")
@@ -1576,7 +1473,6 @@ with col1:
                 return "🟡", f"{ds} Tage"
             return "🟢", f"{ds} Tage"
 
-        # Übersicht
         st.markdown("### Übersicht & Tools")
         only_high = st.checkbox("Nur High-Priority (🔥) anzeigen", value=False, key="fc_only_high")
         name_filter = st.text_input("Firma suchen (Teilstring)", value="", key="fc_name_filter").strip().lower()
