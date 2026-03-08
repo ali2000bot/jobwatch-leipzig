@@ -1,7 +1,3 @@
-
-
-
-Teammitglieder einladen
 import json
 import math
 import os
@@ -588,10 +584,8 @@ def leaflet_map_html(
     home_lon: float,
     home_label: str,
     markers: List[Dict[str, Any]],
-    max_distance_km: float,
     height_px: int = 520,
 ) -> str:
-    radius_m = int(max_distance_km * 1000)
     markers_json = json.dumps(markers, ensure_ascii=False)
 
     return f"""
@@ -638,16 +632,16 @@ def leaflet_map_html(
   const markers = {markers_json};
 
   function pinSvg(color) {{
-    return 
+    return `
       <svg class="pinsvg" viewBox="0 0 26 38" xmlns="http://www.w3.org/2000/svg">
         <path d="M13 0C5.8 0 0 5.8 0 13c0 10.2 13 25 13 25s13-14.8 13-25C26 5.8 20.2 0 13 0z" fill="${{color}}"/>
         <circle cx="13" cy="13" r="5.2" fill="white" opacity="0.95"/>
       </svg>
-    ;
+    `;
   }}
 
   function numberedIcon(color, numText) {{
-    const html = <div class="pinwrap">${{pinSvg(color)}}<div class="pinnum">${{numText || ""}}</div></div>;
+    const html = `<div class="pinwrap">${{pinSvg(color)}}<div class="pinnum">${{numText || ""}}</div></div>`;
     return L.divIcon({{
       className: '',
       html: html,
@@ -669,15 +663,6 @@ def leaflet_map_html(
   const homeMarker = L.marker([{home_lat}, {home_lon}], {{icon: homeIcon}}).addTo(fg);
   homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
 
-  // Pendelradius-Kreis
-  L.circle([{home_lat}, {home_lon}], {{
-    radius: {radius_m},
-    color: "#1565c0",
-    weight: 2,
-    fillColor: "#1565c0",
-    fillOpacity: 0.08
-  }}).addTo(map);
-
   markers.forEach(m => {{
     const lat = m.lat, lon = m.lon;
     const title = (m.title || '').replace(/</g,'&lt;');
@@ -693,7 +678,7 @@ def leaflet_map_html(
 
     const popup =
       '<b>' + idx + ') ' + title + '</b><br/>' + company
-      + (dist != null ? '<br/>Dist: ' + dist + ' km' : '');
+      + (dist!=null ? '<br/>Dist: ' + dist + ' km' : '');
 
     L.marker([lat, lon], {{icon: icon}}).addTo(fg).bindPopup(popup);
   }});
@@ -707,6 +692,7 @@ def leaflet_map_html(
 </body>
 </html>
 """
+
 
 # ============================================================
 # Score / Relevanz
@@ -898,20 +884,12 @@ with st.sidebar:
     # BA-Suche (minimal)
     # -------------------------
     st.subheader("Suche")
+    wo = home_query  # BA-Ort = Wohnort
 
-    wo = home_query
+    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
+    include_ho = st.checkbox("Homeoffice berücksichtigen", value=False)
+    ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
 
-    max_distance_filter = st.slider(
-        "Maximale Entfernung (km)",
-        10, 200, 45, 5
-    )
-    st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
-    # gleicher Wert wird für BA-Suche verwendet
-    umkreis = int(max_distance_filter)
-
-    include_ho = False
-    ho_umkreis = 0
-    
     aktualitaet_option = st.selectbox(
         "Aktualität",
         ["7 Tage", "30 Tage", "60 Tage", "180 Tage", "Alle"],
@@ -960,14 +938,19 @@ with st.sidebar:
         max_job_geocodes = st.slider("Max. Geocoding pro Lauf", 0, 50, 10, 5)
 
         st.markdown("**Entfernung / Fahrzeit**")
-        near_km = st.slider("Grün bis (km)", 5, 80, 10, 5)
-        mid_km = st.slider("Gelb bis (km)", 10, 150, 35, 5)
+        near_km = st.slider("Grün bis (km)", 5, 80, 25, 5)
+        mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
         speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
-        umkreis = int(max_distance_filter)
+        max_distance_filter = st.slider(
+            "Maximale Entfernung anzeigen (km)",
+            20, 300, 150, 10
+        )
+
         st.divider()
         st.markdown("**Score-Tuning**")
-        ho_bonus = 0
+        ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
+
         st.divider()
         st.markdown("**Technik**")
     
@@ -1048,7 +1031,6 @@ with col1:
         # Hidden jobs state
         _hidden_data = load_hidden_jobs()
         hidden_keys: Set[str] = set(_hidden_data.get("hidden", []))
-        favorites = load_favorites()
 
         if show_hidden_manage:
             st.subheader("🙈 Ausblend-Liste")
@@ -1081,7 +1063,7 @@ with col1:
             total_limit = int(max_results)
             pages_limit = int(max_pages)
             done_pages = 0
-            expected_pages = max(1, len(selected_profiles) * pages_limit)
+            expected_pages = max(1, len(selected_profiles) * pages_limit * (2 if include_ho else 1))
 
             for name in selected_profiles:
                 q = qmap.get(name, "")
@@ -1121,6 +1103,41 @@ with col1:
                     if len(items_local) < int(size):
                         break
 
+                # -------- Homeoffice --------
+                if include_ho:
+                    for page in range(1, pages_limit + 1):
+                        if len(all_items) >= total_limit:
+                            break
+
+                        done_pages += 1
+                        pct = min(1.0, done_pages / expected_pages)
+
+                        live_status.markdown(
+                            f"**Live:** Profil **{name}** · Homeoffice · Seite **{page}/{pages_limit}** · Treffer **{len(all_items)}/{total_limit}**"
+                        )
+                        live_progress.progress(int(pct * 100))
+
+                        items_ho, e2 = fetch_search(
+                            api_key, wo, int(ho_umkreis), q, aktualitaet, int(size),
+                            page=page, arbeitszeit="ho"
+                        )
+
+                        if e2:
+                            errs.append(f"{name} (homeoffice) Seite {page}: {e2}")
+                            break
+
+                        if not items_ho:
+                            break
+
+                        live_hint.caption(f"Letzte Seite (HO): +{len(items_ho)} Treffer")
+
+                        for it in items_ho:
+                            it["_profile"] = name
+                            it["_bucket"] = f"Homeoffice ({ho_umkreis} km)"
+                            all_items.append(it)
+
+                        if len(items_ho) < int(size):
+                            break
 
         live_progress.progress(100)
         live_status.success(f"Fertig. Roh-Treffer: {len(all_items)}")
@@ -1177,17 +1194,11 @@ with col1:
         items_now_filtered = []
         for it in items_now:
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-
-            if dist is None:
-                items_now_filtered.append(it)
-                continue
-
-            if dist <= float(max_distance_filter):
+            if dist is None or dist <= float(max_distance_filter):
                 items_now_filtered.append(it)
 
         items_now = items_now_filtered
         
-               
         items_sorted = sorted(items_now, key=sort_key)
 
         # Nummerierung
@@ -1195,7 +1206,7 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
-        
+        st.caption(f"Entfernungslimit aktiv: {max_distance_filter} km")
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
@@ -1316,98 +1327,83 @@ with col1:
         if markers:
             st.write("### Karte")
             components.html(
-                leaflet_map_html(
-                    float(home_lat),
-                    float(home_lon),
-                    home_label,
-                    markers[:80],
-                    float(max_distance_filter),
-                    height_px=520,
-                ),
+                leaflet_map_html(float(home_lat), float(home_lon), home_label, markers[:80], height_px=520),
                 height=560,
             )
 
         st.divider()
         st.write("### Ergebnisse")
+
         for it in items_sorted:
             idx = int(it.get("_idx", 0) or 0)
             k = it.get("_key") or item_key(it)
-
-            # neu seit Snapshot
             is_new = (k in new_keys)
-
-            # Favorit / Hidden
-            fav = is_favorited(k, favorites)
-            pin = "📌 " if fav else ""
             is_hidden = (k in hidden_keys)
+            fav = is_favorited(k, favorites)
 
-            # Score
-            score, parts = score_breakdown(
-                it,
-                FOCUS_KEYWORDS,
-                LEADERSHIP_KEYWORDS,
-                NEGATIVE_KEYWORDS,
-                int(ho_bonus),
-            )
+            score, parts = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))
 
-            # Entfernung
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
             t_min = travel_time_minutes(dist, float(speed_kmh))
             bucket = distance_bucket(dist, int(near_km), int(mid_km))
             emo = distance_emoji(bucket)
 
-            # Leadership
             star = "⭐ " if looks_leadership_strict(it) else ""
+            ho_tag = " 🏠" if is_homeoffice_item(it) else ""
 
-            # Zielorganisation
             org = match_target_org(item_company(it))
             target_tag = ""
             if org:
                 target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
 
-            # Nummer / Entfernung
             num_txt = f"{idx:02d}" if idx > 0 else "??"
             dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
-            # Label
-            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{target_tag}"
-
-            meta_text = " | ".join([
-                f"Score: {score}",
-                it.get("_profile", ""),
-                it.get("_bucket", ""),
-                item_company(it),
-                pretty_location(it),
-            ])
+            pin = "📌 " if fav else ""
+            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{ho_tag}{target_tag}"
+            
+            meta_text = " | ".join(
+                [
+                    f"Score: {score}",
+                    it.get("_profile", ""),
+                    it.get("_bucket", ""),
+                    item_company(it),
+                    pretty_location(it),
+                ]
+            )
 
             with st.expander(label):
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
-                st.markdown(
-                    badge + f' <span style="color:#666;">{meta_text}</span>',
-                    unsafe_allow_html=True,
-                )
-
-                # -------------------------
-                # Favorit + Ausblenden
-                # -------------------------
-                cA, cB, cC, cD = st.columns([1.2, 1.4, 1.2, 4.2])
-
-                with cA:
-                    if fav:
-                        if st.button("🗑️ Merker", key=f"unfav_{k}"):
-                            favorites.pop(k, None)
-                            save_favorites(favorites)
-                            st.rerun()
-                    else:
-                        if st.button("📌 Merken", key=f"fav_{k}"):
+                st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
+                # --- Favorit togglen + Notiz ---
+                cFav1, cFav2 = st.columns([1.2, 3.8])
+                with cFav1:
+                    if not fav:
+                        if st.button("📌 Merken", key=f"fav_add_{k}"):
                             favorites[k] = {
                                 "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                "note": favorites.get(k, {}).get("note", ""),
+                                "note": favorites.get(k, {}).get("note", "")
                             }
                             save_favorites(favorites)
                             st.rerun()
+                    else:
+                        if st.button("🗑️ Entfernen", key=f"fav_del_{k}"):
+                            favorites.pop(k, None)
+                            save_favorites(favorites)
+                            st.rerun()
 
-                with cB:
+                with cFav2:
+                    if fav:
+                        note_key = f"fav_note_{k}"
+                        note_val = (favorites.get(k, {}) or {}).get("note", "")
+                        new_note = st.text_input("Notiz (optional)", value=note_val, key=note_key)
+                        if new_note != note_val:
+                            favorites[k]["note"] = new_note
+                            save_favorites(favorites)
+
+                # ---- Hide/Unhide controls ----
+                cH1, cH2 = st.columns([1.4, 6.6])
+                with cH1:
                     if not is_hidden:
                         if st.button("🙈 Ausblenden", key=f"hide_{k}"):
                             hidden_keys.add(k)
@@ -1418,32 +1414,15 @@ with col1:
                             hidden_keys.discard(k)
                             save_hidden_jobs(hidden_keys)
                             st.rerun()
-
-                with cC:
-                    if org:
-                        try:
-                            st.link_button("🏢 Firma", org["url"], key=f"org_{k}")
-                        except Exception:
-                            st.markdown(f"[🏢 Firma]({org['url']})")
-
-                with cD:
-                    st.caption("Favoriten und ausgeblendete Jobs bleiben für spätere Suchen gespeichert.")
-
-                # Favoriten-Notiz
-                if fav:
-                    note_key = f"fav_note_{k}"
-                    note_val = (favorites.get(k, {}) or {}).get("note", "")
-                    new_note = st.text_input("Notiz (optional)", value=note_val, key=note_key)
-                    if new_note != note_val:
-                        favorites[k]["note"] = new_note
-                        save_favorites(favorites)
+                with cH2:
+                    st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
 
                 rid = item_id_raw(it) or "—"
-
                 facts = [
                     ("Nr.", num_txt),
                     ("Distanz", dist_txt),
                     ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
+                    ("Homeoffice", "Ja (Bonus aktiv)" if is_homeoffice_item(it) else "—"),
                     ("Ziel-Organisation", org["name"] if org else "—"),
                     ("Arbeitgeber", item_company(it) or "—"),
                     ("Ort", pretty_location(it)),
@@ -1454,39 +1433,37 @@ with col1:
                 ]
                 render_fact_grid(facts)
 
+                if org:
+                    st.write("**Karriereseite (Ziel-Organisation)**")
+                    try:
+                        st.link_button("🏢 Karriereseite öffnen", org["url"])
+                    except Exception:
+                        st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
+
+                # Score-Aufschlüsselung bleibt hier als Info (ohne extra Checkbox)
                 st.write("**Score-Aufschlüsselung**")
                 st.code(" | ".join(parts))
 
-                # BA Web Link + Route
                 web_url = jobsuche_web_url(it)
                 ll = extract_latlon_from_item(it)
-
                 if web_url or ll:
                     cL, cR = st.columns(2)
-
                     with cL:
                         if web_url:
                             try:
-                                st.link_button("🔗 In BA Jobsuche öffnen", web_url, key=f"ba_{k}")
+                                st.link_button("🔗 In BA Jobsuche öffnen", web_url)
                             except Exception:
                                 st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
-
                     with cR:
                         if ll:
-                            gdir = google_directions_url(
-                                float(home_lat),
-                                float(home_lon),
-                                float(ll[0]),
-                                float(ll[1]),
-                            )
+                            gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
                             try:
-                                st.link_button("🚗 Route in Google Maps", gdir, key=f"route_{k}")
+                                st.link_button("🚗 Route in Google Maps", gdir)
                             except Exception:
                                 st.markdown(f"[🚗 Route in Google Maps]({gdir})")
 
                 st.divider()
 
-                # Details
                 api_url = details_url_api(it)
                 if not api_url:
                     st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
@@ -1500,7 +1477,6 @@ with col1:
                     st.error(derr)
                     st.info("Wenn Details per API nicht gehen: nutze den BA-Link oben.")
                     continue
-
                 if not details:
                     st.info("Keine Details erhalten.")
                     continue
@@ -1518,8 +1494,7 @@ with col1:
                     st.write(desc)
                 else:
                     st.info("Keine ausführliche Beschreibung im Detail-Response gefunden. Nutze ggf. den BA-Link oben.")
-        
-    
+
     # -------------------- TAB 2: Firmencheck (manuell, pro Firma) --------------------
     with tab_company:
         st.subheader("Firmencheck (manuell, pro Firma)")
@@ -1765,190 +1740,3 @@ with col1:
                 file_name=f"firmencheck_{today}.csv",
                 mime="text/csv",
             )
-
-Ich sehe in deinem Streamlit-Code ein paar konkrete Problemstellen, die sehr wahrscheinlich zu Fehlern oder unerwartetem Verhalten führen.
-
-Der wichtigste akute Bug ist hier:
-
-if show_hidden_manage:
-    st.subheader("🙈 Ausblend-Liste")
-    if len(all_items) >= int(max_results):
-        st.warning(...)
-all_items wird an dieser Stelle noch gar nicht angelegt. Es entsteht erst später im with st.spinner("Suche läuft…"):-Block. Sobald show_hidden_manage=True ist, bekommst du sehr wahrscheinlich einen NameError oder UnboundLocalError.
-
-So sollte das aussehen:
-
-if show_hidden_manage:
-    st.subheader("🙈 Ausblend-Liste")
-    st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
-Und die Prüfung auf len(all_items) gehört erst nach der Suche.
-
-Der zweite große Punkt: Du deaktivierst TLS-Prüfung an mehreren Stellen:
-
-verify=False
-urllib3.disable_warnings(...)
-Das funktioniert zwar oft praktisch, ist aber unsauber und potenziell riskant. Falls die BA-API ohne Zertifikatsprobleme erreichbar ist, solltest du verify=False entfernen.
-
-In diesen Funktionen:
-
-fetch_search(...)
-fetch_details(...)
-besser:
-
-r = requests.get(
-    SEARCH_URL,
-    headers=ba_headers(api_key),
-    params=params,
-    timeout=25,
-)
-Dann noch ein Logikpunkt bei der Entfernung:
-
-dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-
-if dist is None:
-    items_now_filtered.append(it)
-    continue
-Jobs ohne Koordinaten rutschen damit immer durch den Distanzfilter. Das kann gewollt sein, führt aber dazu, dass auch weit entfernte Stellen sichtbar bleiben, nur weil keine Koordinaten mitgeliefert wurden. Falls du wirklich hart auf Radius filtern willst, dann eher:
-
-if dist is None:
-    continue
-oder nur dann behalten, wenn enable_job_geocode aktiv war und trotzdem nichts gefunden wurde.
-
-Ein weiterer Fehlerkandidat ist die Reihenfolge bei Favoriten im Merkliste-Block:
-
-for it in items_sorted:
-    ...
-items_sorted enthält nur die aktuelle Suche. Gespeicherte Favoriten, die gerade nicht im Suchlauf vorkommen, erscheinen deshalb nicht. Du hast das schon mit der Warnung angedeutet, aber funktional ist die Merkliste damit eher eine „Favoriten innerhalb der aktuellen Ergebnisliste“. Falls du echte persistente Favoriten willst, musst du zusätzlich die gespeicherten Metadaten mit abspeichern, nicht nur den Key.
-
-Zum Score-System: score_breakdown addiert für jeden Keyword-Treffer stumpf Punkte. Das kann sehr stark eskalieren, weil alle Treffer gleich gewichtet sind und Mehrfachkontexte nicht begrenzt werden. Praktisch führt das oft zu überhöhten Scores bei langen Beschreibungen. Solider wäre eine Deckelung:
-
-focus_hits = 0
-for k in focus_keywords:
-    if k and k in text:
-        score += 10
-        focus_hits += 1
-        parts.append(f"+10 {k}")
-        if focus_hits >= 5:
-            break
-Dann noch ein UI-/Strukturproblem: Du lädst favorites = load_favorites() einmal global und später nochmal innerhalb der Tabs. Das ist nicht kaputt, aber unnötig verwirrend. Ich würde das globale
-
-favorites = load_favorites()
-entfernen und nur lokal dort laden, wo es gebraucht wird.
-
-Bei match_target_org(company) kann es Fehlklassifikationen geben, weil du sehr kurze Match-Strings hast, zum Beispiel:
-
-{"name": "GBA Group", "match": ["gba"]}
-{"name": "BASF", "match": ["basf"]}
-{"name": "Fraunhofer IZI (Leipzig)", "match": ["fraunhofer izi", "izi"]}
-"izi" ist sehr kurz und könnte zufällig woanders auftauchen. Besser wären strengere Regeln, etwa Wortgrenzen oder normalisierte Vollnamen.
-
-Noch eine echte Robustheitslücke: fetch_search ist mit @st.cache_data(ttl=300) dekoriert. Du übergibst api_key, wo, umkreis_km, was, aktualitaet_tage, size, page, arbeitszeit. Das ist okay, aber weil du live mehrere Seiten und Profile abfragst, kann das Cache-Verhalten bei Debugging verwirrend wirken. Technisch kein Bug, aber du solltest wissen, dass veraltete Suchergebnisse bis zu 5 Minuten hängen bleiben können.
-
-Mein Fazit:
-
-all_items vor Definition in show_hidden_manage ist der dringlichste Fix.
-
-verify=False rausnehmen.
-
-Distanzfilter für Jobs ohne Koordinaten bewusst entscheiden.
-
-Favoritenmodell überdenken, falls die Merkliste unabhängig von der aktuellen Suche sein soll.
-
-Score und Firmen-Matching robuster machen.
-
-Ich kann dir den Code auch direkt bereinigt und mit den wichtigsten Fixes als überarbeitete Version zurückgeben.
-
-
-ja bitte
-
-Jobwatch Leipzig Revised App
-· python
-        return data["stellenangebote"]
-    emb = data.get("_embedded") or {}
-    if isinstance(emb, dict) and isinstance(emb.get("jobs"), list):
-        return emb["jobs"]
-    if isinstance(data.get("jobs"), list):
-        return data["jobs"]
-    return []
-
-
-def item_id_raw(it: Dict[str, Any]) -> str:
-    v = it.get("refnr") or it.get("refNr") or it.get("hashId") or it.get("hashID") or ""
-    return str(v).strip() if v is not None else ""
-
-
-def item_title(it: Dict[str, Any]) -> str:
-    v = it.get("titel") or it.get("beruf") or it.get("title") or "Ohne Titel"
-    return str(v)
-
-
-def item_company(it: Dict[str, Any]) -> str:
-    v = it.get("arbeitgeber") or it.get("arbeitgeberName") or it.get("unternehmen") or ""
-    return str(v)
-
-
-def pretty_location(it: Dict[str, Any]) -> str:
-    loc = it.get("arbeitsort") or it.get("ort") or it.get("wo")
-    if isinstance(loc, str):
-        return loc
-    if isinstance(loc, dict):
-        ort = (loc.get("ort") or "").strip()
-        region = (loc.get("region") or "").strip()
-        land = (loc.get("land") or "").strip()
-        parts = [p for p in [ort, region, land] if p]
-        return ", ".join(parts) if parts else "—"
-    if loc is None:
-        return "—"
-    try:
-        return json.dumps(loc, ensure_ascii=False)
-    except Exception:
-        return str(loc)
-
-
-def item_key(it: Dict[str, Any]) -> str:
-    rid = item_id_raw(it)
-    if rid:
-        return f"ba:{rid}"
-    base = (item_title(it) + "|" + item_company(it) + "|" + pretty_location(it)).strip().lower()
-    h = hashlib.sha1(base.encode("utf-8", errors="ignore")).hexdigest()[:16]
-    return f"hx:{h}"
-
-
-def extract_latlon_from_item(it: Dict[str, Any]) -> Optional[Tuple[float, float]]:
-    loc = it.get("arbeitsort") or {}
-    if isinstance(loc, dict):
-        coords = loc.get("koordinaten") or {}
-        if isinstance(coords, dict):
-            lat = coords.get("lat")
-            lon = coords.get("lon")
-            try:
-                if lat is not None and lon is not None:
-                    return float(lat), float(lon)
-            except Exception:
-                pass
-
-    coords2 = it.get("koordinaten")
-    if isinstance(coords2, dict):
-        lat = coords2.get("lat")
-        lon = coords2.get("lon")
-        try:
-            if lat is not None and lon is not None:
-                return float(lat), float(lon)
-        except Exception:
-            pass
-
-    return None
-
-
-def details_url_api(it: Dict[str, Any]) -> Optional[str]:
-    links = it.get("_links") or {}
-    for k in ["details", "jobdetails"]:
-        v = links.get(k)
-        if isinstance(v, dict) and isinstance(v.get("href"), str):
-            href = v["href"]
-            return href if href.startswith("http") else (BASE + href)
-    return None
-
-
-
-ChatGPT generiert immer noch eine Reaktion…
