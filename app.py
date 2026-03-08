@@ -979,7 +979,7 @@ FOCUS_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_focus"]
 LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_lead"])]
 NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
 
-col1, col2 = st.columns([5, 2], gap="medium")
+col1, col2 = st.columns([6.5, 1.5], gap="medium")
 with col2:
 
     # -------- Snapshot --------
