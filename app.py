@@ -981,45 +981,71 @@ NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"
 
 col1, col2 = st.columns([7.2, 1.2], gap="small")
 with col2:
+    st.markdown(
+        """
+        <style>
+        .side-card {
+            border: 1px solid rgba(128,128,128,0.25);
+            border-radius: 14px;
+            padding: 14px 14px 10px 14px;
+            margin-bottom: 14px;
+            background: rgba(255,255,255,0.02);
+        }
+        .side-title {
+            font-size: 1.0rem;
+            font-weight: 700;
+            white-space: nowrap;
+            margin-bottom: 4px;
+        }
+        .side-sub {
+            font-size: 0.82rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # -------- Snapshot --------
-    with st.container(border=True):
-        st.markdown("### 💾 Snapshot")
+    st.markdown('<div class="side-card">', unsafe_allow_html=True)
+    st.markdown('<div class="side-title">💾 Snapshot</div>', unsafe_allow_html=True)
 
-        snap_time = snap.get("timestamp") or "— noch keiner gespeichert"
-        st.caption(f"Letzter Stand: {snap_time}")
+    snap_time = snap.get("timestamp") or "Noch kein Snapshot gespeichert"
+    st.markdown(f'<div class="side-sub">{snap_time}</div>', unsafe_allow_html=True)
 
-        if st.button("Stand speichern", use_container_width=True):
-            st.session_state["save_snapshot_requested"] = True
+    if st.button("Stand speichern", use_container_width=True):
+        st.session_state["save_snapshot_requested"] = True
 
-        if st.button("Stand löschen", use_container_width=True):
-            ensure_state_dir()
-            if os.path.exists(SNAPSHOT_FILE):
-                os.remove(SNAPSHOT_FILE)
-            st.success("Snapshot gelöscht. Seite neu laden.")
+    if st.button("Stand löschen", use_container_width=True):
+        ensure_state_dir()
+        if os.path.exists(SNAPSHOT_FILE):
+            os.remove(SNAPSHOT_FILE)
+        st.success("Snapshot gelöscht. Seite neu laden.")
 
-    st.write("")
+    st.markdown("</div>", unsafe_allow_html=True)
 
     # -------- Zielorganisationen --------
-    with st.container(border=True):
+    st.markdown('<div class="side-card">', unsafe_allow_html=True)
+    st.markdown('<div class="side-title">🎯 Organisationen</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="side-sub">Karriereseiten zum manuellen Prüfen</div>',
+        unsafe_allow_html=True
+    )
 
-        st.markdown("### 🎯 Zielorganisationen")
-        st.caption("Karriereseiten zum manuellen Prüfen")
+    with st.expander("Liste anzeigen", expanded=False):
+        for org in TARGET_ORGS:
+            try:
+                st.link_button(
+                    f"🏢 {org['name']}",
+                    org["url"],
+                    use_container_width=True
+                )
+            except Exception:
+                st.markdown(f"[🏢 {org['name']}]({org['url']})")
 
-        with st.expander("Liste anzeigen", expanded=False):
-
-            for org in TARGET_ORGS:
-
-                try:
-                    st.link_button(
-                        f"🏢 {org['name']}",
-                        org["url"],
-                        use_container_width=True
-                    )
-
-                except Exception:
-                    st.markdown(f"[🏢 {org['name']}]({org['url']})")
-
+    st.markdown("</div>", unsafe_allow_html=True)
+    
 with col1:
     tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
 
