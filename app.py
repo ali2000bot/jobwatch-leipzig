@@ -1043,14 +1043,14 @@ with col1:
             st.warning("Bitte mindestens eine Jobart auswählen.")
             st.stop()
 
+        all_items: List[Dict[str, Any]] = []
+
         # Hidden jobs state
         _hidden_data = load_hidden_jobs()
         hidden_keys: Set[str] = set(_hidden_data.get("hidden", []))
 
         if show_hidden_manage:
             st.subheader("🙈 Ausblend-Liste")
-            if len(all_items) >= int(max_results):
-                st.warning(f"Suche wurde bei {int(max_results)} Treffern gestoppt (Erweitert → Stopp-Limit).")
             st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
             cHM1, cHM2 = st.columns([1.2, 3.8])
             with cHM1:
@@ -1064,7 +1064,7 @@ with col1:
             st.divider()
 
         wo = home_query
-
+    
         # Live-UI
         live_status = st.empty()
         live_progress = st.progress(0)
@@ -1156,12 +1156,15 @@ with col1:
 
         live_progress.progress(100)
         live_status.success(f"Fertig. Roh-Treffer: {len(all_items)}")
+
+        if len(all_items) >= int(max_results):
+            st.warning(f"Suche wurde bei {int(max_results)} Treffern gestoppt (Erweitert → Stopp-Limit).")
         
         if errs:
             st.error("Fehler / Hinweise")
             for e in errs:
                 st.code(e)
-
+        
         # Dedup nach robuster ID
         items_now: List[Dict[str, Any]] = []
         seen: Set[str] = set()
