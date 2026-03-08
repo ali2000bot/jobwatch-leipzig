@@ -979,31 +979,46 @@ FOCUS_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_focus"]
 LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_lead"])]
 NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
 
-col1, col2 = st.columns([6, 1], gap="large")
-
+col1, col2 = st.columns([5, 2], gap="medium")
 with col2:
-    st.subheader("Snapshot")
-    st.write(snap.get("timestamp") or "— noch keiner gespeichert")
 
-    if st.button("Stand speichern"):
-        st.session_state["save_snapshot_requested"] = True
+    # -------- Snapshot --------
+    with st.container(border=True):
+        st.markdown("### 💾 Snapshot")
 
-    if st.button("Stand löschen"):
-        ensure_state_dir()
-        if os.path.exists(SNAPSHOT_FILE):
-            os.remove(SNAPSHOT_FILE)
-        st.success("Snapshot gelöscht. Seite neu laden.")
+        snap_time = snap.get("timestamp") or "— noch keiner gespeichert"
+        st.caption(f"Letzter Stand: {snap_time}")
 
-    st.divider()
-    st.subheader("Ziel-Organisationen")
-    st.caption("Karriereseiten (manueller Check).")
-    with st.expander("Liste anzeigen / öffnen", expanded=False):
-        for org in TARGET_ORGS:
-            try:
-                st.link_button(f"🏢 {org['name']}", org["url"])
-            except Exception:
-                st.markdown(f"[🏢 {org['name']}]({org['url']})")
+        if st.button("Stand speichern", use_container_width=True):
+            st.session_state["save_snapshot_requested"] = True
 
+        if st.button("Stand löschen", use_container_width=True):
+            ensure_state_dir()
+            if os.path.exists(SNAPSHOT_FILE):
+                os.remove(SNAPSHOT_FILE)
+            st.success("Snapshot gelöscht. Seite neu laden.")
+
+    st.write("")
+
+    # -------- Zielorganisationen --------
+    with st.container(border=True):
+
+        st.markdown("### 🎯 Zielorganisationen")
+        st.caption("Karriereseiten zum manuellen Prüfen")
+
+        with st.expander("Liste anzeigen", expanded=False):
+
+            for org in TARGET_ORGS:
+
+                try:
+                    st.link_button(
+                        f"🏢 {org['name']}",
+                        org["url"],
+                        use_container_width=True
+                    )
+
+                except Exception:
+                    st.markdown(f"[🏢 {org['name']}]({org['url']})")
 
 with col1:
     tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
