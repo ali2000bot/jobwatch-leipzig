@@ -584,8 +584,10 @@ def leaflet_map_html(
     home_lon: float,
     home_label: str,
     markers: List[Dict[str, Any]],
+    max_distance_km: float,
     height_px: int = 520,
 ) -> str:
+    radius_m = int(max_distance_km * 1000)
     markers_json = json.dumps(markers, ensure_ascii=False)
 
     return f"""
@@ -663,6 +665,15 @@ def leaflet_map_html(
   const homeMarker = L.marker([{home_lat}, {home_lon}], {{icon: homeIcon}}).addTo(fg);
   homeMarker.bindPopup("<b>Wohnort</b><br/>{home_label}");
 
+  // Pendelradius-Kreis
+  L.circle([{home_lat}, {home_lon}], {{
+    radius: {radius_m},
+    color: "#1565c0",
+    weight: 2,
+    fillColor: "#1565c0",
+    fillOpacity: 0.08
+  }}).addTo(map);
+
   markers.forEach(m => {{
     const lat = m.lat, lon = m.lon;
     const title = (m.title || '').replace(/</g,'&lt;');
@@ -678,7 +689,7 @@ def leaflet_map_html(
 
     const popup =
       '<b>' + idx + ') ' + title + '</b><br/>' + company
-      + (dist!=null ? '<br/>Dist: ' + dist + ' km' : '');
+      + (dist != null ? '<br/>Dist: ' + dist + ' km' : '');
 
     L.marker([lat, lon], {{icon: icon}}).addTo(fg).bindPopup(popup);
   }});
@@ -692,7 +703,6 @@ def leaflet_map_html(
 </body>
 </html>
 """
-
 
 # ============================================================
 # Score / Relevanz
@@ -884,10 +894,19 @@ with st.sidebar:
     # BA-Suche (minimal)
     # -------------------------
     st.subheader("Suche")
-    wo = home_query  # BA-Ort = Wohnort
 
-    umkreis = st.selectbox("Umkreis vor Ort (km)", [25, 40, 50], index=1)
+    wo = home_query
+
+    max_distance_filter = st.slider(
+        "Maximale Entfernung (km)",
+        10, 200, 80, 5
+    )
+    st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
+    # gleicher Wert wird für BA-Suche verwendet
+    umkreis = int(max_distance_filter)
+
     include_ho = st.checkbox("Homeoffice berücksichtigen", value=False)
+    
     ho_umkreis = st.slider("Homeoffice-Umkreis (km)", 50, 200, 100, 25) if include_ho else 0
 
     aktualitaet_option = st.selectbox(
@@ -938,15 +957,11 @@ with st.sidebar:
         max_job_geocodes = st.slider("Max. Geocoding pro Lauf", 0, 50, 10, 5)
 
         st.markdown("**Entfernung / Fahrzeit**")
-        near_km = st.slider("Grün bis (km)", 5, 80, 25, 5)
-        mid_km = st.slider("Gelb bis (km)", 10, 150, 60, 5)
+        near_km = st.slider("Grün bis (km)", 5, 80, 10, 5)
+        mid_km = st.slider("Gelb bis (km)", 10, 150, 35, 5)
         speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
 
-        max_distance_filter = st.slider(
-            "Maximale Entfernung anzeigen (km)",
-            20, 300, 150, 10
-        )
-
+        umkreis = int(max_distance_filter)
         st.divider()
         st.markdown("**Score-Tuning**")
         ho_bonus = st.slider("Homeoffice-Bonus (Score)", 0, 30, 8, 1)
@@ -1194,10 +1209,28 @@ with col1:
         items_now_filtered = []
         for it in items_now:
             dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-            if dist is None or dist <= float(max_distance_filter):
+
+            if dist is None:
+                items_now_filtered.append(it)
+                continue
+
+            if dist <= float(max_distance_filter):
+                items_now_filtered.append(it)
+                continue
+
+            if include_ho and is_homeoffice_item(it):
                 items_now_filtered.append(it)
 
         items_now = items_now_filtered
+
+        # alt
+        #items_now_filtered = []
+        #for it in items_now:
+        #    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+        #    if dist is None or dist <= float(max_distance_filter):
+        #        items_now_filtered.append(it)
+
+        #items_now = items_now_filtered
         
         items_sorted = sorted(items_now, key=sort_key)
 
@@ -1206,7 +1239,7 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
-        st.caption(f"Entfernungslimit aktiv: {max_distance_filter} km")
+        
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
@@ -1327,7 +1360,14 @@ with col1:
         if markers:
             st.write("### Karte")
             components.html(
-                leaflet_map_html(float(home_lat), float(home_lon), home_label, markers[:80], height_px=520),
+                leaflet_map_html(
+                    float(home_lat),
+                    float(home_lon),
+                    home_label,
+                    markers[:80],
+                    float(max_distance_filter),
+                    height_px=520,
+                ),
                 height=560,
             )
 
