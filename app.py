@@ -925,7 +925,7 @@ with st.sidebar:
 
         st.markdown("**Suche-Breite**")
         max_pages = st.slider("Max. Seiten pro Jobart", 1, 100, 100, 1)
-        max_results = st.slider("Stopp bei max. Treffern", 100, 4000, 2000, 100)
+        max_results = st.slider("Stopp bei max. Treffern", 100, 10000, 2000, 100)
         st.caption(f"Techn. Maximum: {int(max_pages)*size}")
         st.caption(f"App-Limit: {int(max_results)}")
 
