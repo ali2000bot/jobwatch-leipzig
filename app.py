@@ -472,7 +472,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
     "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung",
     "kommissionierer", "lager", "picker", "packen", "versand", "zusteller",
-    "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer",
+    "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer", "aushilfe",
     "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer",
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
     "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
