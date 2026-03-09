@@ -1082,18 +1082,50 @@ with col1:
 
         if show_hidden_manage:
             st.subheader("🙈 Ausblend-Liste")
+
+            # ---------------- Jobs ----------------
+            st.markdown("**Ausgeblendete Jobs**")
             st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
+
             cHM1, cHM2 = st.columns([1.2, 3.8])
             with cHM1:
-                if st.button("🧹 Alle löschen"):
+                if st.button("🧹 Jobs leeren", key="clear_hidden_jobs"):
                     save_hidden_jobs(set())
-                    st.success("Ausblend-Liste geleert.")
+                    st.success("Ausblend-Liste für Jobs geleert.")
                     st.rerun()
             with cHM2:
                 if hidden_keys:
                     st.code("\n".join(sorted(hidden_keys)))
+                else:
+                    st.caption("Keine Jobs ausgeblendet.")
+
             st.divider()
 
+    # ---------------- Firmen ----------------
+    st.markdown("**Blockierte Firmen**")
+    st.caption(f"{len(hidden_companies)} Firmen blockiert")
+
+    cHC1, cHC2 = st.columns([1.2, 3.8])
+    with cHC1:
+        if st.button("🧹 Firmen leeren", key="clear_hidden_companies"):
+            save_hidden_companies(set())
+            st.success("Blockierte Firmen geleert.")
+            st.rerun()
+    with cHC2:
+        if hidden_companies:
+            for comp in sorted(hidden_companies):
+                c1, c2 = st.columns([4.5, 1])
+                with c1:
+                    st.write(comp)
+                with c2:
+                    if st.button("❌", key=f"unblock_company_{comp}"):
+                        hidden_companies.discard(comp)
+                        save_hidden_companies(hidden_companies)
+                        st.rerun()
+        else:
+            st.caption("Keine Firmen blockiert.")
+
+    st.divider()
         wo = home_query
 
         live_status = st.empty()
