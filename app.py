@@ -1195,10 +1195,9 @@ with col1:
         st.subheader(f"Treffer: {len(items_sorted)}")
         st.caption(
             f"Neu seit Snapshot: {len(new_keys)} | "
-            f"Marker auf Karte: {len(markers)} | "
             f"Suchradius: {max_distance_filter} km"
         )
-
+             
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
