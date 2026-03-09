@@ -484,6 +484,7 @@ DEFAULT_LEADERSHIP_KEYWORDS = [
 
 DEFAULT_NEGATIVE_KEYWORDS = [
     "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
+    "psychologe", "betreuungsassistent", 
     "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut", "betreuungskraft",
     "zahntechniker", "zahntechnikerin", "erzieher", "erzieherin", "friseurmeister",
     "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
@@ -496,7 +497,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
     "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
     "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer",
-    "maschinist", "rohrverrichter", "metallfacharbeiter", "metallbearbeiter", 
+    "maschinist", "rohrverrichter", "metallfacharbeiter", "metallbearbeiter", "tischler",
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
     "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
