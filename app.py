@@ -1126,6 +1126,7 @@ with col1:
             st.caption("Keine Firmen blockiert.")
 
     st.divider()
+    
         wo = home_query
 
         live_status = st.empty()
@@ -1201,7 +1202,11 @@ with col1:
 
         if hide_marked:
             items_now = [it for it in items_now if (it.get("_key") or item_key(it)) not in hidden_keys]
-       
+        items_now = [
+            it for it in items_now
+            if item_company(it).strip().lower() not in hidden_companies
+        ]
+
         # Firmen-Blacklist
         items_now = [
             it for it in items_now
