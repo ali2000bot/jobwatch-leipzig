@@ -23,6 +23,7 @@ SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
 COMPANY_STATE_FILE = os.path.join(STATE_DIR, "company_monitor.json")
 HIDDEN_JOBS_FILE = os.path.join(STATE_DIR, "hidden_jobs.json")
 FAVORITES_FILE = os.path.join(STATE_DIR, "favorites.json")
+HIDDEN_COMPANIES_FILE = os.path.join(STATE_DIR, "hidden_companies.json")
 
 
 def ensure_state_dir() -> None:
@@ -127,6 +128,22 @@ def save_hidden_jobs(hidden_keys: Set[str]) -> None:
     with open(HIDDEN_JOBS_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
+def load_hidden_companies() -> Set[str]:
+    if not os.path.exists(HIDDEN_COMPANIES_FILE):
+        return set()
+    try:
+        with open(HIDDEN_COMPANIES_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            if isinstance(data, list):
+                return set([x.lower() for x in data])
+    except Exception:
+        pass
+    return set()
+
+def save_hidden_companies(companies: Set[str]) -> None:
+    ensure_state_dir()
+    with open(HIDDEN_COMPANIES_FILE, "w", encoding="utf-8") as f:
+        json.dump(sorted(list(companies)), f, ensure_ascii=False, indent=2)
 
 # ============================================================
 # Geocoding (Wohnort + optional Job-Orte)
@@ -1061,6 +1078,7 @@ with col1:
 
         _hidden_data = load_hidden_jobs()
         hidden_keys: Set[str] = set(_hidden_data.get("hidden", []))
+        hidden_companies = load_hidden_companies()
 
         if show_hidden_manage:
             st.subheader("🙈 Ausblend-Liste")
@@ -1151,7 +1169,13 @@ with col1:
 
         if hide_marked:
             items_now = [it for it in items_now if (it.get("_key") or item_key(it)) not in hidden_keys]
-
+       
+        # Firmen-Blacklist
+        items_now = [
+            it for it in items_now
+            if item_company(it).lower() not in hidden_companies
+        ]
+        
         if hide_irrelevant:
             items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
@@ -1403,6 +1427,14 @@ with col1:
                 with cH2:
                     st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
 
+                # ---- Firma blockieren ----
+                company_name = item_company(it)
+                if company_name:
+                    if st.button("🚫 Firma blockieren", key=f"hide_company_{k}"):
+                        hidden_companies.add(company_name.lower())
+                        save_hidden_companies(hidden_companies)
+                        st.rerun()
+                
                 rid = item_id_raw(it) or "—"
                 facts = [
                     ("Nr.", num_txt),
