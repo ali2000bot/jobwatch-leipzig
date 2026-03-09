@@ -476,11 +476,11 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer",
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
     "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
-    "lackierer",
+    "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer", 
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
     "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
-    "facharzt", "integrationshelfer", "empfangsleiter",
+    "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", 
 ]
 
 
