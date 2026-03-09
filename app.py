@@ -1127,7 +1127,7 @@ with col1:
 
     st.divider()
     
-        wo = home_query
+    wo = home_query
 
         live_status = st.empty()
         live_progress = st.progress(0)
