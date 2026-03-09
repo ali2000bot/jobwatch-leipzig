@@ -1101,33 +1101,33 @@ with col1:
 
             st.divider()
 
-    # ---------------- Firmen ----------------
-    st.markdown("**Blockierte Firmen**")
-    st.caption(f"{len(hidden_companies)} Firmen blockiert")
+            # ---------------- Firmen ----------------
+            st.markdown("**Blockierte Firmen**")
+            st.caption(f"{len(hidden_companies)} Firmen blockiert")
 
-    cHC1, cHC2 = st.columns([1.2, 3.8])
-    with cHC1:
-        if st.button("🧹 Firmen leeren", key="clear_hidden_companies"):
-            save_hidden_companies(set())
-            st.success("Blockierte Firmen geleert.")
-            st.rerun()
-    with cHC2:
-        if hidden_companies:
-            for comp in sorted(hidden_companies):
-                c1, c2 = st.columns([4.5, 1])
-                with c1:
-                    st.write(comp)
-                with c2:
-                    if st.button("❌", key=f"unblock_company_{comp}"):
-                        hidden_companies.discard(comp)
-                        save_hidden_companies(hidden_companies)
-                        st.rerun()
-        else:
-            st.caption("Keine Firmen blockiert.")
+            cHC1, cHC2 = st.columns([1.2, 3.8])
+            with cHC1:
+                if st.button("🧹 Firmen leeren", key="clear_hidden_companies"):
+                    save_hidden_companies(set())
+                    st.success("Blockierte Firmen geleert.")
+                    st.rerun()
+            with cHC2:
+                if hidden_companies:
+                    for comp in sorted(hidden_companies):
+                        c1, c2 = st.columns([4.5, 1])
+                        with c1:
+                            st.write(comp)
+                        with c2:
+                            if st.button("❌", key=f"unblock_company_{comp}"):
+                                hidden_companies.discard(comp)
+                                save_hidden_companies(hidden_companies)
+                                st.rerun()
+                else:
+                    st.caption("Keine Firmen blockiert.")
 
-    st.divider()
+            st.divider()
     
-    wo = home_query
+        wo = home_query
 
         live_status = st.empty()
         live_progress = st.progress(0)
