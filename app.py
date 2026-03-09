@@ -483,7 +483,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
     "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
-    "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", 
+    "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", "filialleiter",
 ]
 
 
