@@ -477,7 +477,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
     "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
     "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer", 
-    "assistant", "assistenz", "sekretariat", "vorstandsassistenz",
+    "assistant", "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
     "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
     "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", 
