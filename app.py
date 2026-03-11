@@ -1310,58 +1310,73 @@ with col1:
             key=lambda x: x[1],
             reverse=True
         )[:8]
-        
+
         if top_companies:
             st.markdown("### 🏢 Firmen mit mehreren Treffern")
+        
+            st.markdown(
+                """
+                <style>
+                div[data-testid="stButton"] > button[kind="secondary"] {
+                    border-radius: 999px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
 
             focus_company = st.session_state.get("focus_company")
             if focus_company:
-                c1, c2 = st.columns([5,1])
+                c1, c2 = st.columns([5, 1.2])
                 with c1:
                     st.info(f"🎯 Fokusfirma aktiv: {focus_company}")
                 with c2:
-                    if st.button("❌ Aufheben", key="clear_focus_company"):
+                    if st.button("❌ Aufheben", key="clear_focus_company", use_container_width=True):
                         st.session_state["focus_company"] = None
                         st.session_state["jump_to_job"] = None
                         st.rerun()
-
-            visible_companies = top_companies[:6]
-            more_companies = top_companies[6:]
-
-            cols_per_row = 3
-            rows = [visible_companies[i:i+cols_per_row] for i in range(0, len(visible_companies), cols_per_row)]
-
-            for row_i, row in enumerate(rows):
+        
+            visible_companies = top_companies[:10]
+            more_companies = top_companies[10:]
+        
+            cols_per_row = 2
+            rows = [visible_companies[i:i + cols_per_row] for i in range(0, len(visible_companies), cols_per_row)]
+        
+            for row_idx, row in enumerate(rows):
                 cols = st.columns(cols_per_row)
-
-                for col_i, (comp, count) in enumerate(row):
-                    with cols[col_i]:
-                        with st.container(border=True):
-
-                            st.markdown(f"**{comp}**")
-                            st.caption(f"{count} Treffer")
-
-                            if st.button(
-                                "🔎 Anzeigen",
-                                key=f"focus_company_{row_i}_{col_i}_{comp}",
-                                use_container_width=True
-                            ):
-                                st.session_state["focus_company"] = comp.strip().lower()
-                                st.session_state["jump_to_job"] = None
-                                st.rerun()
-
+                for col_idx, (comp, count) in enumerate(row):
+                    with cols[col_idx]:
+                        label = f"🏢 {comp} · {count}"
+                        if st.button(
+                            label,
+                            key=f"focus_company_chip_{row_idx}_{col_idx}_{comp}",
+                            use_container_width=True,
+                            type="secondary",
+                        ):
+                            st.session_state["focus_company"] = comp.strip().lower()
+                            st.session_state["jump_to_job"] = None
+                            st.rerun()
+        
             if more_companies:
-                with st.expander(f"Weitere Firmen ({len(more_companies)})"):
-                    for comp, count in more_companies:
-                        c1, c2 = st.columns([5,1])
-                        with c1:
-                            st.write(f"**{comp}** — {count} Treffer")
-                        with c2:
-                            if st.button("🔎 Anzeigen", key=f"focus_more_{comp}"):
-                                st.session_state["focus_company"] = comp.strip().lower()
-                                st.session_state["jump_to_job"] = None
-                                st.rerun()
-                
+                with st.expander(f"Weitere Firmen ({len(more_companies)})", expanded=False):
+                    extra_cols_per_row = 2
+                    extra_rows = [more_companies[i:i + extra_cols_per_row] for i in range(0, len(more_companies), extra_cols_per_row)]
+        
+                    for row_idx, row in enumerate(extra_rows):
+                        cols = st.columns(extra_cols_per_row)
+                        for col_idx, (comp, count) in enumerate(row):
+                            with cols[col_idx]:
+                                label = f"🏢 {comp} · {count}"
+                                if st.button(
+                                    label,
+                                    key=f"focus_company_chip_more_{row_idx}_{col_idx}_{comp}",
+                                    use_container_width=True,
+                                    type="secondary",
+                                ):
+                                    st.session_state["focus_company"] = comp.strip().lower()
+                                    st.session_state["jump_to_job"] = None
+                                    st.rerun()
+                       
         top_items = sorted(
             items_sorted,
             key=lambda it: score_breakdown(
