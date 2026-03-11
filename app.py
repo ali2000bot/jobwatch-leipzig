@@ -1329,13 +1329,15 @@ with col1:
                 if org:
                     target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
 
-                st.write(
-                    f"**{rank}. {item_title(it)}**{target_tag}  \n"
-                    f"{item_company(it)} · {pretty_location(it)} · {dist_txt} · Score: {score_val}"
-                )
+                with st.container(border=True):
+                    st.markdown(
+                        f"**{rank}. {item_title(it)}**{target_tag}  \n"
+                        f"{item_company(it)} · {pretty_location(it)}  \n"
+                        f"Entfernung: {dist_txt} · Score: {score_val}"
+                    )
 
             st.divider()
-                     
+                                 
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
