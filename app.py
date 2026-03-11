@@ -1329,12 +1329,24 @@ with col1:
                 if org:
                     target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
 
+                web_url = jobsuche_web_url(it)
+
                 with st.container(border=True):
                     st.markdown(
                         f"**{rank}. {item_title(it)}**{target_tag}  \n"
                         f"{item_company(it)} · {pretty_location(it)}  \n"
                         f"Entfernung: {dist_txt} · Score: {score_val}"
                     )
+
+                    if web_url:
+                        try:
+                            st.link_button(
+                                "🔗 In BA Jobsuche öffnen",
+                                web_url,
+                                key=f"top_link_{rank}_{it.get('_key', rank)}"
+                            )
+                        except Exception:
+                            st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
 
             st.divider()
                                  
