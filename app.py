@@ -156,6 +156,37 @@ def save_hidden_companies(companies: Set[str]) -> None:
         json.dump(sorted(list(companies)), f, ensure_ascii=False, indent=2)
 
 
+def normalize_text(s: str) -> str:
+    return " ".join((s or "").lower().replace("\n", " ").replace("\r", " ").split())
+
+
+def is_recruiting_company(company: str) -> bool:
+    c = normalize_text(company)
+    if not c:
+        return False
+    return any(k in c for k in RECRUITING_COMPANY_KEYWORDS)
+
+
+def is_recruiting_posting(it: Dict[str, Any]) -> bool:
+    company = item_company(it)
+    if is_recruiting_company(company):
+        return True
+
+    text = normalize_text(
+        " ".join(
+            [
+                item_title(it),
+                str(it.get("kurzbeschreibung", "")),
+                str(it.get("beschreibung", "")),
+                str(it.get("jobbeschreibung", "")),
+                str(it.get("stellenbeschreibung", "")),
+                company,
+            ]
+        )
+    )
+
+    return any(p in text for p in RECRUITING_TEXT_PATTERNS)
+
 # ============================================================
 # Geocoding (Wohnort + optional Job-Orte)
 # ============================================================
@@ -524,7 +555,16 @@ RECRUITING_COMPANY_KEYWORDS = [
     "hr services", "people solutions", "career services", "jobcenter", "arbeitsagentur",
     "randstad", "adecco", "manpower", "persona service", "ferchau", "hays", "dis ag",
     "amadeus fire", "experis", "jobactive", "arwa", "orizon", "akut", "job impulse",
-    "bindan", "alpha consult",
+    "bindan", "alpha consult", "timepartner", "permacon", "tempton", "piening", "dekra arbeit",
+    "hofmann", "i. k. hofmann", "run zeitarbeit", "unique personalservice", "meteor personaldienste",
+    "aerb personal",
+]
+
+RECRUITING_TEXT_PATTERNS = [
+    "im auftrag unseres kunden", "im auftrag eines kunden", "für unseren kunden", "für einen unserer kunden",
+    "für einen namhaften kunden", "unser kunde", "unser mandant", "im rahmen der personalvermittlung",
+    "im rahmen der direktvermittlung", "direktvermittlung", "personalvermittlung", "vermittlungsgutschein",
+    "zeitarbeit", "arbeitnehmerüberlassung", "aü", "aueg", "arbeitnehmerueberlassung", "temp to perm",
 ]
 
 def parse_keywords(text: str) -> List[str]:
