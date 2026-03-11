@@ -186,6 +186,14 @@ def is_recruiting_posting(it: Dict[str, Any]) -> bool:
 
     return any(p in text for p in RECRUITING_TEXT_PATTERNS)
 
+def sanitize_md_text(s: str) -> str:
+    return (
+        str(s or "")
+        .replace("*", "✱")
+        .replace("_", "‗")
+        .replace("`", "´")
+    )
+
 # ============================================================
 # Geocoding (Wohnort + optional Job-Orte)
 # ============================================================
@@ -1479,7 +1487,7 @@ with col1:
 
                 k = it.get("_key") or item_key(it)
                 fav_tag = " 📌" if is_favorited(k, favorites) else ""
-
+                                
                 safe_title = sanitize_md_text(item_title(it))
                 safe_company = sanitize_md_text(item_company(it))
                 safe_location = sanitize_md_text(pretty_location(it))
