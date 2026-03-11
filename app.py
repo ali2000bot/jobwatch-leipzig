@@ -65,14 +65,13 @@ def save_company_state(state: Dict[str, Any]) -> None:
     with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
-def is_recruiting_company(company: str) -> bool:
-    c = (company or "").lower()
-
-    if not c.strip():
-        return False
-
-    return any(k in c for k in RECRUITING_COMPANY_KEYWORDS)
-
+def sanitize_md_text(s: str) -> str:
+    return (
+        str(s or "")
+        .replace("*", "✱")
+        .replace("_", "‗")
+        .replace("`", "´")
+    )
 
 # ---------------- Favoriten ---------------------
 def load_favorites() -> Dict[str, Any]:
@@ -1292,11 +1291,6 @@ with col1:
             removed = before_recruiting_filter - len(items_now)
             if removed > 0:
                 st.caption(f"🤖 {removed} Recruiting-/Personaldienstleister-Treffer automatisch ausgeblendet")
-
-        items_now = [
-            it for it in items_now
-            if not is_recruiting_company(item_company(it))
-        ]
         
         if hide_irrelevant:
             items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
@@ -1486,10 +1480,14 @@ with col1:
                 k = it.get("_key") or item_key(it)
                 fav_tag = " 📌" if is_favorited(k, favorites) else ""
 
+                safe_title = sanitize_md_text(item_title(it))
+                safe_company = sanitize_md_text(item_company(it))
+                safe_location = sanitize_md_text(pretty_location(it))
+                
                 with st.container(border=True):
                     st.markdown(
-                        f"**{rank}. {item_title(it)}**{fav_tag}{target_tag}  \n"
-                        f"{item_company(it)} · {pretty_location(it)}  \n"
+                        f"**{rank}. {safe_title}**{fav_tag}{target_tag}  \n"
+                        f"{safe_company} · {safe_location}  \n"
                         f"Entfernung: {dist_txt} · Score: {score_val}"
                     )
 
@@ -1658,7 +1656,8 @@ with col1:
 
             pin = "📌 " if fav else ""
             focus_tag = " 🏢" if is_focused_company else ""
-            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{focus_tag}{target_tag}"
+            safe_title = sanitize_md_text(item_title(it))
+            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{safe_title}{focus_tag}{target_tag}"
 
             meta_text = " | ".join(
                 [
