@@ -65,6 +65,14 @@ def save_company_state(state: Dict[str, Any]) -> None:
     with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
+def is_recruiting_company(company: str) -> bool:
+    c = (company or "").lower()
+
+    if not c.strip():
+        return False
+
+    return any(k in c for k in RECRUITING_COMPANY_KEYWORDS)
+
 
 # ---------------- Favoriten ---------------------
 def load_favorites() -> Dict[str, Any]:
@@ -509,6 +517,15 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "personalentwicklung", "informatiker", "wirtschaftsinformatiker", "programmleiter", 
 ]
 
+RECRUITING_COMPANY_KEYWORDS = [
+    "gmbh & co. kg personal", "personalvermittlung", "personalberatung", "personaldienst",
+    "personaldienstleistung", "personaldienstleister", "recruiting", "headhunter",
+    "talent acquisition", "staffing", "job agency", "arbeitsvermittlung", "hr solutions",
+    "hr services", "people solutions", "career services", "jobcenter", "arbeitsagentur",
+    "randstad", "adecco", "manpower", "persona service", "ferchau", "hays", "dis ag",
+    "amadeus fire", "experis", "jobactive", "arwa", "orizon", "akut", "job impulse",
+    "bindan", "alpha consult",
+]
 
 def parse_keywords(text: str) -> List[str]:
     raw: List[str] = []
