@@ -1328,8 +1328,7 @@ with col1:
 
         if top_items:
             st.markdown("### ⭐ Beste Treffer")
-            k = it.get("_key") or item_key(it)
-            fav_tag = " 📌" if is_favorited(k, favorites) else ""
+
             for rank, it in enumerate(top_items, start=1):
                 dist = distance_from_home_km(it, float(home_lat), float(home_lon))
                 dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
@@ -1347,7 +1346,8 @@ with col1:
                 if org:
                     target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
 
-                web_url = jobsuche_web_url(it)
+                k = it.get("_key") or item_key(it)
+                fav_tag = " 📌" if is_favorited(k, favorites) else ""
 
                 with st.container(border=True):
                     st.markdown(
@@ -1355,7 +1355,7 @@ with col1:
                         f"{item_company(it)} · {pretty_location(it)}  \n"
                         f"Entfernung: {dist_txt} · Score: {score_val}"
                     )
-                
+
                     if st.button(
                         "🔎 In Liste anzeigen",
                         key=f"jump_{rank}_{it.get('_key', rank)}"
@@ -1364,7 +1364,7 @@ with col1:
                         st.rerun()
 
             st.divider()
-                                 
+                                                 
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
