@@ -1295,6 +1295,46 @@ with col1:
 
             for i, (comp, count) in enumerate(top_companies):
                 cols[i % 4].metric(comp[:22], count)
+
+        # -------- Top-Treffer --------
+        top_items = sorted(
+            items_sorted,
+            key=lambda it: score_breakdown(
+                it,
+                FOCUS_KEYWORDS,
+                LEADERSHIP_KEYWORDS,
+                NEGATIVE_KEYWORDS,
+                int(ho_bonus)
+            )[0],
+            reverse=True
+        )[:5]
+
+        if top_items:
+            st.markdown("### ⭐ Beste Treffer")
+
+            for rank, it in enumerate(top_items, start=1):
+                dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+                dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
+
+                score_val = score_breakdown(
+                    it,
+                    FOCUS_KEYWORDS,
+                    LEADERSHIP_KEYWORDS,
+                    NEGATIVE_KEYWORDS,
+                    int(ho_bonus)
+                )[0]
+
+                org = match_target_org(item_company(it))
+                target_tag = ""
+                if org:
+                    target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
+
+                st.write(
+                    f"**{rank}. {item_title(it)}**{target_tag}  \n"
+                    f"{item_company(it)} · {pretty_location(it)} · {dist_txt} · Score: {score_val}"
+                )
+
+            st.divider()
                      
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
