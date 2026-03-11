@@ -1281,6 +1281,18 @@ with col1:
             if item_company(it).strip().lower() not in hidden_companies
         ]
 
+        before_recruiting_filter = len(items_now)
+
+        items_now = [
+            it for it in items_now
+            if not is_recruiting_posting(it)
+        ]
+        
+        if debug:
+            removed = before_recruiting_filter - len(items_now)
+            if removed > 0:
+                st.caption(f"🤖 {removed} Recruiting-/Personaldienstleister-Treffer automatisch ausgeblendet")
+
         items_now = [
             it for it in items_now
             if not is_recruiting_company(item_company(it))
