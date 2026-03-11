@@ -1272,23 +1272,23 @@ with col1:
 
         jump_target = st.session_state.get("jump_to_job")
 
-            if jump_target:
-                target_item = None
-                other_items = []
+        if jump_target:
+            target_item = None
+            other_items = []
 
-                for it in items_sorted:
-                    k2 = it.get("_key") or item_key(it)
-                    if k2 == jump_target and target_item is None:
-                        target_item = it
-                    else:
-                        other_items.append(it)
+            for it in items_sorted:
+                k2 = it.get("_key") or item_key(it)
+                if k2 == jump_target and target_item is None:
+                    target_item = it
+                else:
+                    other_items.append(it)
 
-                if target_item is not None:
-                    items_sorted = [target_item] + other_items
+            if target_item is not None:
+                items_sorted = [target_item] + other_items
 
-            # Nummerierung
-            for i, it in enumerate(items_sorted, start=1):
-                it["_idx"] = i
+        # Nummerierung
+        for i, it in enumerate(items_sorted, start=1):
+            it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
         # -------- Firmen-Radar --------
