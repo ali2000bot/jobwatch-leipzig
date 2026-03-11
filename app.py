@@ -503,6 +503,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
     "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
     "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", "filialleiter",
+    "personalentwicklung", 
 ]
 
 
