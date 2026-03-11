@@ -1270,18 +1270,6 @@ with col1:
         items_now = items_now_filtered
         items_sorted = sorted(items_now, key=sort_key)
 
-        jump_target = st.session_state.get("jump_to_job")
-
-        if jump_target:
-            items_sorted = sorted(
-                items_sorted,
-                key=lambda it: 0 if (it.get("_key") or item_key(it)) == jump_target else 1
-            )
-
-# Nummerierung
-for i, it in enumerate(items_sorted, start=1):
-    it["_idx"] = i
-
         for i, it in enumerate(items_sorted, start=1):
             it["_idx"] = i
 
