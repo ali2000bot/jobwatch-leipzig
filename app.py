@@ -30,6 +30,100 @@ def ensure_state_dir() -> None:
     os.makedirs(STATE_DIR, exist_ok=True)
 
 
+# ============================================================
+# Keyword helpers + defaults
+# ============================================================
+DEFAULT_HOME_LABEL = "06242 Braunsbedra"
+DEFAULT_HOME_LAT = 51.2861
+DEFAULT_HOME_LON = 11.8900
+
+DEFAULT_FOCUS_KEYWORDS = [
+    "thermoanalyse", "thermophysik", "thermal analysis", "thermophysical",
+    "dsc", "tga", "lfa", "hfm", "heat flow meter", "laser flash", "laser flash analysis",
+    "wärmeleitfähigkeit", "thermal conductivity", "diffusivität", "diffusivity",
+    "kalorimetrie", "calorimetry", "wärmekapazität", "heat capacity",
+    "materialcharakterisierung", "material characterization",
+    "analytik", "instrumentierung", "messgerät", "labor",
+    "werkstoff", "werkstoffe", "polymer", "keramik", "metall",
+    "f&e", "forschung", "entwicklung", "r&d", "research", "development",
+    "verfahrenstechnik", "thermodynamik", "wärmeübertragung",
+    "thermische simulation", "physik", "physics",
+]
+
+DEFAULT_LEADERSHIP_KEYWORDS = [
+    "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
+    "leiter", "head", "lead", "director", "manager", "principal",
+    "sektionsleiter", "section manager",
+]
+
+DEFAULT_NEGATIVE_KEYWORDS = [
+    "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
+    "psychologe", "betreuungsassistent",
+    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut", "betreuungskraft",
+    "zahntechniker", "zahntechnikerin", "erzieher", "erzieherin", "friseurmeister",
+    "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
+    "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung", "saisonkraft",
+    "verkäufer", "lehrer",
+    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller", "sicherheitskraft",
+    "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer", "aushilfe",
+    "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer",
+    "lkw-fahrer", "elektriker", "maurer", "monteurin", "mechatroniker", "elektroniker",
+    "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
+    "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
+    "metallbearbeitung",
+    "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer",
+    "maschinist", "rohrverrichter", "metallfacharbeiter", "metallbearbeiter", "tischler",
+    "assistant", "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
+    "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
+    "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
+    "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", "filialleiter",
+    "personalentwicklung", "informatiker", "wirtschaftsinformatiker", "programmleiter",
+]
+
+RECRUITING_COMPANY_KEYWORDS = [
+    "gmbh & co. kg personal", "personalvermittlung", "personalberatung", "personaldienst",
+    "personaldienstleistung", "personaldienstleister", "recruiting", "headhunter",
+    "talent acquisition", "staffing", "job agency", "arbeitsvermittlung", "hr solutions",
+    "hr services", "people solutions", "career services", "jobcenter", "arbeitsagentur",
+    "randstad", "adecco", "manpower", "persona service", "ferchau", "hays", "dis ag",
+    "amadeus fire", "experis", "jobactive", "arwa", "orizon", "akut", "job impulse",
+    "bindan", "alpha consult", "timepartner", "permacon", "tempton", "piening", "dekra arbeit",
+    "hofmann", "i. k. hofmann", "run zeitarbeit", "unique personalservice", "meteor personaldienste",
+    "aerb personal",
+]
+
+RECRUITING_TEXT_PATTERNS = [
+    "im auftrag unseres kunden", "im auftrag eines kunden", "für unseren kunden", "für einen unserer kunden",
+    "für einen namhaften kunden", "unser kunde", "unser mandant", "im rahmen der personalvermittlung",
+    "im rahmen der direktvermittlung", "direktvermittlung", "personalvermittlung", "vermittlungsgutschein",
+    "zeitarbeit", "arbeitnehmerüberlassung", "aü", "aueg", "arbeitnehmerueberlassung", "temp to perm",
+]
+
+
+def parse_keywords(text: str) -> List[str]:
+    raw: List[str] = []
+    for line in (text or "").splitlines():
+        raw.extend([p.strip() for p in line.split(",")])
+    return [x for x in raw if x]
+
+
+def keywords_to_text(words: List[str]) -> str:
+    return "\n".join(words)
+
+
+def sanitize_md_text(s: str) -> str:
+    return (
+        str(s or "")
+        .replace("*", "✱")
+        .replace("_", "‗")
+        .replace("`", "´")
+    )
+
+
+def normalize_text(s: str) -> str:
+    return " ".join((s or "").lower().replace("\n", " ").replace("\r", " ").split())
+
+
 # -------------------- Snapshot helpers --------------------
 def load_snapshot() -> Dict[str, Any]:
     if not os.path.exists(SNAPSHOT_FILE):
@@ -65,13 +159,6 @@ def save_company_state(state: Dict[str, Any]) -> None:
     with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
-def sanitize_md_text(s: str) -> str:
-    return (
-        str(s or "")
-        .replace("*", "✱")
-        .replace("_", "‗")
-        .replace("`", "´")
-    )
 
 # ---------------- Favoriten ---------------------
 def load_favorites() -> Dict[str, Any]:
@@ -154,103 +241,6 @@ def save_hidden_companies(companies: Set[str]) -> None:
     with open(HIDDEN_COMPANIES_FILE, "w", encoding="utf-8") as f:
         json.dump(sorted(list(companies)), f, ensure_ascii=False, indent=2)
 
-
-def normalize_text(s: str) -> str:
-    return " ".join((s or "").lower().replace("\n", " ").replace("\r", " ").split())
-
-
-def is_recruiting_company(company: str) -> bool:
-    c = normalize_text(company)
-    if not c:
-        return False
-    return any(k in c for k in RECRUITING_COMPANY_KEYWORDS)
-
-
-def is_recruiting_posting(it: Dict[str, Any]) -> bool:
-    company = item_company(it)
-    if is_recruiting_company(company):
-        return True
-
-    text = normalize_text(
-        " ".join(
-            [
-                item_title(it),
-                str(it.get("kurzbeschreibung", "")),
-                str(it.get("beschreibung", "")),
-                str(it.get("jobbeschreibung", "")),
-                str(it.get("stellenbeschreibung", "")),
-                company,
-            ]
-        )
-    )
-
-    return any(p in text for p in RECRUITING_TEXT_PATTERNS)
-
-def sanitize_md_text(s: str) -> str:
-    return (
-        str(s or "")
-        .replace("*", "✱")
-        .replace("_", "‗")
-        .replace("`", "´")
-    )
-
-# ============================================================
-# Geocoding (Wohnort + optional Job-Orte)
-# ============================================================
-@st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
-def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
-    """
-    Geocoding via OSM Nominatim.
-    Returns: (lat, lon, display_name_or_error)
-    """
-    q = (query or "").strip()
-    if not q:
-        return None, None, "Kein Ort angegeben."
-
-    url = "https://nominatim.openstreetmap.org/search"
-    params = {"q": q, "format": "json", "limit": 1}
-    headers = {"User-Agent": "JobWatchLeipzig/1.0 (Streamlit App)"}
-
-    try:
-        r = requests.get(url, params=params, headers=headers, timeout=20)
-    except Exception as e:
-        return None, None, f"Geocode-Request fehlgeschlagen: {type(e).__name__}: {e}"
-
-    if r.status_code == 429:
-        return None, None, "Geocode HTTP 429 (zu viele Anfragen). Bitte kurz warten und erneut versuchen."
-    if r.status_code != 200:
-        return None, None, f"Geocode HTTP {r.status_code}: {r.text[:200]}"
-
-    try:
-        data = r.json()
-    except Exception:
-        return None, None, "Geocode: Antwort war kein gültiges JSON."
-
-    if not isinstance(data, list) or len(data) == 0:
-        return None, None, "Keine Koordinaten gefunden. Tipp: 'PLZ Ort' eingeben."
-
-    hit = data[0]
-    try:
-        lat = float(hit.get("lat"))
-        lon = float(hit.get("lon"))
-        name = str(hit.get("display_name") or q)
-        return lat, lon, name
-    except Exception:
-        return None, None, "Geocode: Treffer ohne gültige Koordinaten."
-
-
-@st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
-def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
-    q = (query or "").strip()
-    if not q:
-        return None
-    lat, lon, _msg = geocode_nominatim(q)
-    if lat is None or lon is None:
-        return None
-    return float(lat), float(lon)
-
-
-favorites = load_favorites()
 
 # ============================================================
 # BA Jobsuche (App Endpoint)
@@ -375,6 +365,34 @@ def short_field(it: Dict[str, Any], *keys: str) -> str:
     return ""
 
 
+def is_recruiting_company(company: str) -> bool:
+    c = normalize_text(company)
+    if not c:
+        return False
+    return any(k in c for k in RECRUITING_COMPANY_KEYWORDS)
+
+
+def is_recruiting_posting(it: Dict[str, Any]) -> bool:
+    company = item_company(it)
+    if is_recruiting_company(company):
+        return True
+
+    text = normalize_text(
+        " ".join(
+            [
+                item_title(it),
+                str(it.get("kurzbeschreibung", "")),
+                str(it.get("beschreibung", "")),
+                str(it.get("jobbeschreibung", "")),
+                str(it.get("stellenbeschreibung", "")),
+                company,
+            ]
+        )
+    )
+
+    return any(p in text for p in RECRUITING_TEXT_PATTERNS)
+
+
 @st.cache_data(ttl=300, show_spinner=False)
 def fetch_search(
     api_key: str,
@@ -441,6 +459,65 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
 
 
 # ============================================================
+# Geocoding (Wohnort + optional Job-Orte)
+# ============================================================
+@st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
+def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
+    """
+    Geocoding via OSM Nominatim.
+    Returns: (lat, lon, display_name_or_error)
+    """
+    q = (query or "").strip()
+    if not q:
+        return None, None, "Kein Ort angegeben."
+
+    url = "https://nominatim.openstreetmap.org/search"
+    params = {"q": q, "format": "json", "limit": 1}
+    headers = {"User-Agent": "JobWatchLeipzig/1.0 (Streamlit App)"}
+
+    try:
+        r = requests.get(url, params=params, headers=headers, timeout=20)
+    except Exception as e:
+        return None, None, f"Geocode-Request fehlgeschlagen: {type(e).__name__}: {e}"
+
+    if r.status_code == 429:
+        return None, None, "Geocode HTTP 429 (zu viele Anfragen). Bitte kurz warten und erneut versuchen."
+    if r.status_code != 200:
+        return None, None, f"Geocode HTTP {r.status_code}: {r.text[:200]}"
+
+    try:
+        data = r.json()
+    except Exception:
+        return None, None, "Geocode: Antwort war kein gültiges JSON."
+
+    if not isinstance(data, list) or len(data) == 0:
+        return None, None, "Keine Koordinaten gefunden. Tipp: 'PLZ Ort' eingeben."
+
+    hit = data[0]
+    try:
+        lat = float(hit.get("lat"))
+        lon = float(hit.get("lon"))
+        name = str(hit.get("display_name") or q)
+        return lat, lon, name
+    except Exception:
+        return None, None, "Geocode: Treffer ohne gültige Koordinaten."
+
+
+@st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
+def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
+    q = (query or "").strip()
+    if not q:
+        return None
+    lat, lon, _msg = geocode_nominatim(q)
+    if lat is None or lon is None:
+        return None
+    return float(lat), float(lon)
+
+
+favorites = load_favorites()
+
+
+# ============================================================
 # Distance + travel time
 # ============================================================
 def haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -503,86 +580,6 @@ def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float,
         f"&destination={dest_lat}%2C{dest_lon}"
         "&travelmode=driving"
     )
-
-
-# ============================================================
-# Keyword helpers + defaults
-# ============================================================
-DEFAULT_HOME_LABEL = "06242 Braunsbedra"
-DEFAULT_HOME_LAT = 51.2861
-DEFAULT_HOME_LON = 11.8900
-
-DEFAULT_FOCUS_KEYWORDS = [
-    "thermoanalyse", "thermophysik", "thermal analysis", "thermophysical",
-    "dsc", "tga", "lfa", "hfm", "heat flow meter", "laser flash", "laser flash analysis",
-    "wärmeleitfähigkeit", "thermal conductivity", "diffusivität", "diffusivity",
-    "kalorimetrie", "calorimetry", "wärmekapazität", "heat capacity",
-    "materialcharakterisierung", "material characterization",
-    "analytik", "instrumentierung", "messgerät", "labor",
-    "werkstoff", "werkstoffe", "polymer", "keramik", "metall",
-    "f&e", "forschung", "entwicklung", "r&d", "research", "development",
-    "verfahrenstechnik", "thermodynamik", "wärmeübertragung",
-    "thermische simulation", "physik", "physics",
-]
-
-DEFAULT_LEADERSHIP_KEYWORDS = [
-    "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
-    "leiter", "head", "lead", "director", "manager", "principal",
-    "sektionsleiter", "section manager",
-]
-
-DEFAULT_NEGATIVE_KEYWORDS = [
-    "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
-    "psychologe", "betreuungsassistent",
-    "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut", "betreuungskraft",
-    "zahntechniker", "zahntechnikerin", "erzieher", "erzieherin", "friseurmeister",
-    "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
-    "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung", "saisonkraft",
-    "verkäufer", "lehrer",
-    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller", "sicherheitskraft",
-    "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer", "aushilfe",
-    "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer",
-    "lkw-fahrer", "elektriker", "maurer", "monteurin", "mechatroniker", "elektroniker",
-    "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
-    "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
-    "metallbearbeitung",
-    "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer",
-    "maschinist", "rohrverrichter", "metallfacharbeiter", "metallbearbeiter", "tischler",
-    "assistant", "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
-    "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
-    "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
-    "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", "filialleiter",
-    "personalentwicklung", "informatiker", "wirtschaftsinformatiker", "programmleiter", 
-]
-
-RECRUITING_COMPANY_KEYWORDS = [
-    "gmbh & co. kg personal", "personalvermittlung", "personalberatung", "personaldienst",
-    "personaldienstleistung", "personaldienstleister", "recruiting", "headhunter",
-    "talent acquisition", "staffing", "job agency", "arbeitsvermittlung", "hr solutions",
-    "hr services", "people solutions", "career services", "jobcenter", "arbeitsagentur",
-    "randstad", "adecco", "manpower", "persona service", "ferchau", "hays", "dis ag",
-    "amadeus fire", "experis", "jobactive", "arwa", "orizon", "akut", "job impulse",
-    "bindan", "alpha consult", "timepartner", "permacon", "tempton", "piening", "dekra arbeit",
-    "hofmann", "i. k. hofmann", "run zeitarbeit", "unique personalservice", "meteor personaldienste",
-    "aerb personal",
-]
-
-RECRUITING_TEXT_PATTERNS = [
-    "im auftrag unseres kunden", "im auftrag eines kunden", "für unseren kunden", "für einen unserer kunden",
-    "für einen namhaften kunden", "unser kunde", "unser mandant", "im rahmen der personalvermittlung",
-    "im rahmen der direktvermittlung", "direktvermittlung", "personalvermittlung", "vermittlungsgutschein",
-    "zeitarbeit", "arbeitnehmerüberlassung", "aü", "aueg", "arbeitnehmerueberlassung", "temp to perm",
-]
-
-def parse_keywords(text: str) -> List[str]:
-    raw: List[str] = []
-    for line in (text or "").splitlines():
-        raw.extend([p.strip() for p in line.split(",")])
-    return [x for x in raw if x]
-
-
-def keywords_to_text(words: List[str]) -> str:
-    return "\n".join(words)
 
 
 # ============================================================
@@ -881,6 +878,47 @@ def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
     with c2:
         for k, v in right:
             st.markdown(f"**{k}:** {v}")
+
+
+def enrich_item(
+    it: Dict[str, Any],
+    home_lat: float,
+    home_lon: float,
+    focus_keywords: List[str],
+    leadership_keywords: List[str],
+    negative_keywords: List[str],
+    ho_bonus_val: int,
+    speed_kmh: float,
+) -> Dict[str, Any]:
+    title = item_title(it)
+    company = item_company(it)
+    location = pretty_location(it)
+
+    score, parts = score_breakdown(
+        it,
+        focus_keywords,
+        leadership_keywords,
+        negative_keywords,
+        int(ho_bonus_val),
+    )
+
+    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+    t_min = travel_time_minutes(dist, float(speed_kmh))
+    org = match_target_org(company)
+
+    it["_title"] = title
+    it["_title_safe"] = sanitize_md_text(title)
+    it["_company"] = company
+    it["_company_safe"] = sanitize_md_text(company)
+    it["_location"] = location
+    it["_location_safe"] = sanitize_md_text(location)
+    it["_score"] = score
+    it["_score_parts"] = parts
+    it["_distance_km"] = dist
+    it["_travel_min"] = t_min
+    it["_org"] = org
+    it["_is_leadership"] = looks_leadership_strict(it)
+    return it
 
 
 # ============================================================
@@ -1294,20 +1332,32 @@ with col1:
             it for it in items_now
             if not is_recruiting_posting(it)
         ]
-        
+
         if debug:
             removed = before_recruiting_filter - len(items_now)
             if removed > 0:
                 st.caption(f"🤖 {removed} Recruiting-/Personaldienstleister-Treffer automatisch ausgeblendet")
-        
+
         if hide_irrelevant:
             items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
+        # ---- Performance: Werte einmal vorberechnen ----
+        items_now = [
+            enrich_item(
+                it,
+                float(home_lat),
+                float(home_lon),
+                FOCUS_KEYWORDS,
+                LEADERSHIP_KEYWORDS,
+                NEGATIVE_KEYWORDS,
+                int(ho_bonus),
+                float(speed_kmh),
+            )
+            for it in items_now
+        ]
+
         if only_focus:
-            items_now = [
-                it for it in items_now
-                if score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))[0] >= int(min_score)
-            ]
+            items_now = [it for it in items_now if int(it.get("_score", 0)) >= int(min_score)]
 
         prev_items = snap.get("items", [])
         prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items if isinstance(x, dict)}
@@ -1315,20 +1365,20 @@ with col1:
         new_keys = now_keys - prev_keys
 
         def sort_key(it: Dict[str, Any]):
-            org = match_target_org(item_company(it))
+            org = it.get("_org")
             priority_rank = -1 if (org and org.get("priority") == "high") else 0
 
-            dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+            dist = it.get("_distance_km")
             dist_rank = dist if dist is not None else 999999.0
 
             is_new_rank = 0 if (it.get("_key") in new_keys) else 1
+            score = int(it.get("_score", 0))
 
-            score = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))[0]
-            return (priority_rank, dist_rank, is_new_rank, -score, item_title(it).lower())
+            return (priority_rank, dist_rank, is_new_rank, -score, str(it.get("_title", "")).lower())
 
         items_now_filtered = []
         for it in items_now:
-            dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+            dist = it.get("_distance_km")
 
             if dist is None:
                 items_now_filtered.append(it)
@@ -1389,7 +1439,7 @@ with col1:
 
         if top_companies:
             st.markdown("### 🏢 Firmen mit mehreren Treffern")
-        
+
             st.markdown(
                 """
                 <style>
@@ -1411,13 +1461,13 @@ with col1:
                         st.session_state["focus_company"] = None
                         st.session_state["jump_to_job"] = None
                         st.rerun()
-        
+
             visible_companies = top_companies[:10]
             more_companies = top_companies[10:]
-        
+
             cols_per_row = 2
             rows = [visible_companies[i:i + cols_per_row] for i in range(0, len(visible_companies), cols_per_row)]
-        
+
             for row_idx, row in enumerate(rows):
                 cols = st.columns(cols_per_row)
                 for col_idx, (comp, count) in enumerate(row):
@@ -1432,12 +1482,12 @@ with col1:
                             st.session_state["focus_company"] = comp.strip().lower()
                             st.session_state["jump_to_job"] = None
                             st.rerun()
-        
+
             if more_companies:
                 with st.expander(f"Weitere Firmen ({len(more_companies)})", expanded=False):
                     extra_cols_per_row = 2
                     extra_rows = [more_companies[i:i + extra_cols_per_row] for i in range(0, len(more_companies), extra_cols_per_row)]
-        
+
                     for row_idx, row in enumerate(extra_rows):
                         cols = st.columns(extra_cols_per_row)
                         for col_idx, (comp, count) in enumerate(row):
@@ -1452,16 +1502,10 @@ with col1:
                                     st.session_state["focus_company"] = comp.strip().lower()
                                     st.session_state["jump_to_job"] = None
                                     st.rerun()
-                       
+
         top_items = sorted(
             items_sorted,
-            key=lambda it: score_breakdown(
-                it,
-                FOCUS_KEYWORDS,
-                LEADERSHIP_KEYWORDS,
-                NEGATIVE_KEYWORDS,
-                int(ho_bonus)
-            )[0],
+            key=lambda it: int(it.get("_score", 0)),
             reverse=True
         )[:5]
 
@@ -1469,29 +1513,22 @@ with col1:
             st.markdown("### ⭐ Beste Treffer")
 
             for rank, it in enumerate(top_items, start=1):
-                dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+                dist = it.get("_distance_km")
                 dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
-                score_val = score_breakdown(
-                    it,
-                    FOCUS_KEYWORDS,
-                    LEADERSHIP_KEYWORDS,
-                    NEGATIVE_KEYWORDS,
-                    int(ho_bonus)
-                )[0]
-
-                org = match_target_org(item_company(it))
+                score_val = int(it.get("_score", 0))
+                org = it.get("_org")
                 target_tag = ""
                 if org:
                     target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
 
                 k = it.get("_key") or item_key(it)
                 fav_tag = " 📌" if is_favorited(k, favorites) else ""
-                                
-                safe_title = sanitize_md_text(item_title(it))
-                safe_company = sanitize_md_text(item_company(it))
-                safe_location = sanitize_md_text(pretty_location(it))
-                
+
+                safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+                safe_company = it.get("_company_safe", sanitize_md_text(item_company(it)))
+                safe_location = it.get("_location_safe", sanitize_md_text(pretty_location(it)))
+
                 with st.container(border=True):
                     st.markdown(
                         f"**{rank}. {safe_title}**{fav_tag}{target_tag}  \n"
@@ -1527,9 +1564,14 @@ with col1:
                     for k, it in fav_items:
                         note = (favorites.get(k, {}) or {}).get("note", "")
                         when = (favorites.get(k, {}) or {}).get("added_at", "")
+
+                        safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+                        safe_company = it.get("_company_safe", sanitize_md_text(item_company(it)))
+                        safe_location = it.get("_location_safe", sanitize_md_text(pretty_location(it)))
+
                         st.markdown(
-                            f"**{item_title(it)}**  \n"
-                            f"{item_company(it)} · {pretty_location(it)}  \n"
+                            f"**{safe_title}**  \n"
+                            f"{safe_company} · {safe_location}  \n"
                             f"{('📝 ' + note) if note else ''}  \n"
                             f"{('🕒 ' + when) if when else ''}"
                         )
@@ -1547,11 +1589,11 @@ with col1:
         st.write("## 🔥 High-Priority Treffer")
         hp_items = [
             it for it in items_sorted
-            if (match_target_org(item_company(it)) and match_target_org(item_company(it)).get("priority") == "high")
+            if (it.get("_org") and it.get("_org", {}).get("priority") == "high")
         ]
         if hp_items:
             for it in hp_items[:15]:
-                st.write(f"• {item_title(it)} – {item_company(it)}")
+                st.write(f"• {it.get('_title', item_title(it))} – {it.get('_company', item_company(it))}")
         else:
             st.info("Aktuell keine High-Priority Treffer.")
 
@@ -1572,7 +1614,7 @@ with col1:
 
             if not ll:
                 if enable_job_geocode and geocode_used < int(max_job_geocodes):
-                    loc_text = pretty_location(it)
+                    loc_text = it.get("_location", pretty_location(it))
                     ll = geocode_job_location(loc_text)
                     geocode_used += 1
 
@@ -1580,8 +1622,8 @@ with col1:
                     missing_coords += 1
                     continue
 
-            dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-            d = float(dist) if dist is not None else None
+            dist = haversine_km(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
+            d = float(dist)
             bucket = distance_bucket(d, int(near_km), int(mid_km))
 
             raw_markers.append(
@@ -1589,8 +1631,8 @@ with col1:
                     "idx": int(it.get("_idx", 0)),
                     "lat": float(ll[0]),
                     "lon": float(ll[1]),
-                    "title": item_title(it),
-                    "company": item_company(it),
+                    "title": it.get("_title", item_title(it)),
+                    "company": it.get("_company", item_company(it)),
                     "dist_km": d,
                     "pin": bucket,
                 }
@@ -1645,16 +1687,16 @@ with col1:
             fav = is_favorited(k, favorites)
             is_focused_company = item_company(it).strip().lower() == focus_company if focus_company else False
 
-            score, parts = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))
-
-            dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-            t_min = travel_time_minutes(dist, float(speed_kmh))
+            score = int(it.get("_score", 0))
+            parts = it.get("_score_parts", [])
+            dist = it.get("_distance_km")
+            t_min = it.get("_travel_min")
             bucket = distance_bucket(dist, int(near_km), int(mid_km))
             emo = distance_emoji(bucket)
 
-            star = "⭐ " if looks_leadership_strict(it) else ""
+            star = "⭐ " if it.get("_is_leadership") else ""
 
-            org = match_target_org(item_company(it))
+            org = it.get("_org")
             target_tag = ""
             if org:
                 target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
@@ -1664,7 +1706,11 @@ with col1:
 
             pin = "📌 " if fav else ""
             focus_tag = " 🏢" if is_focused_company else ""
-            safe_title = sanitize_md_text(item_title(it))
+
+            safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+            company_name = it.get("_company", item_company(it))
+            location_name = it.get("_location", pretty_location(it))
+
             label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{safe_title}{focus_tag}{target_tag}"
 
             meta_text = " | ".join(
@@ -1672,8 +1718,8 @@ with col1:
                     f"Score: {score}",
                     it.get("_profile", ""),
                     it.get("_bucket", ""),
-                    item_company(it),
-                    pretty_location(it),
+                    company_name,
+                    location_name,
                 ]
             )
 
@@ -1681,7 +1727,7 @@ with col1:
 
             with st.expander(label, expanded=expanded):
                 if is_focused_company:
-                    st.info(f"Fokusfirma: {item_company(it)}")
+                    st.info(f"Fokusfirma: {company_name}")
 
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                 st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
@@ -1726,7 +1772,6 @@ with col1:
                 with cH2:
                     st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
 
-                company_name = item_company(it)
                 if company_name:
                     if st.button("🚫 Firma blockieren", key=f"hide_company_{k}"):
                         hidden_companies.add(company_name.lower())
@@ -1739,8 +1784,8 @@ with col1:
                     ("Distanz", dist_txt),
                     ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
                     ("Ziel-Organisation", org["name"] if org else "—"),
-                    ("Arbeitgeber", item_company(it) or "—"),
-                    ("Ort", pretty_location(it)),
+                    ("Arbeitgeber", company_name or "—"),
+                    ("Ort", location_name),
                     ("Profil", it.get("_profile", "")),
                     ("Quelle", it.get("_bucket", "")),
                     ("Score", str(score)),
