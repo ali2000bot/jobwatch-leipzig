@@ -1314,46 +1314,101 @@ with col1:
         if top_companies:
             st.markdown("### 🏢 Firmen mit mehreren Treffern")
 
-            st.markdown("""
-            <style>
-            .company-card-title {
-                font-weight: 700;
-                font-size: 0.98rem;
-                line-height: 1.2;
-                min-height: 2.4em;
-            }
-            .company-card-sub {
-                color: #666;
-                font-size: 0.85rem;
-                margin-top: 0.2rem;
-                margin-bottom: 0.6rem;
-            }
-            </style>
-            """, unsafe_allow_html=True)
+            st.markdown(
+                """
+                <style>
+                .company-card {
+                    border: 1px solid rgba(128,128,128,0.22);
+                    border-radius: 14px;
+                    padding: 12px 12px 10px 12px;
+                    margin-bottom: 10px;
+                    background: rgba(255,255,255,0.02);
+                    min-height: 110px;
+                }
+                .company-name {
+                    font-size: 0.98rem;
+                    font-weight: 700;
+                    line-height: 1.25;
+                    margin-bottom: 6px;
+                    min-height: 2.5em;
+                    word-break: break-word;
+                }
+                .company-hit-badge {
+                    display: inline-block;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                    padding: 3px 10px;
+                    border-radius: 999px;
+                    background: rgba(21,101,192,0.12);
+                    color: #1565c0;
+                    margin-bottom: 8px;
+                }
+                .company-focus-box {
+                    border: 1px solid rgba(21,101,192,0.25);
+                    background: rgba(21,101,192,0.06);
+                    border-radius: 12px;
+                    padding: 8px 12px;
+                    margin-bottom: 12px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
 
             focus_company = st.session_state.get("focus_company")
             if focus_company:
-                st.caption(f"Fokusfirma aktiv: {focus_company}")
-                if st.button("❌ Firmenfokus aufheben", key="clear_focus_company"):
-                    st.session_state["focus_company"] = None
-                    st.rerun()
+                cfc1, cfc2 = st.columns([5.5, 1.2])
+                with cfc1:
+                    st.markdown(
+                        f'<div class="company-focus-box">🎯 <b>Fokusfirma aktiv:</b> {focus_company}</div>',
+                        unsafe_allow_html=True,
+                    )
+                with cfc2:
+                    if st.button("❌ Aufheben", key="clear_focus_company", use_container_width=True):
+                        st.session_state["focus_company"] = None
+                        st.session_state["jump_to_job"] = None
+                        st.rerun()
+
+            visible_companies = top_companies[:6]
+            more_companies = top_companies[6:]
 
             cols_per_row = 3
-            rows = [top_companies[i:i + cols_per_row] for i in range(0, len(top_companies), cols_per_row)]
+            rows = [visible_companies[i:i + cols_per_row] for i in range(0, len(visible_companies), cols_per_row)]
 
             for row_idx, row in enumerate(rows):
                 cols = st.columns(cols_per_row)
                 for col_idx, (comp, count) in enumerate(row):
                     with cols[col_idx]:
-                        with st.container(border=True):
-                            st.markdown(f'<div class="company-card-title">{comp}</div>', unsafe_allow_html=True)
-                            st.markdown(f'<div class="company-card-sub">{count} Treffer</div>', unsafe_allow_html=True)
+                        st.markdown('<div class="company-card">', unsafe_allow_html=True)
+                        st.markdown(f'<div class="company-name">{comp}</div>', unsafe_allow_html=True)
+                        st.markdown(
+                            f'<div class="company-hit-badge">{count} Treffer</div>',
+                            unsafe_allow_html=True,
+                        )
 
-                            if st.button("🔎 Anzeigen", key=f"focus_company_{row_idx}_{col_idx}_{comp}", use_container_width=True):
+                        if st.button(
+                            "🔎 Anzeigen",
+                            key=f"focus_company_card_{row_idx}_{col_idx}_{comp}",
+                            use_container_width=True,
+                        ):
+                            st.session_state["focus_company"] = comp.strip().lower()
+                            st.session_state["jump_to_job"] = None
+                            st.rerun()
+
+                        st.markdown("</div>", unsafe_allow_html=True)
+
+            if more_companies:
+                with st.expander(f"Weitere Firmen ({len(more_companies)})", expanded=False):
+                    for comp, count in more_companies:
+                        c1, c2 = st.columns([5, 1.2])
+                        with c1:
+                            st.markdown(f"**{comp}**  \n{count} Treffer")
+                        with c2:
+                            if st.button("🔎 Anzeigen", key=f"focus_company_more_{comp}", use_container_width=True):
                                 st.session_state["focus_company"] = comp.strip().lower()
                                 st.session_state["jump_to_job"] = None
                                 st.rerun()
-        
+                
         top_items = sorted(
             items_sorted,
             key=lambda it: score_breakdown(
