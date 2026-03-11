@@ -1274,6 +1274,27 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
+        # -------- Firmen-Radar --------
+        company_counter = {}
+
+        for it in items_sorted:
+            comp = item_company(it)
+            if comp:
+                company_counter[comp] = company_counter.get(comp, 0) + 1
+
+        top_companies = sorted(
+            company_counter.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )[:8]
+
+        if top_companies:
+            st.markdown("### 🏢 Firmen mit mehreren Treffern")
+
+            cols = st.columns(4)
+
+            for i, (comp, count) in enumerate(top_companies):
+                cols[i % 4].metric(comp[:22], count)
                      
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
