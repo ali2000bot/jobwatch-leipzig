@@ -1314,6 +1314,23 @@ with col1:
         if top_companies:
             st.markdown("### 🏢 Firmen mit mehreren Treffern")
 
+            st.markdown("""
+            <style>
+            .company-card-title {
+                font-weight: 700;
+                font-size: 0.98rem;
+                line-height: 1.2;
+                min-height: 2.4em;
+            }
+            .company-card-sub {
+                color: #666;
+                font-size: 0.85rem;
+                margin-top: 0.2rem;
+                margin-bottom: 0.6rem;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+
             focus_company = st.session_state.get("focus_company")
             if focus_company:
                 st.caption(f"Fokusfirma aktiv: {focus_company}")
@@ -1321,18 +1338,22 @@ with col1:
                     st.session_state["focus_company"] = None
                     st.rerun()
 
-            for comp, count in top_companies:
-                c1, c2 = st.columns([4, 1.2])
+            cols_per_row = 3
+            rows = [top_companies[i:i + cols_per_row] for i in range(0, len(top_companies), cols_per_row)]
 
-                with c1:
-                    st.metric(comp[:30], count)
+            for row_idx, row in enumerate(rows):
+                cols = st.columns(cols_per_row)
+                for col_idx, (comp, count) in enumerate(row):
+                    with cols[col_idx]:
+                        with st.container(border=True):
+                            st.markdown(f'<div class="company-card-title">{comp}</div>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="company-card-sub">{count} Treffer</div>', unsafe_allow_html=True)
 
-                with c2:
-                    if st.button("🔎 Anzeigen", key=f"focus_company_{comp}"):
-                        st.session_state["focus_company"] = comp.strip().lower()
-                        st.session_state["jump_to_job"] = None
-                        st.rerun()
-
+                            if st.button("🔎 Anzeigen", key=f"focus_company_{row_idx}_{col_idx}_{comp}", use_container_width=True):
+                                st.session_state["focus_company"] = comp.strip().lower()
+                                st.session_state["jump_to_job"] = None
+                                st.rerun()
+        
         top_items = sorted(
             items_sorted,
             key=lambda it: score_breakdown(
