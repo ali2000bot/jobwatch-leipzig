@@ -1201,6 +1201,20 @@ with col1:
                 it["_key"] = k
                 items_now.append(it)
 
+        # -------- zusätzliche Duplikat-Erkennung (Titel + Firma + Ort) --------
+        dedup2 = {}
+        for it in items_now:
+            key2 = (
+                item_title(it).lower().strip(),
+                item_company(it).lower().strip(),
+                pretty_location(it).lower().strip()
+            )
+
+            if key2 not in dedup2:
+                dedup2[key2] = it
+
+        items_now = list(dedup2.values())
+
         if hide_marked:
             items_now = [it for it in items_now if (it.get("_key") or item_key(it)) not in hidden_keys]
         items_now = [
