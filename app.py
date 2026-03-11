@@ -1300,7 +1300,7 @@ with col1:
                 company_counter[comp] = company_counter.get(comp, 0) + 1
 
         top_companies = sorted(
-            company_counter.items(),
+            [(c, n) for c, n in company_counter.items() if n > 1],
             key=lambda x: x[1],
             reverse=True
         )[:8]
