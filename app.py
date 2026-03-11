@@ -60,13 +60,13 @@ def load_company_state() -> Dict[str, Any]:
             return {}
 
 
-# ---------------- Favoriten ---------------------
 def save_company_state(state: Dict[str, Any]) -> None:
     ensure_state_dir()
     with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 
+# ---------------- Favoriten ---------------------
 def load_favorites() -> Dict[str, Any]:
     """
     Struktur:
@@ -128,6 +128,7 @@ def save_hidden_jobs(hidden_keys: Set[str]) -> None:
     with open(HIDDEN_JOBS_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
+
 def load_hidden_companies() -> Set[str]:
     if not os.path.exists(HIDDEN_COMPANIES_FILE):
         return set()
@@ -135,15 +136,17 @@ def load_hidden_companies() -> Set[str]:
         with open(HIDDEN_COMPANIES_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
             if isinstance(data, list):
-                return set([x.lower() for x in data])
+                return set(x.lower() for x in data)
     except Exception:
         pass
     return set()
+
 
 def save_hidden_companies(companies: Set[str]) -> None:
     ensure_state_dir()
     with open(HIDDEN_COMPANIES_FILE, "w", encoding="utf-8") as f:
         json.dump(sorted(list(companies)), f, ensure_ascii=False, indent=2)
+
 
 # ============================================================
 # Geocoding (Wohnort + optional Job-Orte)
@@ -484,26 +487,26 @@ DEFAULT_LEADERSHIP_KEYWORDS = [
 
 DEFAULT_NEGATIVE_KEYWORDS = [
     "altenpfleger", "pflege", "pflegefachkraft", "krankenpfleger", "pflegedienst",
-    "psychologe", "betreuungsassistent", 
+    "psychologe", "betreuungsassistent",
     "gesundheits", "medizinische", "arzthelfer", "mfa", "therapeut", "betreuungskraft",
     "zahntechniker", "zahntechnikerin", "erzieher", "erzieherin", "friseurmeister",
     "kellner", "servicekraft", "küche", "koch", "spülkraft", "restaurant", "barista",
     "reinigung", "reinigungskraft", "hausmeister", "gebäudereinigung", "saisonkraft",
-    "verkäufer", "lehrer",  
-    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller", "sicherheitskraft", 
+    "verkäufer", "lehrer",
+    "kommissionierer", "lager", "picker", "packen", "versand", "zusteller", "sicherheitskraft",
     "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer", "aushilfe",
     "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer",
-    "lkw-fahrer", "elektriker", "maurer", "monteurin", "mechatroniker", "elektroniker", 
+    "lkw-fahrer", "elektriker", "maurer", "monteurin", "mechatroniker", "elektroniker",
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
     "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
-    "metallbearbeitung", 
+    "metallbearbeitung",
     "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer",
     "maschinist", "rohrverrichter", "metallfacharbeiter", "metallbearbeiter", "tischler",
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
     "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
     "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", "filialleiter",
-    "personalentwicklung", 
+    "personalentwicklung",
 ]
 
 
@@ -949,7 +952,7 @@ with st.sidebar:
         st.markdown("**Suche-Breite**")
         max_pages = st.slider("Max. Seiten pro Jobart", 1, 100, 100, 1)
         max_results = st.slider("Stopp bei max. Treffern", 100, 10000, 2000, 100)
-        st.caption(f"Techn. Maximum: {int(max_pages)*size}")
+        st.caption(f"Techn. Maximum: {int(max_pages) * size}")
         st.caption(f"App-Limit: {int(max_results)}")
 
         enable_job_geocode = st.checkbox("Fehlende Koordinaten für Karte nachschlagen (langsamer)", value=False)
@@ -1003,6 +1006,7 @@ LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_le
 NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
 
 col1, col2 = st.columns([7.2, 1.2], gap="small")
+
 with col2:
     st.markdown(
         """
@@ -1030,7 +1034,6 @@ with col2:
         unsafe_allow_html=True,
     )
 
-    # -------- Snapshot --------
     st.markdown('<div class="side-card">', unsafe_allow_html=True)
     st.markdown('<div class="side-title">💾 Snapshot</div>', unsafe_allow_html=True)
 
@@ -1048,7 +1051,6 @@ with col2:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # -------- Zielorganisationen --------
     st.markdown('<div class="side-card">', unsafe_allow_html=True)
     st.markdown('<div class="side-title">🎯 Organisationen</div>', unsafe_allow_html=True)
     st.markdown(
@@ -1068,7 +1070,8 @@ with col2:
                 st.markdown(f"[🏢 {org['name']}]({org['url']})")
 
     st.markdown("</div>", unsafe_allow_html=True)
-    
+
+
 with col1:
     tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
 
@@ -1086,7 +1089,6 @@ with col1:
         if show_hidden_manage:
             st.subheader("🙈 Ausblend-Liste")
 
-            # ---------------- Jobs ----------------
             st.markdown("**Ausgeblendete Jobs**")
             st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
 
@@ -1104,7 +1106,6 @@ with col1:
 
             st.divider()
 
-            # ---------------- Firmen ----------------
             st.markdown("**Blockierte Firmen**")
             st.caption(f"{len(hidden_companies)} Firmen blockiert")
 
@@ -1129,7 +1130,7 @@ with col1:
                     st.caption("Keine Firmen blockiert.")
 
             st.divider()
-    
+
         wo = home_query
 
         live_status = st.empty()
@@ -1203,7 +1204,6 @@ with col1:
                 it["_key"] = k
                 items_now.append(it)
 
-        # -------- zusätzliche Duplikat-Erkennung (Titel + Firma + Ort) --------
         dedup2 = {}
         for it in items_now:
             key2 = (
@@ -1211,7 +1211,6 @@ with col1:
                 item_company(it).lower().strip(),
                 pretty_location(it).lower().strip()
             )
-
             if key2 not in dedup2:
                 dedup2[key2] = it
 
@@ -1219,17 +1218,12 @@ with col1:
 
         if hide_marked:
             items_now = [it for it in items_now if (it.get("_key") or item_key(it)) not in hidden_keys]
+
         items_now = [
             it for it in items_now
             if item_company(it).strip().lower() not in hidden_companies
         ]
 
-        # Firmen-Blacklist
-        items_now = [
-            it for it in items_now
-            if item_company(it).lower() not in hidden_companies
-        ]
-        
         if hide_irrelevant:
             items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
@@ -1271,6 +1265,7 @@ with col1:
         items_sorted = sorted(items_now, key=sort_key)
 
         jump_target = st.session_state.get("jump_to_job")
+        focus_company = st.session_state.get("focus_company")
 
         if jump_target:
             target_item = None
@@ -1286,14 +1281,25 @@ with col1:
             if target_item is not None:
                 items_sorted = [target_item] + other_items
 
-        # Nummerierung
+        elif focus_company:
+            company_items = []
+            other_items = []
+
+            for it in items_sorted:
+                comp_name = item_company(it).strip().lower()
+                if comp_name == focus_company:
+                    company_items.append(it)
+                else:
+                    other_items.append(it)
+
+            items_sorted = company_items + other_items
+
         for i, it in enumerate(items_sorted, start=1):
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
-        # -------- Firmen-Radar --------
-        company_counter = {}
 
+        company_counter = {}
         for it in items_sorted:
             comp = item_company(it)
             if comp:
@@ -1308,12 +1314,25 @@ with col1:
         if top_companies:
             st.markdown("### 🏢 Firmen mit mehreren Treffern")
 
-            cols = st.columns(4)
+            focus_company = st.session_state.get("focus_company")
+            if focus_company:
+                st.caption(f"Fokusfirma aktiv: {focus_company}")
+                if st.button("❌ Firmenfokus aufheben", key="clear_focus_company"):
+                    st.session_state["focus_company"] = None
+                    st.rerun()
 
-            for i, (comp, count) in enumerate(top_companies):
-                cols[i % 4].metric(comp[:22], count)
+            for comp, count in top_companies:
+                c1, c2 = st.columns([4, 1.2])
 
-        # -------- Top-Treffer --------
+                with c1:
+                    st.metric(comp[:30], count)
+
+                with c2:
+                    if st.button("🔎 Anzeigen", key=f"focus_company_{comp}"):
+                        st.session_state["focus_company"] = comp.strip().lower()
+                        st.session_state["jump_to_job"] = None
+                        st.rerun()
+
         top_items = sorted(
             items_sorted,
             key=lambda it: score_breakdown(
@@ -1361,10 +1380,11 @@ with col1:
                         key=f"jump_{rank}_{it.get('_key', rank)}"
                     ):
                         st.session_state["jump_to_job"] = it.get("_key")
+                        st.session_state["focus_company"] = None
                         st.rerun()
 
             st.divider()
-                                                 
+
         st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
@@ -1486,10 +1506,12 @@ with col1:
                     height_px=700,
                 ),
                 height=740,
-        )
+            )
+
         st.divider()
         st.write("### Ergebnisse")
         jump_target = st.session_state.get("jump_to_job")
+        focus_company = st.session_state.get("focus_company")
 
         for it in items_sorted:
             idx = int(it.get("_idx", 0) or 0)
@@ -1497,6 +1519,7 @@ with col1:
             is_new = (k in new_keys)
             is_hidden = (k in hidden_keys)
             fav = is_favorited(k, favorites)
+            is_focused_company = item_company(it).strip().lower() == focus_company if focus_company else False
 
             score, parts = score_breakdown(it, FOCUS_KEYWORDS, LEADERSHIP_KEYWORDS, NEGATIVE_KEYWORDS, int(ho_bonus))
 
@@ -1516,7 +1539,8 @@ with col1:
             dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
             pin = "📌 " if fav else ""
-            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{target_tag}"
+            focus_tag = " 🏢" if is_focused_company else ""
+            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{item_title(it)}{focus_tag}{target_tag}"
 
             meta_text = " | ".join(
                 [
@@ -1530,7 +1554,10 @@ with col1:
 
             expanded = (jump_target == k)
 
-            with st.expander(label, expanded=expanded):            
+            with st.expander(label, expanded=expanded):
+                if is_focused_company:
+                    st.info(f"Fokusfirma: {item_company(it)}")
+
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                 st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
 
@@ -1574,14 +1601,13 @@ with col1:
                 with cH2:
                     st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
 
-                # ---- Firma blockieren ----
                 company_name = item_company(it)
                 if company_name:
                     if st.button("🚫 Firma blockieren", key=f"hide_company_{k}"):
                         hidden_companies.add(company_name.lower())
                         save_hidden_companies(hidden_companies)
                         st.rerun()
-                
+
                 rid = item_id_raw(it) or "—"
                 facts = [
                     ("Nr.", num_txt),
