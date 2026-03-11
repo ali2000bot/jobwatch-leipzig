@@ -1241,6 +1241,11 @@ with col1:
             if item_company(it).strip().lower() not in hidden_companies
         ]
 
+        items_now = [
+            it for it in items_now
+            if not is_recruiting_company(item_company(it))
+        ]
+        
         if hide_irrelevant:
             items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
