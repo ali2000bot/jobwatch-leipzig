@@ -1328,7 +1328,8 @@ with col1:
 
         if top_items:
             st.markdown("### ⭐ Beste Treffer")
-
+            k = it.get("_key") or item_key(it)
+            fav_tag = " 📌" if is_favorited(k, favorites) else ""
             for rank, it in enumerate(top_items, start=1):
                 dist = distance_from_home_km(it, float(home_lat), float(home_lon))
                 dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
@@ -1350,11 +1351,11 @@ with col1:
 
                 with st.container(border=True):
                     st.markdown(
-                        f"**{rank}. {item_title(it)}**{target_tag}  \n"
+                        f"**{rank}. {item_title(it)}**{fav_tag}{target_tag}  \n"
                         f"{item_company(it)} · {pretty_location(it)}  \n"
                         f"Entfernung: {dist_txt} · Score: {score_val}"
                     )
-
+                
                     if st.button(
                         "🔎 In Liste anzeigen",
                         key=f"jump_{rank}_{it.get('_key', rank)}"
