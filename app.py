@@ -496,6 +496,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "lkw-fahrer", "elektriker", "maurer", "monteurin", "mechatroniker", "elektroniker", 
     "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
     "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
+    "metallbearbeitung", 
     "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer",
     "maschinist", "rohrverrichter", "metallfacharbeiter", "metallbearbeiter", "tischler",
     "assistant", "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
