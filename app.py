@@ -1338,15 +1338,12 @@ with col1:
                         f"Entfernung: {dist_txt} · Score: {score_val}"
                     )
 
-                    if web_url:
-                        try:
-                            st.link_button(
-                                "🔗 In BA Jobsuche öffnen",
-                                web_url,
-                                key=f"top_link_{rank}_{it.get('_key', rank)}"
-                            )
-                        except Exception:
-                            st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
+                    if st.button(
+                        "🔎 In Liste anzeigen",
+                        key=f"jump_{rank}_{it.get('_key', rank)}"
+                    ):
+                        st.session_state["jump_to_job"] = it.get("_key")
+                        st.rerun()
 
             st.divider()
                                  
@@ -1474,6 +1471,7 @@ with col1:
         )
         st.divider()
         st.write("### Ergebnisse")
+        jump_target = st.session_state.get("jump_to_job")
 
         for it in items_sorted:
             idx = int(it.get("_idx", 0) or 0)
@@ -1512,7 +1510,9 @@ with col1:
                 ]
             )
 
-            with st.expander(label):
+            expanded = (jump_target == k)
+
+            with st.expander(label, expanded=expanded):            
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                 st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
 
