@@ -1376,13 +1376,27 @@ with col1:
         
         unique_companies = len(company_counter)
         
-        st.subheader(f"Treffer: {len(items_sorted)}")
+        st.subheader(f"Treffer {len(items_sorted)}")
 
-        st.caption(
-            f"🟢 Neu: {len(new_keys)} | "
-            f"🤖 Recruiting entfernt: {removed_recruiting} | "
-            f"🏢 Firmen: {unique_companies} | "
-            f"📍 Marker: {len(markers)}"
+        st.markdown(
+            f"""
+            <div style="
+                font-size:0.95rem;
+                padding:6px 10px;
+                border-radius:8px;
+                background:rgba(128,128,128,0.08);
+                margin-bottom:6px;
+                ">
+                🟢 Neu <b>{len(new_keys)}</b>
+                &nbsp; | &nbsp;
+                🤖 Recruiting <b>{removed_recruiting}</b>
+                &nbsp; | &nbsp;
+                🏢 Firmen <b>{unique_companies}</b>
+                &nbsp; | &nbsp;
+                📍 Marker <b>{len(markers)}</b>
+            </div>
+            """,
+            unsafe_allow_html=True
         )
         # Firmen mit mehreren Treffern
         company_counter: Dict[str, int] = {}
