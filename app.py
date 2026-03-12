@@ -1675,11 +1675,10 @@ with col1:
                     bg = "rgba(198,40,40,0.18)"
         
                 chip = (
-                    f'<span style="display:inline-flex;align-items:center;gap:6px;'
+                    f'<span style="display:inline-flex;align-items:center;gap:8px;'
                     f'padding:5px 10px;border-radius:999px;background:{bg};'
                     f'font-size:0.88rem;white-space:nowrap;">'
                     f'<span style="font-weight:600;">{city}</span>'
-                    f'<span style="opacity:0.75;">•</span>'
                     f'<span style="font-weight:700;">{count}</span>'
                     f'<span style="opacity:0.78;font-size:0.82rem;">{dist:.0f} km</span>'
                     f'</span>'
