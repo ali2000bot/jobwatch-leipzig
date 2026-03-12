@@ -1841,7 +1841,24 @@ with col1:
 
         # Ergebnisse
         st.divider()
-        st.write("### Ergebnisse")
+        st.markdown(
+            """
+        <div style="
+        font-size:1.1rem;
+        font-weight:700;
+        margin-top:6px;
+        margin-bottom:2px;">
+        📋 Ergebnisse
+        </div>
+        <div style="
+        font-size:0.9rem;
+        opacity:0.75;
+        margin-bottom:10px;">
+        Alle Treffer sortiert nach Priorität, Entfernung und Score
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
 
