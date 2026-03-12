@@ -2091,8 +2091,11 @@ with col1:
                     except Exception:
                         st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
 
-                st.write("**Score-Aufschlüsselung**")
-                st.code(" | ".join(parts))
+                st.markdown(
+                    '<div style="font-weight:600;margin-top:6px;margin-bottom:4px;">Score-Aufschlüsselung</div>',
+                    unsafe_allow_html=True,
+                )
+                st.caption(" · ".join(parts))
 
                 web_url = jobsuche_web_url(it)
                 ll = extract_latlon_from_item(it)
