@@ -1440,7 +1440,7 @@ with col1:
                 """,
                 unsafe_allow_html=True,
             )
-            st.caption("Klick auf eine Firma, um ihre Treffer nach oben zu holen.")
+            # st.caption("Klick auf eine Firma, um ihre Treffer nach oben zu holen.")
             st.markdown(
                 """
                 <style>
