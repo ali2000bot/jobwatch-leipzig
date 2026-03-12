@@ -1440,7 +1440,7 @@ with col1:
                 """,
                 unsafe_allow_html=True,
             )
-        
+            st.caption("Klick auf eine Firma, um ihre Treffer nach oben zu holen.")
             st.markdown(
                 """
                 <style>
@@ -1478,7 +1478,6 @@ with col1:
                 for col_idx, (comp, count) in enumerate(row):
                     with cols[col_idx]:
                         label = f"{comp} · {count}"
-                        st.caption("Klick auf eine Firma, um ihre Treffer nach oben zu holen.")
                         if st.button(
                             label,
                             key=f"focus_company_chip_{row_idx}_{col_idx}_{comp}",
