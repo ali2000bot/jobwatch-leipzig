@@ -981,6 +981,10 @@ with st.sidebar:
     hide_marked = st.checkbox("Bereits ausgeblendete Jobs verbergen", value=True)
     show_hidden_manage = st.checkbox("Ausblend-Liste verwalten", value=False)
 
+FOCUS_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_focus"])]
+LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_lead"])]
+NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
+
 col1, col2 = st.columns([7.2, 1.2], gap="small")
 
 with col2:
