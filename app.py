@@ -1236,27 +1236,7 @@ with col1:
                         break
 
         live_progress.progress(100)
-        # raw_hits = len(all_items)
-        # limit_hit = raw_hits >= int(max_results)
-        
-        raw_hits = len(all_items)
-        limit_hit = raw_hits >= int(max_results)
-        
-        status_parts = []
-        
-        status_parts.append(f"🔎 {raw_hits} Roh-Treffer")
-        
-        if limit_hit:
-            status_parts.append("⚠ Limit erreicht")
-        
-        status_parts.append(f"📄 letzte Seite +{len(items_local)}")
-        status_parts.append(f"🆕 {len(new_keys)} neu")
-        status_parts.append(f"🤖 {removed_recruiting} Recruiting entfernt")
-        status_parts.append(f"🏢 {unique_companies} Firmen")
-        status_parts.append(f"📍 {len(markers)} Marker")
-        
-        st.caption(" | ".join(status_parts))
-        
+                       
         if errs:
             st.error("Fehler / Hinweise")
             for e in errs:
@@ -1641,7 +1621,22 @@ with col1:
                 markers.append(base)
 
         
-        st.caption(f"Treffer gesamt: {len(items_sorted)} | Marker auf Karte: {len(markers)}")
+        last_page_count = len(items_local) if "items_local" in locals() else 0
+
+        status_parts = [
+            f"🔎 {len(all_items)} Roh-Treffer",
+            f"✅ {len(items_sorted)} Treffer",
+            f"📄 letzte Seite +{last_page_count}",
+            f"🆕 {len(new_keys)} neu",
+            f"🤖 {removed_recruiting} Recruiting entfernt",
+            f"🏢 {unique_companies} Firmen",
+            f"📍 {len(markers)} Marker",
+        ]
+        
+        if len(all_items) >= int(max_results):
+            status_parts.insert(1, "⚠ Limit erreicht")
+        
+        st.caption(" | ".join(status_parts))
 
         if markers:
             st.write("### Karte")
