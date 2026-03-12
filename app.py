@@ -1535,9 +1535,27 @@ with col1:
         )[:5]
 
         if top_items:
-            st.markdown("### ⭐ Beste Treffer")
-
-            for rank, it in enumerate(top_items, start=1):
+        if top_items:
+            st.markdown(
+                """
+        <div style="
+        font-size:1.1rem;
+        font-weight:700;
+        margin-top:6px;
+        margin-bottom:2px;">
+        ⭐ Beste Treffer
+        </div>
+        <div style="
+        font-size:0.9rem;
+        opacity:0.75;
+        margin-bottom:10px;">
+        Die aktuell relevantesten Treffer nach Score
+        </div>
+        """,
+                unsafe_allow_html=True,
+            )
+        
+            for rank, it in enumerate(top_items, start=1):    
                 dist = it.get("_distance_km")
                 dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
                 score_val = int(it.get("_score", 0))
