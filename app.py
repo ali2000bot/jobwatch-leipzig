@@ -1583,7 +1583,7 @@ with col1:
                         st.session_state["focus_company"] = None
                         st.rerun()
 
-            st.divider()
+            #st.divider()
 
         # Merkliste
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
