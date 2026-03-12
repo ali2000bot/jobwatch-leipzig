@@ -1226,9 +1226,7 @@ with col1:
 
                     if not items_local:
                         break
-
-                    live_hint.caption(f"Letzte Seite: +{len(items_local)} Treffer")
-
+                    
                     for it in items_local:
                         it["_profile"] = name
                         it["_bucket"] = f"Vor Ort ({umkreis} km)"
