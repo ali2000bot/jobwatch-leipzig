@@ -1641,54 +1641,41 @@ with col1:
             "warn": "background:rgba(198,40,40,0.16); color:#b71c1c; font-weight:700;",
         }
         
-        chips = "".join(
-            f"""
-            <div style="
-                display:inline-flex;
-                align-items:center;
-                padding:5px 10px;
-                border-radius:999px;
-                font-size:0.9rem;
-                line-height:1.2;
-                white-space:nowrap;
-                {badge_styles[kind]}
-            ">{text}</div>
-            """
+        loc_line = ""
+        if top_locations:
+            loc_line = " | ".join(
+                f"{city} {count} ({location_distance[city]:.0f} km)"
+                for city, count in top_locations
+            )
+        
+        chips = "".join([
+            (
+                f'<span style="display:inline-flex;align-items:center;'
+                f'padding:5px 10px;border-radius:999px;font-size:0.9rem;'
+                f'line-height:1.2;white-space:nowrap;{badge_styles[kind]}">{text}</span>'
+            )
             for kind, text in status_parts
+        ])
+        
+        location_html = ""
+        if loc_line:
+            location_html = (
+                f'<div style="margin-top:8px;font-size:0.92rem;color:inherit;'
+                f'white-space:nowrap;overflow-x:auto;overflow-y:hidden;">'
+                f'📍 {loc_line}'
+                f'</div>'
+            )
+        
+        status_html = (
+            f'<div style="padding:10px 12px;border:1px solid rgba(128,128,128,0.18);'
+            f'border-radius:12px;background:rgba(255,255,255,0.03);margin-bottom:8px;">'
+            f'<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">{chips}</div>'
+            f'{location_html}'
+            f'</div>'
         )
         
-        status_html = f"""
-        <div style="
-            display:flex;
-            flex-direction:column;
-            gap:8px;
-            padding:10px 12px;
-            border:1px solid rgba(128,128,128,0.18);
-            border-radius:12px;
-            background:rgba(255,255,255,0.03);
-            margin-bottom:8px;
-        ">
-            <div style="
-                display:flex;
-                flex-wrap:wrap;
-                gap:8px;
-                align-items:center;
-            ">
-                {chips}
-            </div>
-            {f'''
-            <div style="
-                font-size:0.92rem;
-                color:inherit;
-                white-space:nowrap;
-                overflow-x:auto;
-                overflow-y:hidden;
-            ">📍 {loc_line}</div>
-            ''' if loc_line else ""}
-        </div>
-        """
+        status_top.markdown(status_html, unsafe_allow_html=True)
         
-        status_top.markdown(status_html, unsafe_allow_html=True)       
         # status_top.caption(" | ".join(status_parts))
 
         if markers:
