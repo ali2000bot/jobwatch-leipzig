@@ -1429,14 +1429,26 @@ with col1:
         if top_companies:
             st.markdown(
                 """
-                <div style="
-                    margin-top:10px;
-                    margin-bottom:8px;
-                    font-size:1.0rem;
-                    font-weight:700;
-                ">
-                    🏢 Firmen mit mehreren Treffern
-                </div>
+                <style>
+            
+                div[data-testid="stButton"] > button[kind="secondary"] {
+                    border-radius: 999px;
+                    padding: 0.18rem 0.6rem;
+                    min-height: 0px;
+                    font-size: 0.85rem;
+                    line-height: 1.2;
+                    text-align: left;
+                    border: 1px solid rgba(128,128,128,0.25);
+                    background: rgba(255,255,255,0.04);
+                    font-weight: 500;
+                }
+            
+                div[data-testid="stButton"] > button[kind="secondary"]:hover {
+                    background: rgba(255,255,255,0.09);
+                    border-color: rgba(128,128,128,0.45);
+                }
+            
+                </style>
                 """,
                 unsafe_allow_html=True,
             )
