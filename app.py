@@ -1984,7 +1984,22 @@ with col1:
             company_name = it.get("_company", item_company(it))
             location_name = it.get("_location", pretty_location(it))
 
-            label = f"{pin}{'🆕 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{safe_title}{focus_tag}{target_tag}"
+            badges = []
+            if is_new:
+                badges.append("🆕")
+            if fav:
+                badges.append("📌")
+            if it.get("_is_leadership"):
+                badges.append("⭐")
+            if is_focused_company:
+                badges.append("🏢")
+            if org:
+                badges.append("🔥🎯" if org.get("priority") == "high" else "🎯")
+            
+            badge_prefix = " ".join(badges)
+            badge_prefix = f"{badge_prefix} " if badge_prefix else ""
+            
+            label = f"{emo} {num_txt} · {dist_txt} · {badge_prefix}{safe_title}"
             
             meta_text = " | ".join(
                 [
@@ -2003,8 +2018,11 @@ with col1:
                     st.info(f"Fokusfirma: {company_name}")
 
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
-                st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
-
+                st.markdown(
+                    badge
+                    + f' <span style="opacity:0.78;font-size:0.92rem;">{meta_text}</span>',
+                    unsafe_allow_html=True,
+                )
                 cFav1, cFav2 = st.columns([1.2, 3.8])
                 with cFav1:
                     if not fav:
