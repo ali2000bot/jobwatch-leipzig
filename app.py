@@ -1535,7 +1535,6 @@ with col1:
         )[:5]
 
         if top_items:
-        if top_items:
             st.markdown(
                 """
         <div style="
