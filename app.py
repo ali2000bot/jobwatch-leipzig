@@ -967,11 +967,19 @@ with st.sidebar:
     st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
     umkreis = int(max_distance_filter)
 
-    aktualitaet_option = st.selectbox("Aktualität", ["7 Tage", "30 Tage", "60 Tage", "180 Tage", "Alle"], index=2)
+    aktualitaet_option = st.selectbox(
+        "Aktualität",
+        ["7 Tage", "30 Tage", "60 Tage", "180 Tage", "Alle"],
+        index=2,
+    )
     aktualitaet = None if aktualitaet_option == "Alle" else int(aktualitaet_option.split()[0])
 
     queries = build_queries()
-    selected_profiles = st.multiselect("Jobarten", list(queries.keys()), default=["Breit (ohne Suchtext)"])
+    selected_profiles = st.multiselect(
+        "Jobarten",
+        list(queries.keys()),
+        default=["Breit (ohne Suchtext)"],
+    )
 
     st.divider()
     st.subheader("Filter")
@@ -981,6 +989,69 @@ with st.sidebar:
     hide_marked = st.checkbox("Bereits ausgeblendete Jobs verbergen", value=True)
     show_hidden_manage = st.checkbox("Ausblend-Liste verwalten", value=False)
 
+    st.divider()
+
+    with st.expander("Erweitert", expanded=False):
+        st.caption("Nur wenn du feintunen oder debuggen willst.")
+
+        st.markdown("**Suche-Breite**")
+        max_pages = st.slider("Max. Seiten pro Jobart", 1, 100, 100, 1)
+        max_results = st.slider("Stopp bei max. Treffern", 100, 10000, 2000, 100)
+        st.caption(f"Techn. Maximum: {int(max_pages) * size}")
+        st.caption(f"App-Limit: {int(max_results)}")
+
+        enable_job_geocode = st.checkbox(
+            "Fehlende Koordinaten für Karte nachschlagen (langsamer)",
+            value=False
+        )
+        max_job_geocodes = st.slider("Max. Geocoding pro Lauf", 0, 50, 10, 5)
+
+        st.markdown("**Entfernung / Fahrzeit**")
+        near_km = st.slider("Grün bis (km)", 5, 80, 10, 5)
+        mid_km = st.slider("Gelb bis (km)", 10, 150, 35, 5)
+        speed_kmh = st.slider("Ø Geschwindigkeit (km/h)", 30, 140, 75, 5)
+
+        umkreis = int(max_distance_filter)
+
+        st.divider()
+        st.markdown("**Score-Tuning**")
+        ho_bonus = 0
+
+        st.divider()
+        st.markdown("**Technik**")
+        api_key = st.text_input("X-API-Key (nur bei Problemen)", value=API_KEY_DEFAULT)
+        debug = st.checkbox("Debug anzeigen", value=False)
+
+        st.divider()
+        st.markdown("**Keywords (optional)**")
+
+        with st.expander("Fokus-Keywords bearbeiten", expanded=False):
+            st.session_state["kw_focus"] = st.text_area(
+                "Ein Begriff pro Zeile (oder Komma-getrennt)",
+                value=st.session_state["kw_focus"],
+                height=150,
+            )
+
+        with st.expander("Leitung/Führung-Keywords bearbeiten", expanded=False):
+            st.session_state["kw_lead"] = st.text_area(
+                "Ein Begriff pro Zeile (oder Komma-getrennt)",
+                value=st.session_state["kw_lead"],
+                height=110,
+            )
+
+        with st.expander("Negative Keywords bearbeiten", expanded=False):
+            st.session_state["kw_neg"] = st.text_area(
+                "Ein Begriff pro Zeile (oder Komma-getrennt)",
+                value=st.session_state["kw_neg"],
+                height=110,
+            )
+
+        if st.button("↩︎ Keywords zurücksetzen"):
+            st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
+            st.session_state["kw_lead"] = keywords_to_text(DEFAULT_LEADERSHIP_KEYWORDS)
+            st.session_state["kw_neg"] = keywords_to_text(DEFAULT_NEGATIVE_KEYWORDS)
+            st.rerun()
+            
 FOCUS_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_focus"])]
 LEADERSHIP_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_lead"])]
 NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"])]
