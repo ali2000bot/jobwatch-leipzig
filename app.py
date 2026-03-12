@@ -1334,6 +1334,22 @@ with col1:
                 items_now_filtered.append(it)
 
         items_sorted = sorted(items_now_filtered, key=sort_key)
+        location_counter = {}
+
+        for it in items_sorted:
+            loc = pretty_location(it)
+        
+            if loc:
+                # nur erster Ortsname vor Komma
+                city = loc.split(",")[0].strip()
+        
+                location_counter[city] = location_counter.get(city, 0) + 1
+
+        top_locations = sorted(
+            location_counter.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )[:6]
 
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
@@ -1398,6 +1414,12 @@ with col1:
             """,
             unsafe_allow_html=True
         )
+
+        if top_locations:
+            loc_line = " | ".join([f"{city} {count}" for city, count in top_locations])
+            st.caption(f"📍 {loc_line}")
+        
+              
         # Firmen mit mehreren Treffern
         company_counter: Dict[str, int] = {}
         for it in items_sorted:
