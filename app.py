@@ -750,24 +750,6 @@ def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
         for k, v in right:
             st.markdown(f"**{k}:** {v}")
 
-def number_badge(n: int) -> str:
-    return f"""
-    <span style="
-        display:inline-block;
-        min-width:22px;
-        padding:2px 6px;
-        margin-right:4px;
-        border-radius:999px;
-        background:#1976d2;
-        color:white;
-        font-size:0.80rem;
-        font-weight:700;
-        text-align:center;
-    ">
-        {n}
-    </span>
-    """
-
 # ============================================================
 # Karte
 # ============================================================
@@ -1670,7 +1652,6 @@ with col1:
                 target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
 
             num_txt = f"{idx:02d}" if idx > 0 else "??"
-            num_badge = number_badge(idx) if idx > 0 else ""
             dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
 
             pin = "📌 " if fav else ""
@@ -1680,9 +1661,7 @@ with col1:
             company_name = it.get("_company", item_company(it))
             location_name = it.get("_location", pretty_location(it))
 
-            label = f"{pin}{'🆕 ' if is_new else ''}{emo} {dist_txt} · {star}{safe_title}{focus_tag}{target_tag}"
-
-            label = number_badge(idx) + label
+            label = f"{pin}{'🆕 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{safe_title}{focus_tag}{target_tag}"
             
             meta_text = " | ".join(
                 [
