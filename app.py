@@ -1855,39 +1855,56 @@ with col1:
         st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")        
         if "result_filter" not in st.session_state:
             st.session_state["result_filter"] = "Alle"
-
-        cF1, cF2, cF3 = st.columns([1, 1, 1])
-
+        
+        fav_count_visible = sum(
+            1 for it in items_sorted
+            if is_favorited(it.get("_key") or item_key(it), favorites)
+        )
+        
+        st.markdown(
+            """
+            <style>
+            div[data-testid="stButton"] > button[kind="secondary"],
+            div[data-testid="stButton"] > button[kind="primary"] {
+                border-radius: 999px;
+                padding: 0.2rem 0.75rem;
+                min-height: 0px;
+                font-size: 0.85rem;
+                line-height: 1.2;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        
+        cF1, cF2, cF3, cF4 = st.columns([1, 1, 1.2, 6])
+        
         with cF1:
             if st.button(
                 "Alle",
                 key="filter_all",
-                use_container_width=True,
                 type="primary" if st.session_state["result_filter"] == "Alle" else "secondary",
+                use_container_width=True,
             ):
                 st.session_state["result_filter"] = "Alle"
                 st.rerun()
-
+        
         with cF2:
             if st.button(
-                f"Neu ({len(new_keys)})",
+                f"Neu {len(new_keys)}",
                 key="filter_new",
-                use_container_width=True,
                 type="primary" if st.session_state["result_filter"] == "Neu" else "secondary",
+                use_container_width=True,
             ):
                 st.session_state["result_filter"] = "Neu"
                 st.rerun()
-
+        
         with cF3:
-            fav_count_visible = sum(
-                1 for it in items_sorted
-                if is_favorited(it.get("_key") or item_key(it), favorites)
-            )
             if st.button(
-                f"Favoriten ({fav_count_visible})",
+                f"Favoriten {fav_count_visible}",
                 key="filter_fav",
-                use_container_width=True,
                 type="primary" if st.session_state["result_filter"] == "Favoriten" else "secondary",
+                use_container_width=True,
             ):
                 st.session_state["result_filter"] = "Favoriten"
                 st.rerun()
