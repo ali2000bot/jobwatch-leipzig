@@ -1020,7 +1020,7 @@ with st.sidebar:
         st.divider()
         st.markdown("**Technik**")
         api_key = st.text_input("X-API-Key (nur bei Problemen)", value=API_KEY_DEFAULT)
-        debug = st.checkbox("Debug anzeigen", value=False)
+        # debug = st.checkbox("Debug anzeigen", value=False)
 
         st.divider()
         st.markdown("**Keywords (optional)**")
@@ -1373,6 +1373,10 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
+        st.caption(
+            f"🟢 Neu seit Snapshot: {len(new_keys)}   |   "
+            f"🤖 Recruiting-/Personaldienstleister ausgeblendet: {removed_recruiting}"
+        )
 
         # Firmen mit mehreren Treffern
         company_counter: Dict[str, int] = {}
@@ -1510,8 +1514,7 @@ with col1:
 
                         st.divider()
 
-        st.caption(f"Neu seit Snapshot: {len(new_keys)}")
-
+       
         # High Priority
         st.divider()
         st.write("## 🔥 High-Priority Treffer")
