@@ -1871,6 +1871,32 @@ with col1:
                 min-height: 0px;
                 font-size: 0.85rem;
                 line-height: 1.2;
+                border: 1px solid rgba(128,128,128,0.22);
+                background: rgba(255,255,255,0.03);
+                box-shadow: none;
+            }
+        
+            div[data-testid="stButton"] > button[kind="secondary"] {
+                color: inherit;
+                background: rgba(255,255,255,0.03);
+                border: 1px solid rgba(128,128,128,0.22);
+            }
+        
+            div[data-testid="stButton"] > button[kind="secondary"]:hover {
+                background: rgba(255,255,255,0.08);
+                border-color: rgba(128,128,128,0.40);
+            }
+        
+            div[data-testid="stButton"] > button[kind="primary"] {
+                color: inherit;
+                background: rgba(46,125,50,0.14);
+                border: 1px solid rgba(46,125,50,0.28);
+                font-weight: 600;
+            }
+        
+            div[data-testid="stButton"] > button[kind="primary"]:hover {
+                background: rgba(46,125,50,0.20);
+                border-color: rgba(46,125,50,0.42);
             }
             </style>
             """,
