@@ -2001,9 +2001,9 @@ with col1:
             
             label = f"{emo} {num_txt} · {dist_txt} · {badge_prefix}{safe_title}"
             
-            meta_text = " | ".join(
+            meta_text = " · ".join(
                 [
-                    f"Score: {score}",
+                    f"Score {score}",
                     it.get("_profile", ""),
                     it.get("_bucket", ""),
                     company_name,
@@ -2085,7 +2085,11 @@ with col1:
                 render_fact_grid(facts)
 
                 if org:
-                    st.write("**Karriereseite (Ziel-Organisation)**")
+                    if org:
+                        st.markdown(
+                            '<div style="font-weight:600;margin-top:6px;margin-bottom:4px;">Karriereseite (Ziel-Organisation)</div>',
+                            unsafe_allow_html=True,
+                        )
                     try:
                         st.link_button("🏢 Karriereseite öffnen", org["url"])
                     except Exception:
