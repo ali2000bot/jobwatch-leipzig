@@ -1636,20 +1636,23 @@ with col1:
             status_parts.insert(1, ("warn", "⚠ Limit erreicht"))
         
         badge_styles = {
-            "normal": "background:rgba(128,128,128,0.12);",
-            "success": "background:rgba(46,125,50,0.14);",
-            "warn": "background:rgba(198,40,40,0.16); font-weight:700;",
+            "normal": "background:rgba(128,128,128,0.12); color:inherit;",
+            "success": "background:rgba(46,125,50,0.14); color:inherit;",
+            "warn": "background:rgba(198,40,40,0.16); color:#b71c1c; font-weight:700;",
         }
         
         chips = "".join(
             f"""
-            <span style="
+            <div style="
+                display:inline-flex;
+                align-items:center;
                 padding:5px 10px;
                 border-radius:999px;
                 font-size:0.9rem;
+                line-height:1.2;
                 white-space:nowrap;
                 {badge_styles[kind]}
-            ">{text}</span>
+            ">{text}</div>
             """
             for kind, text in status_parts
         )
@@ -1670,7 +1673,7 @@ with col1:
         </div>
         """
         
-        status_top.markdown(status_html, unsafe_allow_html=True)        
+        status_top.markdown(status_html, unsafe_allow_html=True)       
         # status_top.caption(" | ".join(status_parts))
 
         if markers:
