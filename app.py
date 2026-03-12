@@ -1356,6 +1356,15 @@ with col1:
                 else:
                     location_distance[city] = min(location_distance[city], dist)
 
+        top_locations = sorted(
+            location_counter.items(),
+            key=lambda x: (
+                location_distance.get(x[0], 999999),
+                -x[1],
+                x[0].lower()
+            )
+        )[:6]
+
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
 
