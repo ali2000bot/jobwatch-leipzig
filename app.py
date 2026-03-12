@@ -1420,7 +1420,7 @@ with col1:
             f"""
             📊 **Treffer {len(items_sorted)}**
             | 🆕 {len(new_keys)}
-            | 🤖 {recruiting_removed} Recruiting
+            | 🤖 {removed_recruiting} Recruiting
             | 🏢 {unique_companies} Firmen
             | 📍 {len(markers)} Marker
             """
