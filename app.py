@@ -1123,7 +1123,7 @@ with col2:
 
 with col1:
     tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
-
+    markers = []
     with tab_ba:
         if not selected_profiles:
             st.warning("Bitte mindestens eine Jobart auswählen.")
@@ -1380,6 +1380,7 @@ with col1:
             comp = item_company(it)
             if comp:
                 company_counter[comp] = company_counter.get(comp, 0) + 1
+        unique_companies = len(company_counter)
 
         top_companies = sorted(
             [(c, n) for c, n in company_counter.items() if n > 1],
