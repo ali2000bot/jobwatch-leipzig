@@ -1387,7 +1387,7 @@ with col1:
                 background:rgba(128,128,128,0.08);
                 margin-bottom:6px;
                 ">
-                🟢 Neu <b>{len(new_keys)}</b>
+                🆕 Neu <b>{len(new_keys)}</b>
                 &nbsp; | &nbsp;
                 🤖 Recruiting <b>{removed_recruiting}</b>
                 &nbsp; | &nbsp;
