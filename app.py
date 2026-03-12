@@ -1236,20 +1236,26 @@ with col1:
                         break
 
         live_progress.progress(100)
+        # raw_hits = len(all_items)
+        # limit_hit = raw_hits >= int(max_results)
+        
         raw_hits = len(all_items)
         limit_hit = raw_hits >= int(max_results)
         
-        status_line = f"🔎 {raw_hits} Roh-Treffer"
-
-        if raw_hits >= int(max_results):
-            status_line += " ⚠"
+        status_parts = []
         
-        status_line += f" | ➕ letzte Seite +{len(items_local)}"
+        status_parts.append(f"🔎 {raw_hits} Roh-Treffer")
         
         if limit_hit:
-            status_line += " | ⚠ Limit erreicht"
+            status_parts.append("⚠ Limit erreicht")
         
-        st.caption(status_line)
+        status_parts.append(f"📄 letzte Seite +{len(items_local)}")
+        status_parts.append(f"🆕 {len(new_keys)} neu")
+        status_parts.append(f"🤖 {removed_recruiting} Recruiting entfernt")
+        status_parts.append(f"🏢 {unique_companies} Firmen")
+        status_parts.append(f"📍 {len(markers)} Marker")
+        
+        st.caption(" | ".join(status_parts))
         
         if errs:
             st.error("Fehler / Hinweise")
@@ -1414,37 +1420,6 @@ with col1:
         
         unique_companies = len(company_counter)
         
-        st.markdown(
-            f"""
-            📊 **Treffer {len(items_sorted)}**
-            | 🆕 {len(new_keys)}
-            | 🤖 {removed_recruiting} Recruiting
-            | 🏢 {unique_companies} Firmen
-            | 📍 {len(markers)} Marker
-            """
-        )
-
-        st.markdown(
-            f"""
-            <div style="
-                font-size:0.95rem;
-                padding:6px 10px;
-                border-radius:8px;
-                background:rgba(128,128,128,0.08);
-                margin-bottom:6px;
-                ">
-                🆕 Neu <b>{len(new_keys)}</b>
-                &nbsp; | &nbsp;
-                🤖 Recruiting <b>{removed_recruiting}</b>
-                &nbsp; | &nbsp;
-                🏢 Firmen <b>{unique_companies}</b>
-                &nbsp; | &nbsp;
-                📍 Marker <b>{len(markers)}</b>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
         if top_locations:
             loc_line = " | ".join(
                 [
