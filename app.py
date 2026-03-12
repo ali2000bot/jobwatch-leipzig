@@ -1668,20 +1668,20 @@ with col1:
                 if dist is None:
                     bg = "rgba(128,128,128,0.12)"
                 elif dist <= near_km:
-                    bg = "rgba(46,125,50,0.18)"      # grün
+                    bg = "rgba(46,125,50,0.18)"
                 elif dist <= mid_km:
-                    bg = "rgba(249,168,37,0.22)"     # gelb
+                    bg = "rgba(249,168,37,0.22)"
                 else:
-                    bg = "rgba(198,40,40,0.18)"      # rot
+                    bg = "rgba(198,40,40,0.18)"
         
                 chip = (
-                    f'<span style="display:inline-block;'
-                    f'padding:4px 9px;'
-                    f'border-radius:999px;'
-                    f'background:{bg};'
-                    f'font-size:0.88rem;'
-                    f'white-space:nowrap;">'
-                    f'{city} · {count} · {dist:.0f} km'
+                    f'<span style="display:inline-flex;align-items:center;gap:6px;'
+                    f'padding:5px 10px;border-radius:999px;background:{bg};'
+                    f'font-size:0.88rem;white-space:nowrap;">'
+                    f'<span style="font-weight:600;">{city}</span>'
+                    f'<span style="opacity:0.75;">•</span>'
+                    f'<span style="font-weight:700;">{count}</span>'
+                    f'<span style="opacity:0.78;font-size:0.82rem;">{dist:.0f} km</span>'
                     f'</span>'
                 )
         
