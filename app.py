@@ -1859,6 +1859,7 @@ with col1:
         """,
             unsafe_allow_html=True,
         )
+        st.caption(f"{len(items_sorted)} Treffer angezeigt")
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
 
