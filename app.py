@@ -1020,8 +1020,7 @@ with st.sidebar:
         st.divider()
         st.markdown("**Technik**")
         api_key = st.text_input("X-API-Key (nur bei Problemen)", value=API_KEY_DEFAULT)
-        # debug = st.checkbox("Debug anzeigen", value=False)
-
+        
         st.divider()
         st.markdown("**Keywords (optional)**")
 
@@ -1285,10 +1284,7 @@ with col1:
         before_recruiting_filter = len(items_now)
         items_now = [it for it in items_now if not is_recruiting_posting(it)]
 
-        if debug:
-            removed = before_recruiting_filter - len(items_now)
-            if removed > 0:
-                st.caption(f"🤖 {removed} Recruiting-/Personaldienstleister-Treffer automatisch ausgeblendet")
+        removed_recruiting = before_recruiting_filter - len(items_now)
 
         # 5) Negative Jobs raus
         if hide_irrelevant:
@@ -1374,13 +1370,10 @@ with col1:
 
         st.subheader(f"Treffer: {len(items_sorted)}")
 
-        cMeta1, cMeta2 = st.columns([1.2, 2.8])
-        with cMeta1:
-            st.caption(f"🟢 Neu seit Snapshot: {len(new_keys)}")
-        with cMeta2:
-            if removed_recruiting > 0:
-                st.caption(f"🤖 {removed_recruiting} Recruiting-/Personaldienstleister automatisch ausgeblendet")
-
+        st.caption(
+            f"🟢 Neu seit Snapshot: {len(new_keys)}   |   "
+            f"🤖 Recruiting-/Personaldienstleister ausgeblendet: {removed_recruiting}"
+        )
         # Firmen mit mehreren Treffern
         company_counter: Dict[str, int] = {}
         for it in items_sorted:
@@ -1588,11 +1581,7 @@ with col1:
                 base["title"] = f"{len(group)} Treffer an diesem Ort"
                 markers.append(base)
 
-        if debug:
-            st.info(
-                f"Marker nach Gruppierung: {len(markers)} | ursprüngliche Marker: {len(raw_markers)} | ohne Koordinaten: {missing_coords}"
-            )
-
+        
         st.caption(f"Treffer gesamt: {len(items_sorted)} | Marker auf Karte: {len(markers)}")
 
         if markers:
