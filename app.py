@@ -1334,22 +1334,27 @@ with col1:
                 items_now_filtered.append(it)
 
         items_sorted = sorted(items_now_filtered, key=sort_key)
+       
         location_counter = {}
-
+        location_distance = {}
+        
         for it in items_sorted:
             loc = pretty_location(it)
+            if not loc:
+                continue
         
-            if loc:
-                # nur erster Ortsname vor Komma
-                city = loc.split(",")[0].strip()
+            city = loc.split(",")[0].strip()
+            if not city:
+                continue
         
-                location_counter[city] = location_counter.get(city, 0) + 1
-
-        top_locations = sorted(
-            location_counter.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )[:6]
+            location_counter[city] = location_counter.get(city, 0) + 1
+        
+            dist = it.get("_distance_km")
+            if dist is not None:
+                if city not in location_distance:
+                    location_distance[city] = dist
+                else:
+                    location_distance[city] = min(location_distance[city], dist)
 
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
@@ -1416,7 +1421,14 @@ with col1:
         )
 
         if top_locations:
-            loc_line = " | ".join([f"{city} {count}" for city, count in top_locations])
+            loc_line = " | ".join(
+                [
+                    f"{city} {count}"
+                    if city not in location_distance
+                    else f"{city} {count} ({location_distance[city]:.0f} km)"
+                    for city, count in top_locations
+                ]
+            )
             st.caption(f"📍 {loc_line}")
         
               
