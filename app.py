@@ -1418,12 +1418,12 @@ with col1:
         
         st.markdown(
             f"""
-        📊 **Treffer {len(items_sorted)}**
-        | 🆕 {len(new_keys)}
-        | 🤖 {recruiting_removed} Recruiting
-        | 🏢 {unique_companies} Firmen
-        | 📍 {len(markers)} Marker
-        """
+            📊 **Treffer {len(items_sorted)}**
+            | 🆕 {len(new_keys)}
+            | 🤖 {recruiting_removed} Recruiting
+            | 🏢 {unique_companies} Firmen
+            | 📍 {len(markers)} Marker
+            """
         )
 
         st.markdown(
