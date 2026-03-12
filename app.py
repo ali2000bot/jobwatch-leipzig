@@ -1620,22 +1620,6 @@ with col1:
                 base["title"] = f"{len(group)} Treffer an diesem Ort"
                 markers.append(base)
 
-        
-        last_page_count = len(items_local) if "items_local" in locals() else 0
-
-        status_parts = [
-            f"🔎 {len(all_items)} Roh-Treffer",
-            f"✅ {len(items_sorted)} Treffer",
-            f"📄 letzte Seite +{last_page_count}",
-            f"🆕 {len(new_keys)} neu",
-            f"🤖 {removed_recruiting} Recruiting entfernt",
-            f"🏢 {unique_companies} Firmen",
-            f"📍 {len(markers)} Marker",
-        ]
-        
-        if len(all_items) >= int(max_results):
-            status_parts.insert(1, "⚠ Limit erreicht")
-
         last_page_count = len(items_local) if "items_local" in locals() else 0
 
         status_parts = [
@@ -1652,20 +1636,17 @@ with col1:
             status_parts.insert(1, ("warn", "⚠ Limit erreicht"))
         
         badge_styles = {
-            "normal": "background:rgba(128,128,128,0.12); color:inherit;",
-            "success": "background:rgba(46,125,50,0.14); color:inherit;",
-            "warn": "background:rgba(198,40,40,0.16); color:#b71c1c; font-weight:700;",
+            "normal": "background:rgba(128,128,128,0.12);",
+            "success": "background:rgba(46,125,50,0.14);",
+            "warn": "background:rgba(198,40,40,0.16); font-weight:700;",
         }
         
-        status_html = "".join(
+        chips = "".join(
             f"""
             <span style="
-                display:inline-block;
-                padding:6px 10px;
-                margin:0 8px 8px 0;
+                padding:5px 10px;
                 border-radius:999px;
-                font-size:0.92rem;
-                line-height:1.2;
+                font-size:0.9rem;
                 white-space:nowrap;
                 {badge_styles[kind]}
             ">{text}</span>
@@ -1673,7 +1654,23 @@ with col1:
             for kind, text in status_parts
         )
         
-        status_top.markdown(status_html, unsafe_allow_html=True)
+        status_html = f"""
+        <div style="
+            display:flex;
+            flex-wrap:wrap;
+            gap:8px;
+            align-items:center;
+            padding:10px 12px;
+            border:1px solid rgba(128,128,128,0.18);
+            border-radius:12px;
+            background:rgba(255,255,255,0.03);
+            margin-bottom:8px;
+        ">
+            {chips}
+        </div>
+        """
+        
+        status_top.markdown(status_html, unsafe_allow_html=True)        
         # status_top.caption(" | ".join(status_parts))
 
         if markers:
