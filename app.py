@@ -1238,7 +1238,17 @@ with col1:
                         break
 
         live_progress.progress(100)
-        live_status.success(f"Fertig. Roh-Treffer: {len(all_items)}")
+        raw_hits = len(all_items)
+        limit_hit = raw_hits >= int(max_results)
+        
+        status_line = f"🔎 {raw_hits} Roh-Treffer"
+        
+        if limit_hit:
+            status_line += " | ⚠ Limit erreicht"
+        
+        status_line += f" | ➕ letzte Seite +{len(items_local)}"
+        
+        st.caption(status_line)
 
         if len(all_items) >= int(max_results):
             st.warning(f"Suche wurde bei {int(max_results)} Treffern gestoppt (Erweitert → Stopp-Limit).")
@@ -1406,7 +1416,15 @@ with col1:
         
         unique_companies = len(company_counter)
         
-        st.subheader(f"Treffer {len(items_sorted)}")
+        st.markdown(
+            f"""
+        📊 **Treffer {len(items_sorted)}**
+        | 🆕 {len(new_keys)}
+        | 🤖 {recruiting_removed} Recruiting
+        | 🏢 {unique_companies} Firmen
+        | 📍 {len(markers)} Marker
+        """
+        )
 
         st.markdown(
             f"""
