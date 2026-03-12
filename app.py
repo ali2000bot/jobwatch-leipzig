@@ -1839,43 +1839,18 @@ with col1:
             
             st.markdown("</div>", unsafe_allow_html=True)
 
-        # Ergebnisse
+        # Ergebnisse 
         st.divider()
         st.markdown(
-            """
-        <div style="
-        font-size:1.1rem;
-        font-weight:700;
-        margin-top:6px;
-        margin-bottom:2px;">
-        st.markdown(
-            f"""
-        <div style="
-        font-size:1.1rem;
-        font-weight:700;
-        margin-top:6px;
-        margin-bottom:2px;">
-        📋 Ergebnisse ({len(items_sorted)})
-        </div>
-        <div style="
-        font-size:0.9rem;
-        opacity:0.75;
-        margin-bottom:10px;">
-        Sortiert nach Priorität, Entfernung und Score
-        </div>
-        """,
+            f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:2px;">'
+            f'📋 Ergebnisse ({len(items_sorted)})'
+            f'</div>'
+            f'<div style="font-size:0.9rem;opacity:0.75;margin-bottom:10px;">'
+            f'Sortiert nach Priorität, Entfernung und Score'
+            f'</div>',
             unsafe_allow_html=True,
         )
-        </div>
-        <div style="
-        font-size:0.9rem;
-        opacity:0.75;
-        margin-bottom:10px;">
-        Alle Treffer sortiert nach Priorität, Entfernung und Score
-        </div>
-        """,
-            unsafe_allow_html=True,
-        )
+
         st.caption(f"{len(items_sorted)} Treffer angezeigt")
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
