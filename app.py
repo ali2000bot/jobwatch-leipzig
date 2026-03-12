@@ -1660,16 +1660,31 @@ with col1:
         status_html = f"""
         <div style="
             display:flex;
-            flex-wrap:wrap;
+            flex-direction:column;
             gap:8px;
-            align-items:center;
             padding:10px 12px;
             border:1px solid rgba(128,128,128,0.18);
             border-radius:12px;
             background:rgba(255,255,255,0.03);
             margin-bottom:8px;
         ">
-            {chips}
+            <div style="
+                display:flex;
+                flex-wrap:wrap;
+                gap:8px;
+                align-items:center;
+            ">
+                {chips}
+            </div>
+            {f'''
+            <div style="
+                font-size:0.92rem;
+                color:inherit;
+                white-space:nowrap;
+                overflow-x:auto;
+                overflow-y:hidden;
+            ">📍 {loc_line}</div>
+            ''' if loc_line else ""}
         </div>
         """
         
