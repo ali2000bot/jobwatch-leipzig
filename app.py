@@ -1636,25 +1636,7 @@ with col1:
         if len(all_items) >= int(max_results):
             status_parts.insert(1, "⚠ Limit erreicht")
         
-        status_html = "".join(
-            [
-                f"""
-                <span style="
-                    display:inline-block;
-                    padding:6px 10px;
-                    margin:0 8px 8px 0;
-                    border-radius:999px;
-                    background:rgba(128,128,128,0.12);
-                    font-size:0.92rem;
-                    line-height:1.2;
-                    white-space:nowrap;
-                ">{part}</span>
-                """
-                for part in status_parts
-            ]
-        )
-
-status_top.markdown(status_html, unsafe_allow_html=True)
+        status_top.caption(" | ".join(status_parts))
 
         if markers:
             st.write("### Karte")
