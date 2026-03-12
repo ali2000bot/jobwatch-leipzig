@@ -1796,7 +1796,24 @@ with col1:
         # status_top.caption(" | ".join(status_parts))
 
         if markers:
-            st.write("### Karte")
+            st.markdown(
+                """
+            <div style="
+            font-size:1.1rem;
+            font-weight:700;
+            margin-top:6px;
+            margin-bottom:2px;">
+            🗺️ Karte
+            </div>
+            <div style="
+            font-size:0.9rem;
+            opacity:0.75;
+            margin-bottom:10px;">
+            Treffer nach Entfernung visualisiert
+            </div>
+            """,
+                unsafe_allow_html=True,
+            )
             components.html(
                 leaflet_map_html(
                     float(home_lat),
