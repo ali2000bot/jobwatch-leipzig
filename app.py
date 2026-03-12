@@ -1244,9 +1244,9 @@ with col1:
         if raw_hits >= int(max_results):
             status_line += " ⚠"
 
-status_line += f" | ➕ letzte Seite +{len(items_local)}"
+        status_line += f" | ➕ letzte Seite +{len(items_local)}"
 
-st.caption(status_line)
+        st.caption(status_line)
         
         if limit_hit:
             status_line += " | ⚠ Limit erreicht"
