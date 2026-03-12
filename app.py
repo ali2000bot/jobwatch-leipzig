@@ -1484,7 +1484,13 @@ with col1:
                 cols = st.columns(cols_per_row)
                 for col_idx, (comp, count) in enumerate(row):
                     with cols[col_idx]:
-                        label = f"{comp} · {count}"
+                        if count >= 5:
+                            label = f"🔥 {comp} ({count})"
+                        elif count >= 3:
+                            label = f"⭐ {comp} ({count})"
+                        else:
+                            label = f"{comp} ({count})"
+                        # label = f"{comp} · {count}"
                         if st.button(
                             label,
                             key=f"focus_company_chip_{row_idx}_{col_idx}_{comp}",
