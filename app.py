@@ -1409,7 +1409,7 @@ with col1:
                     for city, count in top_locations
                 ]
             )
-            # st.caption(f"📍 {loc_line}")
+            st.caption(f"📍 {loc_line}")
         
               
         # Firmen mit mehreren Treffern
@@ -1620,6 +1620,22 @@ with col1:
                 base["title"] = f"{len(group)} Treffer an diesem Ort"
                 markers.append(base)
 
+        
+        last_page_count = len(items_local) if "items_local" in locals() else 0
+
+        status_parts = [
+            f"🔎 {len(all_items)} Roh-Treffer",
+            f"✅ {len(items_sorted)} Treffer",
+            f"📄 letzte Seite +{last_page_count}",
+            f"🆕 {len(new_keys)} neu",
+            f"🤖 {removed_recruiting} Recruiting entfernt",
+            f"🏢 {unique_companies} Firmen",
+            f"📍 {len(markers)} Marker",
+        ]
+        
+        if len(all_items) >= int(max_results):
+            status_parts.insert(1, "⚠ Limit erreicht")
+
         last_page_count = len(items_local) if "items_local" in locals() else 0
 
         status_parts = [
@@ -1641,14 +1657,14 @@ with col1:
             "warn": "background:rgba(198,40,40,0.16); color:#b71c1c; font-weight:700;",
         }
         
-        chips = "".join(
+        status_html = "".join(
             f"""
             <span style="
-                display:inline-flex;
-                align-items:center;
-                padding:5px 10px;
+                display:inline-block;
+                padding:6px 10px;
+                margin:0 8px 8px 0;
                 border-radius:999px;
-                font-size:0.9rem;
+                font-size:0.92rem;
                 line-height:1.2;
                 white-space:nowrap;
                 {badge_styles[kind]}
@@ -1657,50 +1673,7 @@ with col1:
             for kind, text in status_parts
         )
         
-        loc_line = ""
-        if top_locations:
-            loc_line = " | ".join(
-                f"{city} {count} ({location_distance.get(city, 0):.0f} km)"
-                for city, count in top_locations
-            )
-        
-        status_html = f"""
-        <div style="
-            padding:10px 12px 8px 12px;
-            border:1px solid rgba(128,128,128,0.18);
-            border-radius:12px;
-            background:rgba(255,255,255,0.03);
-            margin-bottom:10px;
-        ">
-            <div style="
-                display:flex;
-                flex-wrap:wrap;
-                gap:8px;
-                align-items:center;
-                margin-bottom:{'8px' if loc_line else '0'};
-            ">
-                {chips}
-            </div>
-            {
-                f'''
-                <div style="
-                    font-size:0.92rem;
-                    color:rgba(250,250,250,0.85);
-                    white-space:nowrap;
-                    overflow-x:auto;
-                    overflow-y:hidden;
-                    padding-bottom:2px;
-                ">
-                    📍 {loc_line}
-                </div>
-                '''
-                if loc_line else ""
-            }
-        </div>
-        """
-        
         status_top.markdown(status_html, unsafe_allow_html=True)
-        
         # status_top.caption(" | ".join(status_parts))
 
         if markers:
