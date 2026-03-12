@@ -1236,7 +1236,7 @@ with col1:
                         break
 
         live_progress.progress(100)
-                       
+        status_top = st.empty()               
         if errs:
             st.error("Fehler / Hinweise")
             for e in errs:
@@ -1636,7 +1636,7 @@ with col1:
         if len(all_items) >= int(max_results):
             status_parts.insert(1, "⚠ Limit erreicht")
         
-        st.caption(" | ".join(status_parts))
+        status_top.caption(" | ".join(status_parts))
 
         if markers:
             st.write("### Karte")
