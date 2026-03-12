@@ -1373,10 +1373,13 @@ with col1:
             it["_idx"] = i
 
         st.subheader(f"Treffer: {len(items_sorted)}")
-        st.caption(
-            f"🟢 Neu seit Snapshot: {len(new_keys)}   |   "
-            f"🤖 Recruiting-/Personaldienstleister ausgeblendet: {removed_recruiting}"
-        )
+
+        cMeta1, cMeta2 = st.columns([1.2, 2.8])
+        with cMeta1:
+            st.caption(f"🟢 Neu seit Snapshot: {len(new_keys)}")
+        with cMeta2:
+            if removed_recruiting > 0:
+                st.caption(f"🤖 {removed_recruiting} Recruiting-/Personaldienstleister automatisch ausgeblendet")
 
         # Firmen mit mehreren Treffern
         company_counter: Dict[str, int] = {}
