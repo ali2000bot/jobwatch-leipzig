@@ -1368,6 +1368,14 @@ with col1:
         for i, it in enumerate(items_sorted, start=1):
             it["_idx"] = i
 
+        company_counter: Dict[str, int] = {}
+        for it in items_sorted:
+            comp = item_company(it)
+            if comp:
+                company_counter[comp] = company_counter.get(comp, 0) + 1
+        
+        unique_companies = len(company_counter)
+        
         st.subheader(f"Treffer: {len(items_sorted)}")
 
         st.caption(
