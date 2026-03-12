@@ -880,8 +880,24 @@ def leaflet_map_html(
 # App-Start
 # ============================================================
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
-st.title("Raum Leipzig – Jobs finden & vergleichen")
+st.markdown(
+    """
+<div style="
+font-size:1.6rem;
+font-weight:700;
+margin-bottom:6px;">
+🧭 JobWatch Leipzig
+</div>
 
+<div style="
+font-size:0.95rem;
+opacity:0.8;
+margin-bottom:14px;">
+Jobs im Raum Leipzig entdecken, vergleichen und priorisieren
+</div>
+""",
+    unsafe_allow_html=True,
+)
 if "kw_focus" not in st.session_state:
     st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
 if "kw_lead" not in st.session_state:
@@ -1409,9 +1425,7 @@ with col1:
                     for city, count in top_locations
                 ]
             )
-            
-        
-              
+                        
         # Firmen mit mehreren Treffern
         company_counter: Dict[str, int] = {}
         for it in items_sorted:
