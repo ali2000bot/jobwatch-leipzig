@@ -1636,22 +1636,41 @@ with col1:
         if len(all_items) >= int(max_results):
             status_parts.insert(1, "⚠ Limit erreicht")
 
+        last_page_count = len(items_local) if "items_local" in locals() else 0
+
+        status_parts = [
+            ("normal", f"🔎 {len(all_items)} Roh-Treffer"),
+            ("success", f"✅ {len(items_sorted)} Treffer"),
+            ("normal", f"📄 letzte Seite +{last_page_count}"),
+            ("normal", f"🆕 {len(new_keys)} neu"),
+            ("normal", f"🤖 {removed_recruiting} Recruiting entfernt"),
+            ("normal", f"🏢 {unique_companies} Firmen"),
+            ("normal", f"📍 {len(markers)} Marker"),
+        ]
+        
+        if len(all_items) >= int(max_results):
+            status_parts.insert(1, ("warn", "⚠ Limit erreicht"))
+        
+        badge_styles = {
+            "normal": "background:rgba(128,128,128,0.12); color:inherit;",
+            "success": "background:rgba(46,125,50,0.14); color:inherit;",
+            "warn": "background:rgba(198,40,40,0.16); color:#b71c1c; font-weight:700;",
+        }
+        
         status_html = "".join(
-            [
-                f"""
-                <span style="
-                    display:inline-block;
-                    padding:6px 10px;
-                    margin:0 8px 8px 0;
-                    border-radius:999px;
-                    background:rgba(128,128,128,0.12);
-                    font-size:0.92rem;
-                    line-height:1.2;
-                    white-space:nowrap;
-                ">{part}</span>
-                """
-                for part in status_parts
-            ]
+            f"""
+            <span style="
+                display:inline-block;
+                padding:6px 10px;
+                margin:0 8px 8px 0;
+                border-radius:999px;
+                font-size:0.92rem;
+                line-height:1.2;
+                white-space:nowrap;
+                {badge_styles[kind]}
+            ">{text}</span>
+            """
+            for kind, text in status_parts
         )
         
         status_top.markdown(status_html, unsafe_allow_html=True)
