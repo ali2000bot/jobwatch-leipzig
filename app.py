@@ -1658,11 +1658,26 @@ with col1:
         ])
         
         location_html = ""
-        if loc_line:
+
+        if top_locations:
+            location_chips = "".join([
+                (
+                    f'<span style="display:inline-block;'
+                    f'padding:4px 9px;'
+                    f'border-radius:999px;'
+                    f'background:rgba(128,128,128,0.10);'
+                    f'font-size:0.88rem;'
+                    f'white-space:nowrap;">'
+                    f'{city} · {count} · {location_distance[city]:.0f} km'
+                    f'</span>'
+                )
+                for city, count in top_locations
+            ])
+        
             location_html = (
-                f'<div style="margin-top:8px;font-size:0.92rem;color:inherit;'
-                f'white-space:nowrap;overflow-x:auto;overflow-y:hidden;">'
-                f'📍 {loc_line}'
+                f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'
+                f'<span style="font-size:0.9rem;opacity:0.85;">📍</span>'
+                f'{location_chips}'
                 f'</div>'
             )
         
