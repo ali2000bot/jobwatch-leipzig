@@ -1240,6 +1240,13 @@ with col1:
         limit_hit = raw_hits >= int(max_results)
         
         status_line = f"🔎 {raw_hits} Roh-Treffer"
+       
+        if raw_hits >= int(max_results):
+            status_line += " ⚠"
+
+status_line += f" | ➕ letzte Seite +{len(items_local)}"
+
+st.caption(status_line)
         
         if limit_hit:
             status_line += " | ⚠ Limit erreicht"
@@ -1247,10 +1254,7 @@ with col1:
         status_line += f" | ➕ letzte Seite +{len(items_local)}"
         
         st.caption(status_line)
-
-        if len(all_items) >= int(max_results):
-            st.warning(f"Suche wurde bei {int(max_results)} Treffern gestoppt (Erweitert → Stopp-Limit).")
-
+        
         if errs:
             st.error("Fehler / Hinweise")
             for e in errs:
