@@ -1409,7 +1409,7 @@ with col1:
                     for city, count in top_locations
                 ]
             )
-            st.caption(f"📍 {loc_line}")
+            
         
               
         # Firmen mit mehreren Treffern
