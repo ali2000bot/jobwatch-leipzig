@@ -981,8 +981,996 @@ with st.sidebar:
     hide_marked = st.checkbox("Bereits ausgeblendete Jobs verbergen", value=True)
     show_hidden_manage = st.checkbox("Ausblend-Liste verwalten", value=False)
 
-st.info(
-    "Die bereinigte Version ist hier absichtlich kompakter gehalten. "
-    "Wenn du möchtest, sende ich dir im nächsten Schritt den kompletten BA-Tab "
-    "und danach den kompletten Firmencheck-Tab als direkt einsetzbare Fortsetzung."
-)
+col1, col2 = st.columns([7.2, 1.2], gap="small")
+
+with col2:
+    st.markdown(
+        """
+        <style>
+        .side-card {
+            border: 1px solid rgba(128,128,128,0.25);
+            border-radius: 14px;
+            padding: 14px 14px 10px 14px;
+            margin-bottom: 14px;
+            background: rgba(255,255,255,0.02);
+        }
+        .side-title {
+            font-size: 1.0rem;
+            font-weight: 700;
+            white-space: nowrap;
+            margin-bottom: 4px;
+        }
+        .side-sub {
+            font-size: 0.82rem;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown('<div class="side-card">', unsafe_allow_html=True)
+    st.markdown('<div class="side-title">💾 Snapshot</div>', unsafe_allow_html=True)
+
+    snap_time = snap.get("timestamp") or "Noch kein Snapshot gespeichert"
+    st.markdown(f'<div class="side-sub">{snap_time}</div>', unsafe_allow_html=True)
+
+    if st.button("Stand speichern", use_container_width=True):
+        st.session_state["save_snapshot_requested"] = True
+
+    if st.button("Stand löschen", use_container_width=True):
+        ensure_state_dir()
+        if os.path.exists(SNAPSHOT_FILE):
+            os.remove(SNAPSHOT_FILE)
+        st.success("Snapshot gelöscht. Seite neu laden.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown('<div class="side-card">', unsafe_allow_html=True)
+    st.markdown('<div class="side-title">🎯 Organisationen</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="side-sub">Karriereseiten zum manuellen Prüfen</div>',
+        unsafe_allow_html=True
+    )
+
+    with st.expander("Liste anzeigen", expanded=False):
+        for org in TARGET_ORGS:
+            try:
+                st.link_button(
+                    f"🏢 {org['name']}",
+                    org["url"],
+                    use_container_width=True
+                )
+            except Exception:
+                st.markdown(f"[🏢 {org['name']}]({org['url']})")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+with col1:
+    tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
+
+    with tab_ba:
+        if not selected_profiles:
+            st.warning("Bitte mindestens eine Jobart auswählen.")
+            st.stop()
+
+        all_items: List[Dict[str, Any]] = []
+
+        _hidden_data = load_hidden_jobs()
+        hidden_keys: Set[str] = set(_hidden_data.get("hidden", []))
+        hidden_companies = load_hidden_companies()
+
+        if show_hidden_manage:
+            st.subheader("🙈 Ausblend-Liste")
+
+            st.markdown("**Ausgeblendete Jobs**")
+            st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
+
+            cHM1, cHM2 = st.columns([1.2, 3.8])
+            with cHM1:
+                if st.button("🧹 Jobs leeren", key="clear_hidden_jobs"):
+                    save_hidden_jobs(set())
+                    st.success("Ausblend-Liste für Jobs geleert.")
+                    st.rerun()
+            with cHM2:
+                if hidden_keys:
+                    st.code("\n".join(sorted(hidden_keys)))
+                else:
+                    st.caption("Keine Jobs ausgeblendet.")
+
+            st.divider()
+
+            st.markdown("**Blockierte Firmen**")
+            st.caption(f"{len(hidden_companies)} Firmen blockiert")
+
+            cHC1, cHC2 = st.columns([1.2, 3.8])
+            with cHC1:
+                if st.button("🧹 Firmen leeren", key="clear_hidden_companies"):
+                    save_hidden_companies(set())
+                    st.success("Blockierte Firmen geleert.")
+                    st.rerun()
+            with cHC2:
+                if hidden_companies:
+                    for comp in sorted(hidden_companies):
+                        c1, c2 = st.columns([4.5, 1])
+                        with c1:
+                            st.write(comp)
+                        with c2:
+                            if st.button("❌", key=f"unblock_company_{comp}"):
+                                hidden_companies.discard(comp)
+                                save_hidden_companies(hidden_companies)
+                                st.rerun()
+                else:
+                    st.caption("Keine Firmen blockiert.")
+
+            st.divider()
+
+        live_status = st.empty()
+        live_progress = st.progress(0)
+        live_hint = st.empty()
+
+        with st.spinner("Suche läuft…"):
+            all_items = []
+            errs: List[str] = []
+            qmap = build_queries()
+
+            total_limit = int(max_results)
+            pages_limit = int(max_pages)
+            done_pages = 0
+            expected_pages = max(1, len(selected_profiles) * pages_limit)
+
+            for name in selected_profiles:
+                q = qmap.get(name, "")
+
+                for page in range(1, pages_limit + 1):
+                    if len(all_items) >= total_limit:
+                        break
+
+                    done_pages += 1
+                    pct = min(1.0, done_pages / expected_pages)
+
+                    live_status.markdown(
+                        f"**Live:** Profil **{name}** · Seite **{page}/{pages_limit}** · Treffer **{len(all_items)}/{total_limit}**"
+                    )
+                    live_progress.progress(int(pct * 100))
+
+                    items_local, e1 = fetch_search(
+                        api_key,
+                        home_query,
+                        int(umkreis),
+                        q,
+                        aktualitaet,
+                        int(size),
+                        page=page,
+                        arbeitszeit=None,
+                    )
+
+                    if e1:
+                        errs.append(f"{name} Seite {page}: {e1}")
+                        break
+
+                    if not items_local:
+                        break
+
+                    live_hint.caption(f"Letzte Seite: +{len(items_local)} Treffer")
+
+                    for it in items_local:
+                        it["_profile"] = name
+                        it["_bucket"] = f"Vor Ort ({umkreis} km)"
+                        all_items.append(it)
+
+                    if len(items_local) < int(size):
+                        break
+
+        live_progress.progress(100)
+        live_status.success(f"Fertig. Roh-Treffer: {len(all_items)}")
+
+        if len(all_items) >= int(max_results):
+            st.warning(f"Suche wurde bei {int(max_results)} Treffern gestoppt (Erweitert → Stopp-Limit).")
+
+        if errs:
+            st.error("Fehler / Hinweise")
+            for e in errs:
+                st.code(e)
+
+        # 1) Deduplizierung per Key
+        items_now: List[Dict[str, Any]] = []
+        seen: Set[str] = set()
+        for it in all_items:
+            k = item_key(it)
+            if k not in seen:
+                seen.add(k)
+                it["_key"] = k
+                items_now.append(it)
+
+        # 2) Deduplizierung per Titel/Firma/Ort
+        dedup2: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+        for it in items_now:
+            key2 = (
+                item_title(it).lower().strip(),
+                item_company(it).lower().strip(),
+                pretty_location(it).lower().strip(),
+            )
+            if key2 not in dedup2:
+                dedup2[key2] = it
+
+        items_now = list(dedup2.values())
+
+        # 3) Hidden / Blocklisten
+        if hide_marked:
+            items_now = [it for it in items_now if (it.get("_key") or item_key(it)) not in hidden_keys]
+
+        items_now = [
+            it for it in items_now
+            if item_company(it).strip().lower() not in hidden_companies
+        ]
+
+        # 4) Recruiting automatisch raus
+        before_recruiting_filter = len(items_now)
+        items_now = [it for it in items_now if not is_recruiting_posting(it)]
+
+        if debug:
+            removed = before_recruiting_filter - len(items_now)
+            if removed > 0:
+                st.caption(f"🤖 {removed} Recruiting-/Personaldienstleister-Treffer automatisch ausgeblendet")
+
+        # 5) Negative Jobs raus
+        if hide_irrelevant:
+            items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
+
+        # 6) Einmalig anreichern
+        items_now = [
+            enrich_item(
+                it,
+                float(home_lat),
+                float(home_lon),
+                FOCUS_KEYWORDS,
+                LEADERSHIP_KEYWORDS,
+                NEGATIVE_KEYWORDS,
+                int(ho_bonus),
+                float(speed_kmh),
+            )
+            for it in items_now
+        ]
+
+        # 7) Mindestscore
+        if only_focus:
+            items_now = [it for it in items_now if int(it.get("_score", 0)) >= int(min_score)]
+
+        prev_items = snap.get("items", [])
+        prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items if isinstance(x, dict)}
+        now_keys: Set[str] = {x.get("_key") or item_key(x) for x in items_now}
+        new_keys = now_keys - prev_keys
+
+        def sort_key(it: Dict[str, Any]):
+            org = it.get("_org")
+            priority_rank = -1 if (org and org.get("priority") == "high") else 0
+            dist = it.get("_distance_km")
+            dist_rank = dist if dist is not None else 999999.0
+            is_new_rank = 0 if (it.get("_key") in new_keys) else 1
+            score = int(it.get("_score", 0))
+            return (priority_rank, dist_rank, is_new_rank, -score, str(it.get("_title", "")).lower())
+
+        # Radiusfilter
+        items_now_filtered = []
+        for it in items_now:
+            dist = it.get("_distance_km")
+            if dist is None:
+                items_now_filtered.append(it)
+                continue
+            if dist <= float(max_distance_filter):
+                items_now_filtered.append(it)
+
+        items_sorted = sorted(items_now_filtered, key=sort_key)
+
+        jump_target = st.session_state.get("jump_to_job")
+        focus_company = st.session_state.get("focus_company")
+
+        if jump_target:
+            target_item = None
+            other_items = []
+
+            for it in items_sorted:
+                k2 = it.get("_key") or item_key(it)
+                if k2 == jump_target and target_item is None:
+                    target_item = it
+                else:
+                    other_items.append(it)
+
+            if target_item is not None:
+                items_sorted = [target_item] + other_items
+
+        elif focus_company:
+            company_items = []
+            other_items = []
+
+            for it in items_sorted:
+                comp_name = item_company(it).strip().lower()
+                if comp_name == focus_company:
+                    company_items.append(it)
+                else:
+                    other_items.append(it)
+
+            items_sorted = company_items + other_items
+
+        for i, it in enumerate(items_sorted, start=1):
+            it["_idx"] = i
+
+        st.subheader(f"Treffer: {len(items_sorted)}")
+
+        # Firmen mit mehreren Treffern
+        company_counter: Dict[str, int] = {}
+        for it in items_sorted:
+            comp = item_company(it)
+            if comp:
+                company_counter[comp] = company_counter.get(comp, 0) + 1
+
+        top_companies = sorted(
+            [(c, n) for c, n in company_counter.items() if n > 1],
+            key=lambda x: x[1],
+            reverse=True
+        )[:8]
+
+        if top_companies:
+            st.markdown("### 🏢 Firmen mit mehreren Treffern")
+
+            st.markdown(
+                """
+                <style>
+                div[data-testid="stButton"] > button[kind="secondary"] {
+                    border-radius: 999px;
+                }
+                </style>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            if focus_company:
+                c1, c2 = st.columns([5, 1.2])
+                with c1:
+                    st.info(f"🎯 Fokusfirma aktiv: {focus_company}")
+                with c2:
+                    if st.button("❌ Aufheben", key="clear_focus_company", use_container_width=True):
+                        st.session_state["focus_company"] = None
+                        st.session_state["jump_to_job"] = None
+                        st.rerun()
+
+            cols_per_row = 2
+            rows = [top_companies[i:i + cols_per_row] for i in range(0, len(top_companies), cols_per_row)]
+
+            for row_idx, row in enumerate(rows):
+                cols = st.columns(cols_per_row)
+                for col_idx, (comp, count) in enumerate(row):
+                    with cols[col_idx]:
+                        label = f"🏢 {comp} · {count}"
+                        if st.button(
+                            label,
+                            key=f"focus_company_chip_{row_idx}_{col_idx}_{comp}",
+                            use_container_width=True,
+                            type="secondary",
+                        ):
+                            st.session_state["focus_company"] = comp.strip().lower()
+                            st.session_state["jump_to_job"] = None
+                            st.rerun()
+
+        # Beste Treffer
+        top_items = sorted(
+            items_sorted,
+            key=lambda it: int(it.get("_score", 0)),
+            reverse=True
+        )[:5]
+
+        if top_items:
+            st.markdown("### ⭐ Beste Treffer")
+
+            for rank, it in enumerate(top_items, start=1):
+                dist = it.get("_distance_km")
+                dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
+                score_val = int(it.get("_score", 0))
+                org = it.get("_org")
+
+                target_tag = ""
+                if org:
+                    target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
+
+                k = it.get("_key") or item_key(it)
+                fav_tag = " 📌" if is_favorited(k, favorites) else ""
+
+                safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+                safe_company = it.get("_company_safe", sanitize_md_text(item_company(it)))
+                safe_location = it.get("_location_safe", sanitize_md_text(pretty_location(it)))
+
+                with st.container(border=True):
+                    st.markdown(
+                        f"**{rank}. {safe_title}**{fav_tag}{target_tag}  \n"
+                        f"{safe_company} · {safe_location}  \n"
+                        f"Entfernung: {dist_txt} · Score: {score_val}"
+                    )
+
+                    if st.button("🔎 In Liste anzeigen", key=f"jump_{rank}_{it.get('_key', rank)}"):
+                        st.session_state["jump_to_job"] = it.get("_key")
+                        st.session_state["focus_company"] = None
+                        st.rerun()
+
+            st.divider()
+
+        # Merkliste
+        st.divider()
+        with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
+            if not favorites:
+                st.info("Noch keine gemerkten Stellen.")
+            else:
+                fav_items = []
+                for it in items_sorted:
+                    k = it.get("_key") or item_key(it)
+                    if k in favorites:
+                        fav_items.append((k, it))
+
+                if not fav_items:
+                    st.warning("Es sind Favoriten gespeichert, aber sie sind in der aktuellen Suche nicht enthalten.")
+                    st.caption("Tipp: Favoriten bleiben gespeichert – erscheinen aber nur, wenn sie wieder gefunden werden.")
+                else:
+                    for k, it in fav_items:
+                        note = (favorites.get(k, {}) or {}).get("note", "")
+                        when = (favorites.get(k, {}) or {}).get("added_at", "")
+
+                        safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+                        safe_company = it.get("_company_safe", sanitize_md_text(item_company(it)))
+                        safe_location = it.get("_location_safe", sanitize_md_text(pretty_location(it)))
+
+                        st.markdown(
+                            f"**{safe_title}**  \n"
+                            f"{safe_company} · {safe_location}  \n"
+                            f"{('📝 ' + note) if note else ''}  \n"
+                            f"{('🕒 ' + when) if when else ''}"
+                        )
+
+                        web_url = jobsuche_web_url(it)
+                        if web_url:
+                            try:
+                                st.link_button("🔗 BA öffnen", web_url, key=f"fav_link_{k}")
+                            except Exception:
+                                st.markdown(f"[🔗 BA öffnen]({web_url})")
+
+                        st.divider()
+
+        st.caption(f"Neu seit Snapshot: {len(new_keys)}")
+
+        # High Priority
+        st.divider()
+        st.write("## 🔥 High-Priority Treffer")
+        hp_items = [it for it in items_sorted if (it.get("_org") and it.get("_org", {}).get("priority") == "high")]
+
+        if hp_items:
+            for it in hp_items[:15]:
+                st.write(f"• {it.get('_title', item_title(it))} – {it.get('_company', item_company(it))}")
+        else:
+            st.info("Aktuell keine High-Priority Treffer.")
+
+        if st.session_state.get("save_snapshot_requested"):
+            save_snapshot(items_sorted)
+            st.session_state["save_snapshot_requested"] = False
+            st.success("Snapshot gespeichert.")
+
+        # Karte
+        raw_markers: List[Dict[str, Any]] = []
+        missing_coords = 0
+        geocode_used = 0
+
+        enable_job_geocode = bool(locals().get("enable_job_geocode", False))
+        max_job_geocodes = int(locals().get("max_job_geocodes", 0))
+
+        for it in items_sorted:
+            ll = extract_latlon_from_item(it)
+
+            if not ll:
+                if enable_job_geocode and geocode_used < int(max_job_geocodes):
+                    loc_text = it.get("_location", pretty_location(it))
+                    ll = geocode_job_location(loc_text)
+                    geocode_used += 1
+
+                if not ll:
+                    missing_coords += 1
+                    continue
+
+            dist = haversine_km(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
+            d = float(dist)
+            bucket = distance_bucket(d, int(near_km), int(mid_km))
+
+            raw_markers.append(
+                {
+                    "idx": int(it.get("_idx", 0)),
+                    "lat": float(ll[0]),
+                    "lon": float(ll[1]),
+                    "title": it.get("_title", item_title(it)),
+                    "company": it.get("_company", item_company(it)),
+                    "dist_km": d,
+                    "pin": bucket,
+                }
+            )
+
+        groups = defaultdict(list)
+        for m in raw_markers:
+            key = (round(m["lat"], 6), round(m["lon"], 6))
+            groups[key].append(m)
+
+        markers: List[Dict[str, Any]] = []
+        for (_lat, _lon), group in groups.items():
+            if len(group) == 1:
+                markers.append(group[0])
+            else:
+                idxs = sorted([g["idx"] for g in group if isinstance(g.get("idx"), int) and g["idx"] > 0])
+                idx_label = f"{idxs[0]}–{idxs[-1]}" if idxs else "?"
+                base = group[0].copy()
+                base["idx"] = idx_label
+                base["title"] = f"{len(group)} Treffer an diesem Ort"
+                markers.append(base)
+
+        if debug:
+            st.info(
+                f"Marker nach Gruppierung: {len(markers)} | ursprüngliche Marker: {len(raw_markers)} | ohne Koordinaten: {missing_coords}"
+            )
+
+        st.caption(f"Treffer gesamt: {len(items_sorted)} | Marker auf Karte: {len(markers)}")
+
+        if markers:
+            st.write("### Karte")
+            components.html(
+                leaflet_map_html(
+                    float(home_lat),
+                    float(home_lon),
+                    home_label,
+                    markers[:80],
+                    float(max_distance_filter),
+                    height_px=700,
+                ),
+                height=740,
+            )
+
+        # Ergebnisse
+        st.divider()
+        st.write("### Ergebnisse")
+        jump_target = st.session_state.get("jump_to_job")
+        focus_company = st.session_state.get("focus_company")
+
+        for it in items_sorted:
+            idx = int(it.get("_idx", 0) or 0)
+            k = it.get("_key") or item_key(it)
+            is_new = (k in new_keys)
+            is_hidden = (k in hidden_keys)
+            fav = is_favorited(k, favorites)
+            is_focused_company = item_company(it).strip().lower() == focus_company if focus_company else False
+
+            score = int(it.get("_score", 0))
+            parts = it.get("_score_parts", [])
+            dist = it.get("_distance_km")
+            t_min = it.get("_travel_min")
+            bucket = distance_bucket(dist, int(near_km), int(mid_km))
+            emo = distance_emoji(bucket)
+
+            star = "⭐ " if it.get("_is_leadership") else ""
+
+            org = it.get("_org")
+            target_tag = ""
+            if org:
+                target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
+
+            num_txt = f"{idx:02d}" if idx > 0 else "??"
+            dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
+
+            pin = "📌 " if fav else ""
+            focus_tag = " 🏢" if is_focused_company else ""
+
+            safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+            company_name = it.get("_company", item_company(it))
+            location_name = it.get("_location", pretty_location(it))
+
+            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{safe_title}{focus_tag}{target_tag}"
+
+            meta_text = " | ".join(
+                [
+                    f"Score: {score}",
+                    it.get("_profile", ""),
+                    it.get("_bucket", ""),
+                    company_name,
+                    location_name,
+                ]
+            )
+
+            expanded = (jump_target == k)
+
+            with st.expander(label, expanded=expanded):
+                if is_focused_company:
+                    st.info(f"Fokusfirma: {company_name}")
+
+                badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
+                st.markdown(badge + f' <span style="color:#666;">{meta_text}</span>', unsafe_allow_html=True)
+
+                cFav1, cFav2 = st.columns([1.2, 3.8])
+                with cFav1:
+                    if not fav:
+                        if st.button("📌 Merken", key=f"fav_add_{k}"):
+                            favorites[k] = {
+                                "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                "note": favorites.get(k, {}).get("note", ""),
+                            }
+                            save_favorites(favorites)
+                            st.rerun()
+                    else:
+                        if st.button("🗑️ Entfernen", key=f"fav_del_{k}"):
+                            favorites.pop(k, None)
+                            save_favorites(favorites)
+                            st.rerun()
+
+                with cFav2:
+                    if fav:
+                        note_key = f"fav_note_{k}"
+                        note_val = (favorites.get(k, {}) or {}).get("note", "")
+                        new_note = st.text_input("Notiz (optional)", value=note_val, key=note_key)
+                        if new_note != note_val:
+                            favorites[k]["note"] = new_note
+                            save_favorites(favorites)
+
+                cH1, cH2 = st.columns([1.4, 6.6])
+                with cH1:
+                    if not is_hidden:
+                        if st.button("🙈 Ausblenden", key=f"hide_{k}"):
+                            hidden_keys.add(k)
+                            save_hidden_jobs(hidden_keys)
+                            st.rerun()
+                    else:
+                        if st.button("👁️ Einblenden", key=f"unhide_{k}"):
+                            hidden_keys.discard(k)
+                            save_hidden_jobs(hidden_keys)
+                            st.rerun()
+                with cH2:
+                    st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
+
+                if company_name:
+                    if st.button("🚫 Firma blockieren", key=f"hide_company_{k}"):
+                        hidden_companies.add(company_name.lower())
+                        save_hidden_companies(hidden_companies)
+                        st.rerun()
+
+                rid = item_id_raw(it) or "—"
+                facts = [
+                    ("Nr.", num_txt),
+                    ("Distanz", dist_txt),
+                    ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
+                    ("Ziel-Organisation", org["name"] if org else "—"),
+                    ("Arbeitgeber", company_name or "—"),
+                    ("Ort", location_name),
+                    ("Profil", it.get("_profile", "")),
+                    ("Quelle", it.get("_bucket", "")),
+                    ("Score", str(score)),
+                    ("RefNr/BA-ID", rid),
+                ]
+                render_fact_grid(facts)
+
+                if org:
+                    st.write("**Karriereseite (Ziel-Organisation)**")
+                    try:
+                        st.link_button("🏢 Karriereseite öffnen", org["url"])
+                    except Exception:
+                        st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
+
+                st.write("**Score-Aufschlüsselung**")
+                st.code(" | ".join(parts))
+
+                web_url = jobsuche_web_url(it)
+                ll = extract_latlon_from_item(it)
+                if web_url or ll:
+                    cL, cR = st.columns(2)
+                    with cL:
+                        if web_url:
+                            try:
+                                st.link_button("🔗 In BA Jobsuche öffnen", web_url)
+                            except Exception:
+                                st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
+                    with cR:
+                        if ll:
+                            gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
+                            try:
+                                st.link_button("🚗 Route in Google Maps", gdir)
+                            except Exception:
+                                st.markdown(f"[🚗 Route in Google Maps]({gdir})")
+
+                st.divider()
+
+                api_url = details_url_api(it)
+                if not api_url:
+                    st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
+                    kurz = short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext")
+                    st.write("**Kurzbeschreibung**")
+                    st.write(kurz if kurz else "—")
+                    continue
+
+                details, derr = fetch_details(api_key, api_url)
+                if derr:
+                    st.error(derr)
+                    st.info("Wenn Details per API nicht gehen: nutze den BA-Link oben.")
+                    continue
+                if not details:
+                    st.info("Keine Details erhalten.")
+                    continue
+
+                desc = (
+                    details.get("stellenbeschreibung")
+                    or details.get("beschreibung")
+                    or details.get("jobbeschreibung")
+                    or details.get("aufgaben")
+                    or details.get("anforderungen")
+                )
+
+                st.write("**Beschreibung / Aufgaben / Anforderungen**")
+                if isinstance(desc, str) and desc.strip():
+                    st.write(desc)
+                else:
+                    st.info("Keine ausführliche Beschreibung im Detail-Response gefunden. Nutze ggf. den BA-Link oben.")
+
+    with tab_company:
+        st.subheader("Firmencheck (manuell, pro Firma)")
+        st.caption("Öffne die Karriereseite, trage Anzahl + Notizen ein und speichere 'Heute geprüft'.")
+
+        company_state = load_company_state()
+        today = datetime.now().strftime("%Y-%m-%d")
+
+        use_sliders = st.checkbox("Schwellen per Slider einstellen", value=True, key="fc_use_sliders")
+        if use_sliders:
+            warn_days = st.slider("Gelb ab X Tagen ohne Prüfung", 1, 60, 7, 1, key="fc_warn_days")
+            crit_days = st.slider("Rot ab X Tagen ohne Prüfung", 2, 120, 14, 1, key="fc_crit_days")
+        else:
+            warn_days = 7
+            crit_days = 14
+
+        if crit_days < warn_days:
+            crit_days = warn_days
+
+        def days_since(date_str: str) -> Optional[int]:
+            s = (date_str or "").strip()
+            if not s:
+                return None
+            try:
+                d = datetime.strptime(s, "%Y-%m-%d").date()
+                return (datetime.now().date() - d).days
+            except Exception:
+                return None
+
+        def freshness_badge(last_checked: str, warn: int, crit: int) -> Tuple[str, str]:
+            ds = days_since(last_checked)
+            if ds is None:
+                return "🔴", "nie geprüft"
+            if ds >= crit:
+                return "🔴", f"{ds} Tage"
+            if ds >= warn:
+                return "🟡", f"{ds} Tage"
+            return "🟢", f"{ds} Tage"
+
+        st.markdown("### Übersicht & Tools")
+        only_high = st.checkbox("Nur High-Priority (🔥) anzeigen", value=False, key="fc_only_high")
+        name_filter = st.text_input("Firma suchen (Teilstring)", value="", key="fc_name_filter").strip().lower()
+        only_interesting = st.checkbox("Nur Firmen mit ⭐ interessanten Stellen", value=False, key="fc_only_interesting")
+        only_new = st.checkbox("Nur Firmen mit 🟢 +neu seit letzter Prüfung", value=False, key="fc_only_new")
+
+        checked_today = 0
+        overdue = 0
+        total_positive = 0
+
+        for org in TARGET_ORGS:
+            org_name = org["name"]
+            data = company_state.get(org_name, {})
+            last_checked = str(data.get("last_checked") or "")
+
+            if last_checked == today:
+                checked_today += 1
+
+            emoji, _label = freshness_badge(last_checked, int(warn_days), int(crit_days))
+            if emoji in ("🟡", "🔴"):
+                overdue += 1
+
+            prev_count = int(data.get("prev_count", 0) or 0)
+            cur_count = int(data.get("count", 0) or 0)
+            diff = cur_count - prev_count
+            if diff > 0:
+                total_positive += diff
+
+        cA, cB, cC, cD = st.columns(4)
+        cA.metric("Firmen gesamt", len(TARGET_ORGS))
+        cB.metric("Heute geprüft", checked_today)
+        cC.metric("Überfällig", overdue)
+        cD.metric("Σ +neu (seit letzter Prüfung)", total_positive)
+
+        st.divider()
+
+        export_payload = {
+            "exported_at": datetime.now().isoformat(timespec="seconds"),
+            "today": today,
+            "items": [],
+        }
+        csv_lines = ["name,url,priority,last_checked,count,prev_count,diff,notes"]
+
+        def org_sort_key(o: Dict[str, Any]) -> Tuple[int, int, int, str]:
+            pr = 0 if o.get("priority") == "high" else 1
+            org_name = o.get("name", "")
+            data = company_state.get(org_name, {})
+            last_checked = str(data.get("last_checked") or "")
+            ds = days_since(last_checked)
+
+            if ds is None:
+                overdue_rank = 0
+                ds_rank = 10**9
+            else:
+                overdue_rank = 1 if ds >= int(warn_days) else 2
+                ds_rank = -ds
+
+            return (pr, overdue_rank, ds_rank, org_name)
+
+        filtered_orgs = []
+        for org in sorted(TARGET_ORGS, key=org_sort_key):
+            if only_high and org.get("priority") != "high":
+                continue
+            if name_filter and (name_filter not in org.get("name", "").lower()):
+                continue
+
+            org_name = org.get("name", "")
+            data = company_state.get(org_name, {}) if isinstance(company_state, dict) else {}
+            c = int(data.get("count", 0) or 0)
+            prev = int(data.get("prev_count", 0) or 0)
+            diff = c - prev
+
+            if only_interesting and c <= 0:
+                continue
+            if only_new and diff <= 0:
+                continue
+
+            filtered_orgs.append(org)
+
+        st.caption(f"Angezeigte Firmen: {len(filtered_orgs)} von {len(TARGET_ORGS)}")
+        st.divider()
+
+        for org in filtered_orgs:
+            org_name = org["name"]
+            url = org["url"]
+
+            if org_name not in company_state:
+                company_state[org_name] = {
+                    "last_checked": "",
+                    "count": 0,
+                    "prev_count": 0,
+                    "notes": "",
+                }
+
+            data = company_state[org_name]
+            prev_count = int(data.get("prev_count", 0))
+            saved_count = int(data.get("count", 0))
+            priority = org.get("priority", "")
+            last_checked = str(data.get("last_checked") or "")
+            notes_saved = str(data.get("notes") or "")
+
+            diff_saved = saved_count - prev_count
+
+            export_payload["items"].append(
+                {
+                    "name": org_name,
+                    "url": url,
+                    "priority": priority,
+                    "last_checked": last_checked,
+                    "count": saved_count,
+                    "prev_count": prev_count,
+                    "diff": diff_saved,
+                    "notes": notes_saved,
+                }
+            )
+
+            def _csv_safe(s: str) -> str:
+                s = (s or "").replace('"', '""').replace("\n", " ").replace("\r", " ")
+                return f'"{s}"'
+
+            csv_lines.append(
+                ",".join(
+                    [
+                        _csv_safe(org_name),
+                        _csv_safe(url),
+                        _csv_safe(priority),
+                        _csv_safe(last_checked),
+                        str(saved_count),
+                        str(prev_count),
+                        str(diff_saved),
+                        _csv_safe(notes_saved),
+                    ]
+                )
+            )
+
+            hp = "🔥 " if org.get("priority") == "high" else ""
+            emoji, age_label = freshness_badge(str(data.get("last_checked") or ""), int(warn_days), int(crit_days))
+            diff_tag = f" · 🟢 +{diff_saved}" if diff_saved > 0 else (f" · 🔴 {diff_saved}" if diff_saved < 0 else "")
+            count_tag = f" · ⭐ {saved_count} interessant" if saved_count > 0 else ""
+
+            headL, headR, headX = st.columns([5, 1.3, 1.1])
+            with headL:
+                st.markdown(f"### {emoji} {hp}🏢 {org_name}{count_tag}{diff_tag}  ·  {age_label}")
+                st.caption(f"Zuletzt geprüft: {data.get('last_checked') or '—'}")
+            with headR:
+                try:
+                    st.link_button("🏢 Öffnen", url)
+                except Exception:
+                    st.markdown(f"[🏢 Öffnen]({url})")
+            with headX:
+                if st.button("↩︎ Reset", key=f"reset_{org_name}"):
+                    company_state[org_name] = {
+                        "last_checked": "",
+                        "count": 0,
+                        "prev_count": 0,
+                        "notes": "",
+                    }
+                    save_company_state(company_state)
+                    st.success("Zurückgesetzt.")
+                    st.rerun()
+
+            c1, c2, c3 = st.columns([1.6, 1.6, 3.8])
+
+            with c1:
+                new_count = st.number_input(
+                    "Anzahl interessante Stellen",
+                    min_value=0,
+                    value=saved_count,
+                    step=1,
+                    key=f"count_{org_name}",
+                )
+
+            with c2:
+                if st.button("✔ Heute geprüft", key=f"check_{org_name}"):
+                    data["prev_count"] = int(data.get("count", 0))
+                    data["count"] = int(new_count)
+                    data["last_checked"] = today
+                    company_state[org_name] = data
+                    save_company_state(company_state)
+                    st.success("Gespeichert.")
+                    st.rerun()
+
+            with c3:
+                if data.get("last_checked"):
+                    diff = int(new_count) - prev_count
+                    if diff > 0:
+                        st.markdown(f"🟢 **+{diff}** seit letzter Prüfung")
+                    elif diff < 0:
+                        st.markdown(f"🔴 **{diff}** seit letzter Prüfung")
+                    else:
+                        st.markdown("🟡 **keine Veränderung**")
+
+            notes = st.text_area(
+                "Notizen / interessante Titel (z.B. Stichpunkte oder konkrete Jobtitel)",
+                value=str(data.get("notes", "")),
+                height=90,
+                key=f"notes_{org_name}",
+            )
+
+            if st.button("💾 Notizen speichern", key=f"save_notes_{org_name}"):
+                data["notes"] = notes
+                data["count"] = int(new_count)
+                company_state[org_name] = data
+                save_company_state(company_state)
+                st.success("Notizen gespeichert.")
+
+            st.divider()
+
+        st.markdown("### Export")
+        json_bytes = json.dumps(export_payload, ensure_ascii=False, indent=2).encode("utf-8")
+        csv_bytes = ("\n".join(csv_lines)).encode("utf-8")
+
+        cE1, cE2 = st.columns(2)
+        with cE1:
+            st.download_button(
+                "⬇️ Firmencheck als JSON herunterladen",
+                data=json_bytes,
+                file_name=f"firmencheck_{today}.json",
+                mime="application/json",
+            )
+        with cE2:
+            st.download_button(
+                "⬇️ Firmencheck als CSV herunterladen",
+                data=csv_bytes,
+                file_name=f"firmencheck_{today}.csv",
+                mime="text/csv",
+            )
