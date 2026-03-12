@@ -1239,7 +1239,7 @@ with col1:
         raw_hits = len(all_items)
         limit_hit = raw_hits >= int(max_results)
         
-        status_line = f"🔎 {raw_hits} Roh-Treffer"
+        # status_line = f"🔎 {raw_hits} Roh-Treffer"
        
         if raw_hits >= int(max_results):
             status_line += " ⚠"
