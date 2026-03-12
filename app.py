@@ -1814,6 +1814,17 @@ with col1:
             """,
                 unsafe_allow_html=True,
             )
+            st.markdown(
+                """
+            <div style="
+            border:1px solid rgba(128,128,128,0.18);
+            border-radius:12px;
+            overflow:hidden;
+            margin-bottom:10px;">
+            """,
+                unsafe_allow_html=True,
+            )
+            
             components.html(
                 leaflet_map_html(
                     float(home_lat),
@@ -1825,6 +1836,8 @@ with col1:
                 ),
                 height=740,
             )
+            
+            st.markdown("</div>", unsafe_allow_html=True)
 
         # Ergebnisse
         st.divider()
