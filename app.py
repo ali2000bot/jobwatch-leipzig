@@ -1441,20 +1441,27 @@ with col1:
                 unsafe_allow_html=True,
             )
             st.caption("Klick auf eine Firma, um ihre Treffer nach oben zu holen.")
-            st.markdown(
+           st.markdown(
                 """
                 <style>
+            
                 div[data-testid="stButton"] > button[kind="secondary"] {
                     border-radius: 999px;
-                    padding: 0.35rem 0.8rem;
-                    border: 1px solid rgba(128,128,128,0.22);
+                    padding: 0.15rem 0.55rem;
+                    min-height: 0px;
+                    font-size: 0.85rem;
+                    line-height: 1.2;
+                    text-align: left;
+                    border: 1px solid rgba(128,128,128,0.25);
                     background: rgba(255,255,255,0.03);
                     font-weight: 500;
                 }
+            
                 div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                    border-color: rgba(128,128,128,0.38);
-                    background: rgba(255,255,255,0.06);
+                    border-color: rgba(128,128,128,0.45);
+                    background: rgba(255,255,255,0.08);
                 }
+            
                 </style>
                 """,
                 unsafe_allow_html=True,
