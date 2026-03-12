@@ -1427,13 +1427,33 @@ with col1:
         )[:8]
 
         if top_companies:
-            st.markdown("### 🏢 Firmen mit mehreren Treffern")
-
+            st.markdown(
+                """
+                <div style="
+                    margin-top:10px;
+                    margin-bottom:8px;
+                    font-size:1.0rem;
+                    font-weight:700;
+                ">
+                    🏢 Firmen mit mehreren Treffern
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        
             st.markdown(
                 """
                 <style>
                 div[data-testid="stButton"] > button[kind="secondary"] {
                     border-radius: 999px;
+                    padding: 0.35rem 0.8rem;
+                    border: 1px solid rgba(128,128,128,0.22);
+                    background: rgba(255,255,255,0.03);
+                    font-weight: 500;
+                }
+                div[data-testid="stButton"] > button[kind="secondary"]:hover {
+                    border-color: rgba(128,128,128,0.38);
+                    background: rgba(255,255,255,0.06);
                 }
                 </style>
                 """,
