@@ -1851,11 +1851,64 @@ with col1:
             unsafe_allow_html=True,
         )
 
-        st.caption(f"{len(items_sorted)} Treffer angezeigt")
+        current_filter = st.session_state.get("result_filter", "Alle")
+        st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")        
+        if "result_filter" not in st.session_state:
+            st.session_state["result_filter"] = "Alle"
+
+        cF1, cF2, cF3 = st.columns([1, 1, 1])
+
+        with cF1:
+            if st.button(
+                "Alle",
+                key="filter_all",
+                use_container_width=True,
+                type="primary" if st.session_state["result_filter"] == "Alle" else "secondary",
+            ):
+                st.session_state["result_filter"] = "Alle"
+                st.rerun()
+
+        with cF2:
+            if st.button(
+                f"Neu ({len(new_keys)})",
+                key="filter_new",
+                use_container_width=True,
+                type="primary" if st.session_state["result_filter"] == "Neu" else "secondary",
+            ):
+                st.session_state["result_filter"] = "Neu"
+                st.rerun()
+
+        with cF3:
+            fav_count_visible = sum(
+                1 for it in items_sorted
+                if is_favorited(it.get("_key") or item_key(it), favorites)
+            )
+            if st.button(
+                f"Favoriten ({fav_count_visible})",
+                key="filter_fav",
+                use_container_width=True,
+                type="primary" if st.session_state["result_filter"] == "Favoriten" else "secondary",
+            ):
+                st.session_state["result_filter"] = "Favoriten"
+                st.rerun()
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
 
-        for it in items_sorted:
+        #for it in items_sorted:
+        filtered_results = items_sorted
+
+        if st.session_state.get("result_filter") == "Neu":
+            filtered_results = [
+                it for it in items_sorted
+                if (it.get("_key") or item_key(it)) in new_keys
+            ]
+        elif st.session_state.get("result_filter") == "Favoriten":
+            filtered_results = [
+                it for it in items_sorted
+                if is_favorited(it.get("_key") or item_key(it), favorites)
+            ]
+
+        for it in filtered_results:
             idx = int(it.get("_idx", 0) or 0)
             k = it.get("_key") or item_key(it)
             is_new = (k in new_keys)
