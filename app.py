@@ -1660,24 +1660,36 @@ with col1:
         location_html = ""
 
         if top_locations:
-            location_chips = "".join([
-                (
+            location_chips = []
+        
+            for city, count in top_locations:
+                dist = location_distance.get(city)
+        
+                if dist is None:
+                    bg = "rgba(128,128,128,0.12)"
+                elif dist <= near_km:
+                    bg = "rgba(46,125,50,0.18)"      # grün
+                elif dist <= mid_km:
+                    bg = "rgba(249,168,37,0.22)"     # gelb
+                else:
+                    bg = "rgba(198,40,40,0.18)"      # rot
+        
+                chip = (
                     f'<span style="display:inline-block;'
                     f'padding:4px 9px;'
                     f'border-radius:999px;'
-                    f'background:rgba(128,128,128,0.10);'
+                    f'background:{bg};'
                     f'font-size:0.88rem;'
                     f'white-space:nowrap;">'
-                    f'{city} · {count} · {location_distance[city]:.0f} km'
+                    f'{city} · {count} · {dist:.0f} km'
                     f'</span>'
                 )
-                for city, count in top_locations
-            ])
+        
+                location_chips.append(chip)
         
             location_html = (
                 f'<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">'
-                f'<span style="font-size:0.9rem;opacity:0.85;">📍</span>'
-                f'{location_chips}'
+                f'{"".join(location_chips)}'
                 f'</div>'
             )
         
