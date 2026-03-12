@@ -1661,8 +1661,8 @@ with col1:
             company_name = it.get("_company", item_company(it))
             location_name = it.get("_location", pretty_location(it))
 
-            label = f"{pin}{'🟢 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{safe_title}{focus_tag}{target_tag}"
-
+            label = f"{pin}{'🆕 ' if is_new else ''}{emo} {num_txt} · {dist_txt} · {star}{safe_title}{focus_tag}{target_tag}"
+            
             meta_text = " | ".join(
                 [
                     f"Score: {score}",
