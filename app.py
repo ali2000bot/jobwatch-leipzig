@@ -1626,8 +1626,24 @@ with col1:
 
        
         # High Priority
-        st.divider()
-        st.write("## 🔥 High-Priority Treffer")
+        #st.divider()
+        st.markdown(
+            """
+        <div style="
+        font-size:1.1rem;
+        font-weight:700;
+        margin-bottom:2px;">
+        🔥 High-Priority Treffer
+        </div>
+        <div style="
+        font-size:0.9rem;
+        opacity:0.75;
+        margin-bottom:10px;">
+        Unternehmen mit hoher Priorität in deinem Profil
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
         hp_items = [it for it in items_sorted if (it.get("_org") and it.get("_org", {}).get("priority") == "high")]
 
         if hp_items:
