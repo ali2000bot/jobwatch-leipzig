@@ -1586,7 +1586,6 @@ with col1:
             st.divider()
 
         # Merkliste
-        st.divider()
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
             if not favorites:
                 st.info("Noch keine gemerkten Stellen.")
