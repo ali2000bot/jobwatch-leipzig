@@ -1867,7 +1867,8 @@ with col1:
             div[data-testid="stButton"] > button[kind="secondary"],
             div[data-testid="stButton"] > button[kind="primary"] {
                 border-radius: 999px;
-                padding: 0.2rem 0.75rem;
+                padding: 0.14rem 0.62rem;
+                font-size: 0.83rem;
                 min-height: 0px;
                 font-size: 0.85rem;
                 line-height: 1.2;
