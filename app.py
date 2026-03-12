@@ -162,16 +162,6 @@ def save_company_state(state: Dict[str, Any]) -> None:
 
 # ---------------- Favoriten ---------------------
 def load_favorites() -> Dict[str, Any]:
-    """
-    Struktur:
-    {
-      "<job_key>": {
-        "added_at": "YYYY-MM-DD HH:MM",
-        "note": "... optional ..."
-      },
-      ...
-    }
-    """
     if not os.path.exists(FAVORITES_FILE):
         return {}
     try:
@@ -194,9 +184,6 @@ def is_favorited(job_key: str, favs: Dict[str, Any]) -> bool:
 
 # -------------------- Hidden jobs helpers --------------------
 def load_hidden_jobs() -> Dict[str, Any]:
-    """
-    { "hidden": ["ba:123...", "hx:abcd..."], "updated_at": "..." }
-    """
     if not os.path.exists(HIDDEN_JOBS_FILE):
         return {"hidden": [], "updated_at": None}
     with open(HIDDEN_JOBS_FILE, "r", encoding="utf-8") as f:
@@ -457,16 +444,12 @@ def fetch_details(api_key: str, url: str) -> Tuple[Optional[Dict[str, Any]], Opt
     except Exception:
         return None, "Details: Antwort war kein gültiges JSON."
 
-
+#Teil2 -------------------------------------------------------------------------------------------------------------------------------------
 # ============================================================
 # Geocoding (Wohnort + optional Job-Orte)
 # ============================================================
 @st.cache_data(ttl=7 * 24 * 3600, show_spinner=False)
 def geocode_nominatim(query: str) -> Tuple[Optional[float], Optional[float], Optional[str]]:
-    """
-    Geocoding via OSM Nominatim.
-    Returns: (lat, lon, display_name_or_error)
-    """
     q = (query or "").strip()
     if not q:
         return None, None, "Kein Ort angegeben."
@@ -515,7 +498,6 @@ def geocode_job_location(query: str) -> Optional[Tuple[float, float]]:
 
 
 favorites = load_favorites()
-
 
 # ============================================================
 # Distance + travel time
@@ -586,10 +568,6 @@ def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float,
 # Jobarten / Profile (breit)
 # ============================================================
 def build_queries() -> Dict[str, str]:
-    """
-    Breit suchen: BA 'was' eher kurz halten.
-    Relevanz steuern wir danach über Score/Keywords.
-    """
     return {
         "Breit (ohne Suchtext)": "",
         "Leitung (breit)": "Leiter Teamleiter Laborleiter Gruppenleiter Abteilungsleiter Bereichsleiter Head Director",
@@ -663,6 +641,47 @@ def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def enrich_item(
+    it: Dict[str, Any],
+    home_lat: float,
+    home_lon: float,
+    focus_keywords: List[str],
+    leadership_keywords: List[str],
+    negative_keywords: List[str],
+    ho_bonus_val: int,
+    speed_kmh: float,
+) -> Dict[str, Any]:
+    title = item_title(it)
+    company = item_company(it)
+    location = pretty_location(it)
+
+    score, parts = score_breakdown(
+        it,
+        focus_keywords,
+        leadership_keywords,
+        negative_keywords,
+        int(ho_bonus_val),
+    )
+
+    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+    t_min = travel_time_minutes(dist, float(speed_kmh))
+    org = match_target_org(company)
+
+    it["_title"] = title
+    it["_title_safe"] = sanitize_md_text(title)
+    it["_company"] = company
+    it["_company_safe"] = sanitize_md_text(company)
+    it["_location"] = location
+    it["_location_safe"] = sanitize_md_text(location)
+    it["_score"] = score
+    it["_score_parts"] = parts
+    it["_distance_km"] = dist
+    it["_travel_min"] = t_min
+    it["_org"] = org
+    it["_is_leadership"] = looks_leadership_strict(it)
+    return it
+
+# Teil 3 ---------------------------------------------------------------------------------------------------
 # ============================================================
 # Leaflet map
 # ============================================================
@@ -880,47 +899,6 @@ def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
             st.markdown(f"**{k}:** {v}")
 
 
-def enrich_item(
-    it: Dict[str, Any],
-    home_lat: float,
-    home_lon: float,
-    focus_keywords: List[str],
-    leadership_keywords: List[str],
-    negative_keywords: List[str],
-    ho_bonus_val: int,
-    speed_kmh: float,
-) -> Dict[str, Any]:
-    title = item_title(it)
-    company = item_company(it)
-    location = pretty_location(it)
-
-    score, parts = score_breakdown(
-        it,
-        focus_keywords,
-        leadership_keywords,
-        negative_keywords,
-        int(ho_bonus_val),
-    )
-
-    dist = distance_from_home_km(it, float(home_lat), float(home_lon))
-    t_min = travel_time_minutes(dist, float(speed_kmh))
-    org = match_target_org(company)
-
-    it["_title"] = title
-    it["_title_safe"] = sanitize_md_text(title)
-    it["_company"] = company
-    it["_company_safe"] = sanitize_md_text(company)
-    it["_location"] = location
-    it["_location_safe"] = sanitize_md_text(location)
-    it["_score"] = score
-    it["_score_parts"] = parts
-    it["_distance_km"] = dist
-    it["_travel_min"] = t_min
-    it["_org"] = org
-    it["_is_leadership"] = looks_leadership_strict(it)
-    return it
-
-
 # ============================================================
 # Streamlit App
 # ============================================================
@@ -1109,6 +1087,7 @@ NEGATIVE_KEYWORDS = [k.lower() for k in parse_keywords(st.session_state["kw_neg"
 
 col1, col2 = st.columns([7.2, 1.2], gap="small")
 
+# Teil 4/4 ---------------------------------------------------------------------------------------
 with col2:
     st.markdown(
         """
@@ -1341,7 +1320,6 @@ with col1:
         if hide_irrelevant:
             items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
-        # ---- Performance: Werte einmal vorberechnen ----
         items_now = [
             enrich_item(
                 it,
@@ -2097,3 +2075,4 @@ with col1:
                 file_name=f"firmencheck_{today}.csv",
                 mime="text/csv",
             )
+            
