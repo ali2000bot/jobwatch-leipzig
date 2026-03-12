@@ -1371,8 +1371,10 @@ with col1:
         st.subheader(f"Treffer: {len(items_sorted)}")
 
         st.caption(
-            f"🟢 Neu seit Snapshot: {len(new_keys)}   |   "
-            f"🤖 Recruiting-/Personaldienstleister ausgeblendet: {removed_recruiting}"
+            f"🟢 Neu: {len(new_keys)} | "
+            f"🤖 Recruiting entfernt: {removed_recruiting} | "
+            f"🏢 Firmen: {unique_companies} | "
+            f"📍 Marker: {len(markers)}"
         )
         # Firmen mit mehreren Treffern
         company_counter: Dict[str, int] = {}
