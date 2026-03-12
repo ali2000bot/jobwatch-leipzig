@@ -1848,7 +1848,24 @@ with col1:
         font-weight:700;
         margin-top:6px;
         margin-bottom:2px;">
-        📋 Ergebnisse
+        st.markdown(
+            f"""
+        <div style="
+        font-size:1.1rem;
+        font-weight:700;
+        margin-top:6px;
+        margin-bottom:2px;">
+        📋 Ergebnisse ({len(items_sorted)})
+        </div>
+        <div style="
+        font-size:0.9rem;
+        opacity:0.75;
+        margin-bottom:10px;">
+        Sortiert nach Priorität, Entfernung und Score
+        </div>
+        """,
+            unsafe_allow_html=True,
+        )
         </div>
         <div style="
         font-size:0.9rem;
