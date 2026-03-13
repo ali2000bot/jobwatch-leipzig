@@ -690,10 +690,65 @@ if False:
                 "berufsfeld": ""
             }
         }
+
+if False:
+    def build_queries(): #bringt einiges, jedoch icht zielgerichtet kein Labor
+        return {
+    
+            "Projektleitung technisch": {
+                "was": "Projektleiter technischer Projektleiter Projektmanager",
+                "berufsfeld": ""
+            },
+    
+            "Scientist / Forschung": {
+                "was": "Scientist Research Scientist",
+                "berufsfeld": ""
+            },
+    
+            "Entwicklungsingenieur": {
+                "was": "Entwicklungsingenieur Development Engineer",
+                "berufsfeld": ""
+            },
+    
+            "Laborleitung": {
+                "was": "Laborleiter Teamleiter Gruppenleiter",
+                "berufsfeld": ""
+            },
+    
+            "Engineer / Technical": {
+                "was": "Engineer Technical Engineer",
+                "berufsfeld": ""
+            },
+    
+            "Ingenieur allgemein": {
+                "was": "Ingenieur Engineer",
+                "berufsfeld": ""
+            },
+    
+            "Breit": {
+                "was": "",
+                "berufsfeld": ""
+            }
+        }
 # ENDE Code wird nicht ausgeführt ---------------------------------------------------
 
 def build_queries():
     return {
+
+        "Laborleitung / Applikation": {
+            "was": "Laborleiter Leiter Labor Teamleiter Applikation Application Manager Section Manager",
+            "berufsfeld": ""
+        },
+
+        "Produktmanagement / Product Line": {
+            "was": "Produktmanager Product Manager Product Line Manager Business Development Manager",
+            "berufsfeld": ""
+        },
+
+        "Geschäftsführung / Standortleitung": {
+            "was": "Geschäftsführer Werkleiter Standortleiter Managing Director General Manager",
+            "berufsfeld": ""
+        },
 
         "Projektleitung technisch": {
             "was": "Projektleiter technischer Projektleiter Projektmanager",
@@ -705,23 +760,8 @@ def build_queries():
             "berufsfeld": ""
         },
 
-        "Entwicklungsingenieur": {
-            "was": "Entwicklungsingenieur Development Engineer",
-            "berufsfeld": ""
-        },
-
-        "Laborleitung": {
-            "was": "Laborleiter Teamleiter Gruppenleiter",
-            "berufsfeld": ""
-        },
-
         "Engineer / Technical": {
-            "was": "Engineer Technical Engineer",
-            "berufsfeld": ""
-        },
-
-        "Ingenieur allgemein": {
-            "was": "Ingenieur Engineer",
+            "was": "Engineer Technical Engineer Senior Engineer",
             "berufsfeld": ""
         },
 
@@ -730,7 +770,7 @@ def build_queries():
             "berufsfeld": ""
         }
     }
-
+    
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
     if not c.strip():
@@ -1140,10 +1180,10 @@ with st.sidebar:
         "Jobarten",
         list(queries.keys()),
         default=[
+            "Laborleitung / Applikation",
+            "Produktmanagement / Product Line",
+            "Geschäftsführung / Standortleitung",
             "Projektleitung technisch",
-            "Scientist / Forschung",
-            "Entwicklungsingenieur",
-            "Engineer / Technical",
         ],
     )
     
