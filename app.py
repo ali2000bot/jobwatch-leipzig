@@ -1036,7 +1036,11 @@ with st.sidebar:
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
-        default=["Breit (ohne Suchtext)"],
+        default=[
+            "Thermoanalyse / Thermophysik",
+            "Materialcharakterisierung / Analytik",
+            "Laborleitung / Gruppenleitung",
+        ]
     )
 
     st.divider()
