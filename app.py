@@ -184,6 +184,19 @@ def ba_headers(api_key: str) -> Dict[str, str]:
         "Connection": "keep-alive",
     }
 
+import re
+
+def normalize_job_title(title: str) -> str:
+    t = (title or "").strip()
+
+    if ":" in t:
+        t = t.split(":", 1)[1].strip()
+
+    t = re.sub(r"\(.*?\)", "", t)
+    t = t.replace("*", "")
+    t = re.sub(r"\s+", " ", t).strip()
+
+    return t
 
 # ============================================================
 # Persistente Daten laden / speichern
