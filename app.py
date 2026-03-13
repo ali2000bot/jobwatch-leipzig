@@ -576,58 +576,70 @@ def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float,
         "&travelmode=driving"
     )
 
+#Code wird nicht ausgeführt ---------------------------------------------------
+if False: 
+    def build_queries() -> Dict[str, str]:
+        return {
+    
+            "Thermoanalyse / Thermophysik": (
+                '"Thermoanalyse" OR "Thermophysik" OR '
+                '"thermal analysis" OR "thermophysical" OR '
+                'DSC OR TGA OR LFA OR HFM OR '
+                '"laser flash" OR "heat flow meter" OR '
+                '"thermal conductivity" OR "Wärmeleitfähigkeit" OR '
+                'Diffusivität OR diffusivity'
+            ),
+    
+            "Materialcharakterisierung / Analytik": (
+                '"Materialcharakterisierung" OR "material characterization" OR '
+                'Analytik OR Instrumentierung OR Messtechnik OR Messgerät OR '
+                'Labor OR Werkstoff OR Werkstoffe OR Polymer OR Keramik OR Metall OR '
+                'Thermoanalyse OR Thermophysik OR "thermophysikalische Eigenschaften" OR '
+                'Materialprüfung OR Werkstoffprüfung'
+            ),
+    
+            "Laborleitung / Gruppenleitung": (
+                'Laborleiter OR Teamleiter OR Gruppenleiter OR '
+                'Abteilungsleiter OR Bereichsleiter OR '
+                '"Head of Laboratory" OR "Head of R&D" OR '
+                'Laborleitung OR Gruppenleitung'
+            ),
+    
+            "F&E Werkstoffe / Entwicklung": (
+                '"Forschung und Entwicklung" OR F&E OR R&D OR '
+                'Research OR Development OR Scientist OR Engineer OR '
+                'Werkstoff OR Werkstoffe OR Thermodynamik OR '
+                'Wärmeübertragung OR "thermal simulation"'
+            ),
+    
+            "Applikation / Technical Expert": (
+                'Applikationsingenieur OR Anwendungstechniker OR '
+                '"Technical Expert" OR "Product Specialist" OR '
+                '"Application Scientist" OR "Application Engineer" OR '
+                '"Technical Support Scientist"'
+            ),
+    
+            "Projektleitung technisch": (
+                'Projektleiter OR Projektmanagement OR '
+                '"Project Manager" OR "Technical Project Manager" OR '
+                '"Program Manager"'
+            ),
+    
+            # Optional bewusst breit – nicht als Default auswählen
+            "Breit / Testsuche": ""
+        }
+# ENDE Code wird nicht ausgeführt ---------------------------------------------------
 
 def build_queries() -> Dict[str, str]:
     return {
-
-        "Thermoanalyse / Thermophysik": (
-            '"Thermoanalyse" OR "Thermophysik" OR '
-            '"thermal analysis" OR "thermophysical" OR '
-            'DSC OR TGA OR LFA OR HFM OR '
-            '"laser flash" OR "heat flow meter" OR '
-            '"thermal conductivity" OR "Wärmeleitfähigkeit" OR '
-            'Diffusivität OR diffusivity'
-        ),
-
-        "Materialcharakterisierung / Analytik": (
-            '"Materialcharakterisierung" OR "material characterization" OR '
-            'Analytik OR Instrumentierung OR Messtechnik OR Messgerät OR '
-            'Labor OR Werkstoff OR Werkstoffe OR Polymer OR Keramik OR Metall OR '
-            'Thermoanalyse OR Thermophysik OR "thermophysikalische Eigenschaften" OR '
-            'Materialprüfung OR Werkstoffprüfung'
-        ),
-
-        "Laborleitung / Gruppenleitung": (
-            'Laborleiter OR Teamleiter OR Gruppenleiter OR '
-            'Abteilungsleiter OR Bereichsleiter OR '
-            '"Head of Laboratory" OR "Head of R&D" OR '
-            'Laborleitung OR Gruppenleitung'
-        ),
-
-        "F&E Werkstoffe / Entwicklung": (
-            '"Forschung und Entwicklung" OR F&E OR R&D OR '
-            'Research OR Development OR Scientist OR Engineer OR '
-            'Werkstoff OR Werkstoffe OR Thermodynamik OR '
-            'Wärmeübertragung OR "thermal simulation"'
-        ),
-
-        "Applikation / Technical Expert": (
-            'Applikationsingenieur OR Anwendungstechniker OR '
-            '"Technical Expert" OR "Product Specialist" OR '
-            '"Application Scientist" OR "Application Engineer" OR '
-            '"Technical Support Scientist"'
-        ),
-
-        "Projektleitung technisch": (
-            'Projektleiter OR Projektmanagement OR '
-            '"Project Manager" OR "Technical Project Manager" OR '
-            '"Program Manager"'
-        ),
-
-        # Optional bewusst breit – nicht als Default auswählen
-        "Breit / Testsuche": ""
+        "Laborleitung": "Laborleiter Teamleiter Gruppenleiter Labor",
+        "F&E Werkstoffe": "Ingenieur Scientist Entwicklung Werkstoffe",
+        "Thermische Analyse": "Thermoanalyse Thermophysik DSC TGA",
+        "Messtechnik / Analytik": "Messtechnik Analytik Instrumentierung",
+        "Projektleitung technisch": "Projektleiter Projektmanagement technisch",
+        "Applikation": "Applikationsingenieur Anwendungstechniker",
+        "Breit / Testsuche": "",
     }
-        
     
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
@@ -1036,11 +1048,16 @@ with st.sidebar:
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
+        #default=[
+        #    "Thermoanalyse / Thermophysik",
+        #    "Materialcharakterisierung / Analytik",
+        #    "Laborleitung / Gruppenleitung",
+        #]
         default=[
-            "Thermoanalyse / Thermophysik",
-            "Materialcharakterisierung / Analytik",
-            "Laborleitung / Gruppenleitung",
-        ]
+            "Laborleitung",
+            "F&E Werkstoffe",
+            "Messtechnik / Analytik",
+        ],
     )
 
     st.divider()
