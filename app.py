@@ -83,6 +83,8 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
     "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", "filialleiter",
     "personalentwicklung", "informatiker", "wirtschaftsinformatiker", "programmleiter",
+    "sap", "frontend", "backend", "developer", "software developer", "mobile", "android",
+    "ios", "retail", "marketing", "crm", "ecommerce", "seo", "social media", "content manager",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
