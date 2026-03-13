@@ -880,9 +880,9 @@ if False:
                 "berufsfeld": ""
             }
         }
-# ENDE Code wird nicht ausgeführt ---------------------------------------------------
 
-def build_queries():
+if False:
+def build_queries(): 
     return {
 
         "Application / Applikation": {
@@ -892,6 +892,31 @@ def build_queries():
 
         "Projektleitung technisch": {
             "was": "Projektleiter Technical Project Manager Engineering Project Manager",
+            "berufsfeld": ""
+        },
+
+        "Technisches Produktmanagement": {
+            "was": "Technical Product Manager Product Line Manager",
+            "berufsfeld": ""
+        },
+
+        "Laborleitung": {
+            "was": "Laborleiter Head of Laboratory Laboratory Manager",
+            "berufsfeld": ""
+        },
+
+        "Breit": {
+            "was": "",
+            "berufsfeld": ""
+        }
+    }
+# ENDE Code wird nicht ausgeführt ---------------------------------------------------
+
+def build_queries():
+    return {
+
+        "Technische Projektleitung": {
+            "was": "Technical Project Manager Engineering Project Manager Projektleiter",
             "berufsfeld": ""
         },
 
@@ -1320,10 +1345,10 @@ with st.sidebar:
         "Jobarten",
         list(queries.keys()),
         default=[
-            "Application / Applikation",
-            "Projektleitung technisch",
-            "Technisches Produktmanagement"
-        ]
+            "Technische Projektleitung",
+            "Technisches Produktmanagement",
+            "Laborleitung",
+        ],
     )
     
     st.divider()
