@@ -1625,7 +1625,7 @@ with col1:
                     
                         profile_counter[name] = profile_counter.get(name, 0) + 1
                     
-                        title = item_title(it)
+                        title = normalize_job_title(item_title(it))
                         if title:
                             title_counter[title] = title_counter.get(title, 0) + 1
 
