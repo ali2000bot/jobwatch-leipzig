@@ -694,18 +694,9 @@ if False:
 
 def build_queries():
     return {
+
         "Projektleitung technisch": {
             "was": "Projektleiter technischer Projektleiter Projektmanager",
-            "berufsfeld": ""
-        },
-
-        "Entwicklung / Ingenieur": {
-            "was": "Entwicklungsingenieur Ingenieur Engineer",
-            "berufsfeld": ""
-        },
-
-        "Labor / Teamleitung": {
-            "was": "Laborleiter Teamleiter Gruppenleiter",
             "berufsfeld": ""
         },
 
@@ -714,8 +705,18 @@ def build_queries():
             "berufsfeld": ""
         },
 
-        "Technische Spezialisten": {
-            "was": "Spezialist Experte Fachingenieur",
+        "Entwicklungsingenieur": {
+            "was": "Entwicklungsingenieur Development Engineer",
+            "berufsfeld": ""
+        },
+
+        "Laborleitung": {
+            "was": "Laborleiter Teamleiter Gruppenleiter",
+            "berufsfeld": ""
+        },
+
+        "Ingenieur allgemein": {
+            "was": "Ingenieur Engineer",
             "berufsfeld": ""
         },
 
@@ -1129,18 +1130,17 @@ with st.sidebar:
     aktualitaet = None if aktualitaet_option == "Alle" else int(aktualitaet_option.split()[0])
 
     queries = build_queries()
+    
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
         default=[
             "Projektleitung technisch",
-            "Entwicklung / Ingenieur",
-            "Labor / Teamleitung",
             "Scientist / Forschung",
+            "Entwicklungsingenieur",
         ],
     )
-   
-
+    
     st.divider()
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
