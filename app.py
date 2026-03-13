@@ -694,29 +694,28 @@ if False:
 
 def build_queries():
     return {
-
         "Projektleitung technisch": {
-            "was": "Projektleiter technischer Projektleiter",
+            "was": "Projektleiter technischer Projektleiter Projektmanager",
             "berufsfeld": ""
         },
 
-        "F&E Werkstoffe": {
-            "was": "Entwicklungsingenieur Werkstoffingenieur Materialingenieur",
+        "Entwicklung / Ingenieur": {
+            "was": "Entwicklungsingenieur Ingenieur Engineer",
             "berufsfeld": ""
         },
 
-        "Laborleitung": {
+        "Labor / Teamleitung": {
             "was": "Laborleiter Teamleiter Gruppenleiter",
             "berufsfeld": ""
         },
 
-        "Materialprüfung": {
-            "was": "Materialprüfer Prüftechnik Laboringenieur",
+        "Scientist / Forschung": {
+            "was": "Scientist Research Scientist",
             "berufsfeld": ""
         },
 
-        "Applikation": {
-            "was": "Applikationsingenieur Anwendungstechniker",
+        "Technische Spezialisten": {
+            "was": "Spezialist Experte Fachingenieur",
             "berufsfeld": ""
         },
 
@@ -1135,10 +1134,12 @@ with st.sidebar:
         list(queries.keys()),
         default=[
             "Projektleitung technisch",
-            "F&E Werkstoffe",
-            "Laborleitung",
+            "Entwicklung / Ingenieur",
+            "Labor / Teamleitung",
+            "Scientist / Forschung",
         ],
     )
+   
 
     st.divider()
     st.subheader("Filter")
