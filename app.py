@@ -715,6 +715,11 @@ def build_queries():
             "berufsfeld": ""
         },
 
+        "Engineer / Technical": {
+            "was": "Engineer Technical Engineer",
+            "berufsfeld": ""
+        },
+
         "Ingenieur allgemein": {
             "was": "Ingenieur Engineer",
             "berufsfeld": ""
@@ -1138,6 +1143,7 @@ with st.sidebar:
             "Projektleitung technisch",
             "Scientist / Forschung",
             "Entwicklungsingenieur",
+            "Engineer / Technical",
         ],
     )
     
