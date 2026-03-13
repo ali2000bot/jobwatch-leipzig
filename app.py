@@ -1133,15 +1133,10 @@ with st.sidebar:
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
-        #default=[
-        #    "Thermoanalyse / Thermophysik",
-        #    "Materialcharakterisierung / Analytik",
-        #    "Laborleitung / Gruppenleitung",
-        #]
         default=[
-            "Laborleitung",
+            "Projektleitung technisch",
             "F&E Werkstoffe",
-            "Messtechnik / Analytik",
+            "Laborleitung",
         ],
     )
 
