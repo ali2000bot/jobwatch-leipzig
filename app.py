@@ -692,7 +692,7 @@ if False:
         }
 
 if False:
-    def build_queries(): #bringt einiges, jedoch icht zielgerichtet kein Labor
+    def build_queries(): #bringt einiges, jedoch nicht zielgerichtet kein Labor
         return {
     
             "Projektleitung technisch": {
@@ -730,23 +730,53 @@ if False:
                 "berufsfeld": ""
             }
         }
+
+if False:
+    def build_queries(): #besser ud zielgerichteter, aber 0 Labor
+        return {
+    
+            "Laborleitung / Applikation": {
+                "was": "Laborleiter Leiter Labor Teamleiter Applikation Application Manager Section Manager",
+                "berufsfeld": ""
+            },
+    
+            "Produktmanagement / Product Line": {
+                "was": "Produktmanager Product Manager Product Line Manager Business Development Manager",
+                "berufsfeld": ""
+            },
+    
+            "Geschäftsführung / Standortleitung": {
+                "was": "Geschäftsführer Werkleiter Standortleiter Managing Director General Manager",
+                "berufsfeld": ""
+            },
+    
+            "Projektleitung technisch": {
+                "was": "Projektleiter technischer Projektleiter Projektmanager",
+                "berufsfeld": ""
+            },
+    
+            "Scientist / Forschung": {
+                "was": "Scientist Research Scientist",
+                "berufsfeld": ""
+            },
+    
+            "Engineer / Technical": {
+                "was": "Engineer Technical Engineer Senior Engineer",
+                "berufsfeld": ""
+            },
+    
+            "Breit": {
+                "was": "",
+                "berufsfeld": ""
+            }
+        }
 # ENDE Code wird nicht ausgeführt ---------------------------------------------------
 
 def build_queries():
     return {
 
-        "Laborleitung / Applikation": {
-            "was": "Laborleiter Leiter Labor Teamleiter Applikation Application Manager Section Manager",
-            "berufsfeld": ""
-        },
-
         "Produktmanagement / Product Line": {
-            "was": "Produktmanager Product Manager Product Line Manager Business Development Manager",
-            "berufsfeld": ""
-        },
-
-        "Geschäftsführung / Standortleitung": {
-            "was": "Geschäftsführer Werkleiter Standortleiter Managing Director General Manager",
+            "was": "Produktmanager Product Manager Product Line Manager",
             "berufsfeld": ""
         },
 
@@ -755,13 +785,28 @@ def build_queries():
             "berufsfeld": ""
         },
 
+        "Engineer / Technical": {
+            "was": "Engineer Technical Engineer Senior Engineer",
+            "berufsfeld": ""
+        },
+
         "Scientist / Forschung": {
             "was": "Scientist Research Scientist",
             "berufsfeld": ""
         },
 
-        "Engineer / Technical": {
-            "was": "Engineer Technical Engineer Senior Engineer",
+        "Laborleitung / Applikation": {
+            "was": "Laborleiter Teamleiter Labor Application Manager Section Manager",
+            "berufsfeld": ""
+        },
+
+        "Application / Technical Support": {
+            "was": "Application Engineer Application Manager Technical Support",
+            "berufsfeld": ""
+        },
+
+        "Standortleitung / Betriebsleitung": {
+            "was": "Standortleiter Betriebsleiter Werkleiter",
             "berufsfeld": ""
         },
 
@@ -770,7 +815,6 @@ def build_queries():
             "berufsfeld": ""
         }
     }
-    
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
     if not c.strip():
@@ -1180,10 +1224,10 @@ with st.sidebar:
         "Jobarten",
         list(queries.keys()),
         default=[
-            "Laborleitung / Applikation",
             "Produktmanagement / Product Line",
-            "Geschäftsführung / Standortleitung",
             "Projektleitung technisch",
+            "Laborleitung / Applikation",
+            "Application / Technical Support",
         ],
     )
     
