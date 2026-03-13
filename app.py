@@ -815,27 +815,57 @@ if False:
                 "berufsfeld": ""
             }
         }
+
+if False:
+    def build_queries(): #ganz gut aber zu viele IT-treffer
+        return {
+    
+            "Produktmanagement / Product Line": {
+                "was": "Product Line Manager Produktmanager Technical Product Manager",
+                "berufsfeld": ""
+            },
+    
+            "Projektleitung technisch": {
+                "was": "Projektleiter technischer Projektleiter Projektmanager",
+                "berufsfeld": ""
+            },
+    
+            "Application / Technical Support": {
+                "was": "Application Engineer Application Manager Technical Support Technical Specialist",
+                "berufsfeld": ""
+            },
+    
+            "Scientist / Forschung": {
+                "was": "Scientist Research Scientist",
+                "berufsfeld": ""
+            },
+    
+            "Laborleitung / Applikation": {
+                "was": "Laborleiter Teamleiter Labor Application Manager Section Manager",
+                "berufsfeld": ""
+            },
+    
+            "Breit": {
+                "was": "",
+                "berufsfeld": ""
+            }
+        }
 # ENDE Code wird nicht ausgeführt ---------------------------------------------------
 def build_queries():
     return {
 
-        "Produktmanagement / Product Line": {
-            "was": "Product Line Manager Produktmanager Technical Product Manager",
+        "Technisches Produktmanagement": {
+            "was": "Technical Product Manager Product Line Manager Produktmanager Messtechnik",
+            "berufsfeld": ""
+        },
+
+        "Application / Technical Support": {
+            "was": "Application Engineer Application Manager Technical Specialist",
             "berufsfeld": ""
         },
 
         "Projektleitung technisch": {
             "was": "Projektleiter technischer Projektleiter Projektmanager",
-            "berufsfeld": ""
-        },
-
-        "Application / Technical Support": {
-            "was": "Application Engineer Application Manager Technical Support Technical Specialist",
-            "berufsfeld": ""
-        },
-
-        "Scientist / Forschung": {
-            "was": "Scientist Research Scientist",
             "berufsfeld": ""
         },
 
@@ -1259,11 +1289,10 @@ with st.sidebar:
         "Jobarten",
         list(queries.keys()),
         default=[
-            "Produktmanagement / Product Line",
-            "Projektleitung technisch",
-            "Laborleitung / Applikation",
+            "Technisches Produktmanagement",
             "Application / Technical Support",
-        ],
+            "Projektleitung technisch",
+        ]
     )
     
     st.divider()
