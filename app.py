@@ -855,17 +855,17 @@ def build_queries():
     return {
 
         "Technisches Produktmanagement": {
-            "was": "Technical Product Manager Product Line Manager Produktmanager Messtechnik",
+            "was": "Technical Product Manager Product Line Manager Instrumentation Produktmanager Messtechnik",
             "berufsfeld": ""
         },
 
         "Application / Technical Support": {
-            "was": "Application Engineer Application Manager Technical Specialist",
+            "was": "Application Engineer Applikationsingenieur Technical Specialist Field Application Engineer",
             "berufsfeld": ""
         },
 
         "Projektleitung technisch": {
-            "was": "Projektleiter technischer Projektleiter Projektmanager",
+            "was": "Projektleiter technischer Projektleiter Technical Project Manager Engineering Project Manager",
             "berufsfeld": ""
         },
 
