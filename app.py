@@ -882,34 +882,34 @@ if False:
         }
 
 if False:
-def build_queries(): 
-    return {
-
-        "Application / Applikation": {
-            "was": "Application Engineer Applikationsingenieur Field Application Engineer",
-            "berufsfeld": ""
-        },
-
-        "Projektleitung technisch": {
-            "was": "Projektleiter Technical Project Manager Engineering Project Manager",
-            "berufsfeld": ""
-        },
-
-        "Technisches Produktmanagement": {
-            "was": "Technical Product Manager Product Line Manager",
-            "berufsfeld": ""
-        },
-
-        "Laborleitung": {
-            "was": "Laborleiter Head of Laboratory Laboratory Manager",
-            "berufsfeld": ""
-        },
-
-        "Breit": {
-            "was": "",
-            "berufsfeld": ""
+    def build_queries(): 
+        return {
+    
+            "Application / Applikation": {
+                "was": "Application Engineer Applikationsingenieur Field Application Engineer",
+                "berufsfeld": ""
+            },
+    
+            "Projektleitung technisch": {
+                "was": "Projektleiter Technical Project Manager Engineering Project Manager",
+                "berufsfeld": ""
+            },
+    
+            "Technisches Produktmanagement": {
+                "was": "Technical Product Manager Product Line Manager",
+                "berufsfeld": ""
+            },
+    
+            "Laborleitung": {
+                "was": "Laborleiter Head of Laboratory Laboratory Manager",
+                "berufsfeld": ""
+            },
+    
+            "Breit": {
+                "was": "",
+                "berufsfeld": ""
+            }
         }
-    }
 # ENDE Code wird nicht ausgeführt ---------------------------------------------------
 
 def build_queries():
