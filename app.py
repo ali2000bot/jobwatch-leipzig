@@ -594,7 +594,7 @@ def build_queries() -> Dict[str, str]:
             'Analytik OR Instrumentierung OR Messtechnik OR Messgerät OR '
             'Labor OR Werkstoff OR Werkstoffe OR Polymer OR Keramik OR Metall OR '
             'Thermoanalyse OR Thermophysik OR "thermophysikalische Eigenschaften" OR '
-            'Materialprüfung OR Werkstoffprüfung',
+            'Materialprüfung OR Werkstoffprüfung'
         ),
 
         "Laborleitung / Gruppenleitung": (
