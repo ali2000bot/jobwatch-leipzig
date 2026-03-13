@@ -643,48 +643,84 @@ if False:
             "Applikation": "Applikationsingenieur Anwendungstechniker",
             "Breit / Testsuche": "",
         }
+
+if False:
+    #liefert nur Treffer bei Projektleitung-technisch, wenig bei F&E Werkstoffe, Laborleitung
+    def build_queries() -> Dict[str, Dict[str, str]]:
+        return {
+    
+            "Laborleitung": {
+                "was": "Laborleiter Teamleiter Gruppenleiter Labor",
+                #"berufsfeld": "Naturwissenschaften"
+                "berufsfeld": ""
+            },
+    
+            "F&E Werkstoffe": {
+                "was": "Ingenieur Scientist Entwicklung Werkstoffe",
+                #"berufsfeld": "Forschung und Entwicklung"
+                "berufsfeld": ""
+            },
+    
+            "Thermische Analyse": {
+                "was": "Thermoanalyse Thermophysik DSC TGA",
+                #"berufsfeld": "Physik"
+                "berufsfeld": ""
+            },
+    
+            "Messtechnik / Analytik": {
+                "was": "Messtechnik Analytik Instrumentierung",
+                #"berufsfeld": "Messtechnik"
+                "berufsfeld": ""
+            },
+    
+            "Projektleitung technisch": {
+                "was": "Projektleiter Projektmanagement technisch",
+                #"berufsfeld": "Ingenieurwesen"
+                "berufsfeld": ""
+            },
+    
+            "Applikation": {
+                "was": "Applikationsingenieur Anwendungstechniker",
+                #"berufsfeld": "Technik"
+                "berufsfeld": ""
+            },
+    
+            "Breit / Testsuche": {
+                "was": "",
+                "berufsfeld": ""
+            }
+        }
 # ENDE Code wird nicht ausgeführt ---------------------------------------------------
 
-def build_queries() -> Dict[str, Dict[str, str]]:
+def build_queries():
     return {
 
-        "Laborleitung": {
-            "was": "Laborleiter Teamleiter Gruppenleiter Labor",
-            #"berufsfeld": "Naturwissenschaften"
+        "Projektleitung technisch": {
+            "was": "Projektleiter technischer Projektleiter",
             "berufsfeld": ""
         },
 
         "F&E Werkstoffe": {
-            "was": "Ingenieur Scientist Entwicklung Werkstoffe",
-            #"berufsfeld": "Forschung und Entwicklung"
+            "was": "Entwicklungsingenieur Werkstoffingenieur Materialingenieur",
             "berufsfeld": ""
         },
 
-        "Thermische Analyse": {
-            "was": "Thermoanalyse Thermophysik DSC TGA",
-            #"berufsfeld": "Physik"
+        "Laborleitung": {
+            "was": "Laborleiter Teamleiter Gruppenleiter",
             "berufsfeld": ""
         },
 
-        "Messtechnik / Analytik": {
-            "was": "Messtechnik Analytik Instrumentierung",
-            #"berufsfeld": "Messtechnik"
-            "berufsfeld": ""
-        },
-
-        "Projektleitung technisch": {
-            "was": "Projektleiter Projektmanagement technisch",
-            #"berufsfeld": "Ingenieurwesen"
+        "Materialprüfung": {
+            "was": "Materialprüfer Prüftechnik Laboringenieur",
             "berufsfeld": ""
         },
 
         "Applikation": {
             "was": "Applikationsingenieur Anwendungstechniker",
-            #"berufsfeld": "Technik"
             "berufsfeld": ""
         },
 
-        "Breit / Testsuche": {
+        "Breit": {
             "was": "",
             "berufsfeld": ""
         }
