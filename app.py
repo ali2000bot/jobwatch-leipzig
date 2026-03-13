@@ -584,6 +584,7 @@ def build_queries() -> Dict[str, str]:
         "Projektmanagement": "Projektmanager Project Manager Program Manager Technical Project",
         "Technischer Vertrieb": "Sales Engineer Technischer Vertrieb Key Account Business Development",
         "R&D / Entwicklung": "Forschung Entwicklung R&D Engineer Scientist",
+        "Laborleitung": "Thermoanalyse Thermophysik thermophysikalische Eigenschaften Materialprüfung Werkstoffprüfung",
     }
 
 
