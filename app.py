@@ -1347,6 +1347,7 @@ with col1:
             all_items = []
             errs: List[str] = []
             qmap = build_queries()
+            profile_counter = {}
 
             total_limit = int(max_results)
             pages_limit = int(max_pages)
@@ -1395,6 +1396,8 @@ with col1:
                         it["_profile"] = name
                         it["_bucket"] = f"Vor Ort ({umkreis} km)"
                         all_items.append(it)
+                    
+                        profile_counter[name] = profile_counter.get(name, 0) + 1
 
                     if len(items_local) < int(size):
                         break
@@ -1556,6 +1559,13 @@ with col1:
         for i, it in enumerate(items_sorted, start=1):
             it["_idx"] = i
 
+        if profile_counter:
+            parts = [
+                f"{p} {c}"
+                for p, c in sorted(profile_counter.items(), key=lambda x: x[1], reverse=True)
+            ]
+            st.caption("Treffer pro Jobart: " + " | ".join(parts))
+        
         company_counter: Dict[str, int] = {}
         for it in items_sorted:
             comp = item_company(it)
