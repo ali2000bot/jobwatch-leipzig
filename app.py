@@ -409,6 +409,7 @@ def fetch_search(
     size: int,
     page: int = 1,
     arbeitszeit: Optional[str] = None,
+    berufsfeld: Optional[str] = None,
 ) -> Tuple[List[Dict[str, Any]], Optional[str]]:
     params: Dict[str, Any] = {
         "angebotsart": "1",
@@ -418,6 +419,8 @@ def fetch_search(
         "umkreis": str(umkreis_km),
         "wo": wo,
     }
+    if berufsfeld:
+        params["berufsfeld"] = berufsfeld
 
     if aktualitaet_tage is not None:
         params["aktualitaet"] = str(int(aktualitaet_tage))
@@ -628,19 +631,59 @@ if False:
             # Optional bewusst breit – nicht als Default auswählen
             "Breit / Testsuche": ""
         }
+
+if False: 
+    def build_queries() -> Dict[str, str]:
+        return {
+            "Laborleitung": "Laborleiter Teamleiter Gruppenleiter Labor",
+            "F&E Werkstoffe": "Ingenieur Scientist Entwicklung Werkstoffe",
+            "Thermische Analyse": "Thermoanalyse Thermophysik DSC TGA",
+            "Messtechnik / Analytik": "Messtechnik Analytik Instrumentierung",
+            "Projektleitung technisch": "Projektleiter Projektmanagement technisch",
+            "Applikation": "Applikationsingenieur Anwendungstechniker",
+            "Breit / Testsuche": "",
+        }
 # ENDE Code wird nicht ausgeführt ---------------------------------------------------
 
-def build_queries() -> Dict[str, str]:
+def build_queries() -> Dict[str, Dict[str, str]]:
     return {
-        "Laborleitung": "Laborleiter Teamleiter Gruppenleiter Labor",
-        "F&E Werkstoffe": "Ingenieur Scientist Entwicklung Werkstoffe",
-        "Thermische Analyse": "Thermoanalyse Thermophysik DSC TGA",
-        "Messtechnik / Analytik": "Messtechnik Analytik Instrumentierung",
-        "Projektleitung technisch": "Projektleiter Projektmanagement technisch",
-        "Applikation": "Applikationsingenieur Anwendungstechniker",
-        "Breit / Testsuche": "",
+
+        "Laborleitung": {
+            "was": "Laborleiter Teamleiter Gruppenleiter Labor",
+            "berufsfeld": "Naturwissenschaften"
+        },
+
+        "F&E Werkstoffe": {
+            "was": "Ingenieur Scientist Entwicklung Werkstoffe",
+            "berufsfeld": "Forschung und Entwicklung"
+        },
+
+        "Thermische Analyse": {
+            "was": "Thermoanalyse Thermophysik DSC TGA",
+            "berufsfeld": "Physik"
+        },
+
+        "Messtechnik / Analytik": {
+            "was": "Messtechnik Analytik Instrumentierung",
+            "berufsfeld": "Messtechnik"
+        },
+
+        "Projektleitung technisch": {
+            "was": "Projektleiter Projektmanagement technisch",
+            "berufsfeld": "Ingenieurwesen"
+        },
+
+        "Applikation": {
+            "was": "Applikationsingenieur Anwendungstechniker",
+            "berufsfeld": "Technik"
+        },
+
+        "Breit / Testsuche": {
+            "was": "",
+            "berufsfeld": ""
+        }
     }
-    
+
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
     if not c.strip():
@@ -1274,12 +1317,16 @@ with col1:
             expected_pages = max(1, len(selected_profiles) * pages_limit)
 
             for name in selected_profiles:
-                q = qmap.get(name, "")
 
+                profile = qmap.get(name, {"was": "", "berufsfeld": ""})
+            
+                q = profile.get("was", "")
+                berufsfeld = profile.get("berufsfeld", "")
+            
                 for page in range(1, pages_limit + 1):
+            
                     if len(all_items) >= total_limit:
                         break
-
                     done_pages += 1
                     pct = min(1.0, done_pages / expected_pages)
 
@@ -1297,6 +1344,7 @@ with col1:
                         int(size),
                         page=page,
                         arbeitszeit=None,
+                        berufsfeld=berufsfeld,
                     )
 
                     if e1:
