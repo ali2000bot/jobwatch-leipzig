@@ -650,32 +650,38 @@ def build_queries() -> Dict[str, Dict[str, str]]:
 
         "Laborleitung": {
             "was": "Laborleiter Teamleiter Gruppenleiter Labor",
-            "berufsfeld": "Naturwissenschaften"
+            #"berufsfeld": "Naturwissenschaften"
+            "berufsfeld": ""
         },
 
         "F&E Werkstoffe": {
             "was": "Ingenieur Scientist Entwicklung Werkstoffe",
-            "berufsfeld": "Forschung und Entwicklung"
+            #"berufsfeld": "Forschung und Entwicklung"
+            "berufsfeld": ""
         },
 
         "Thermische Analyse": {
             "was": "Thermoanalyse Thermophysik DSC TGA",
-            "berufsfeld": "Physik"
+            #"berufsfeld": "Physik"
+            "berufsfeld": ""
         },
 
         "Messtechnik / Analytik": {
             "was": "Messtechnik Analytik Instrumentierung",
-            "berufsfeld": "Messtechnik"
+            #"berufsfeld": "Messtechnik"
+            "berufsfeld": ""
         },
 
         "Projektleitung technisch": {
             "was": "Projektleiter Projektmanagement technisch",
-            "berufsfeld": "Ingenieurwesen"
+            #"berufsfeld": "Ingenieurwesen"
+            "berufsfeld": ""
         },
 
         "Applikation": {
             "was": "Applikationsingenieur Anwendungstechniker",
-            "berufsfeld": "Technik"
+            #"berufsfeld": "Technik"
+            "berufsfeld": ""
         },
 
         "Breit / Testsuche": {
