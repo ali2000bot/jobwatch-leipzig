@@ -1440,6 +1440,7 @@ with col1:
             qmap = build_queries()
         
             profile_counter = {name: 0 for name in selected_profiles}
+            title_counter = {}
 
             total_limit = int(max_results)
             pages_limit = int(max_pages)
@@ -1490,6 +1491,10 @@ with col1:
                         all_items.append(it)
                     
                         profile_counter[name] = profile_counter.get(name, 0) + 1
+                    
+                        title = item_title(it)
+                        if title:
+                            title_counter[title] = title_counter.get(title, 0) + 1
 
                     if len(items_local) < int(size):
                         break
@@ -1657,6 +1662,12 @@ with col1:
                 for p, c in sorted(profile_counter.items(), key=lambda x: x[1], reverse=True)
             ]
             st.caption("Treffer pro Jobart: " + " | ".join(parts))
+        if title_counter:
+            top_titles = sorted(title_counter.items(), key=lambda x: x[1], reverse=True)[:10]
+        
+            parts = [f"{t} {c}" for t, c in top_titles]
+        
+            st.caption("Häufigste Jobtitel: " + " | ".join(parts))
         
         company_counter: Dict[str, int] = {}
         for it in items_sorted:
