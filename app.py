@@ -85,6 +85,9 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "personalentwicklung", "informatiker", "wirtschaftsinformatiker", "programmleiter",
     "sap", "frontend", "backend", "developer", "software developer", "mobile", "android",
     "ios", "retail", "marketing", "crm", "ecommerce", "seo", "social media", "content manager",
+    "data scientist", "data engineer", "machine learning", "ai engineer", "fullstack",
+    "web developer", "cloud engineer", "devops", "react", "angular", "nodejs", "php developer",
+    "javascript developer", "mobile developer", "ios developer", "android developer",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
