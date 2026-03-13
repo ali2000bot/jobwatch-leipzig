@@ -850,27 +850,58 @@ if False:
                 "berufsfeld": ""
             }
         }
+
+if False:
+    def build_queries(): #immernoch zuviel IT SAP & Co
+        return {
+    
+            "Technisches Produktmanagement": {
+                "was": "Technical Product Manager Product Line Manager Instrumentation Produktmanager Messtechnik",
+                "berufsfeld": ""
+            },
+    
+            "Application / Technical Support": {
+                "was": "Application Engineer Applikationsingenieur Technical Specialist Field Application Engineer",
+                "berufsfeld": ""
+            },
+    
+            "Projektleitung technisch": {
+                "was": "Projektleiter technischer Projektleiter Technical Project Manager Engineering Project Manager",
+                "berufsfeld": ""
+            },
+    
+            "Laborleitung / Applikation": {
+                "was": "Laborleiter Teamleiter Labor Application Manager Section Manager",
+                "berufsfeld": ""
+            },
+    
+            "Breit": {
+                "was": "",
+                "berufsfeld": ""
+            }
+        }
 # ENDE Code wird nicht ausgeführt ---------------------------------------------------
+
 def build_queries():
     return {
 
-        "Technisches Produktmanagement": {
-            "was": "Technical Product Manager Product Line Manager Instrumentation Produktmanager Messtechnik",
-            "berufsfeld": ""
-        },
-
-        "Application / Technical Support": {
-            "was": "Application Engineer Applikationsingenieur Technical Specialist Field Application Engineer",
+        "Application / Applikation": {
+            "was": "Application Engineer Applikationsingenieur Field Application Engineer",
             "berufsfeld": ""
         },
 
         "Projektleitung technisch": {
-            "was": "Projektleiter technischer Projektleiter Technical Project Manager Engineering Project Manager",
+            "was": "Projektleiter Technical Project Manager Engineering Project Manager",
             "berufsfeld": ""
         },
 
-        "Laborleitung / Applikation": {
-            "was": "Laborleiter Teamleiter Labor Application Manager Section Manager",
+        "Technisches Produktmanagement": {
+            "was": "Technical Product Manager Product Line Manager",
+            "berufsfeld": ""
+        },
+
+        "Laborleitung": {
+            "was": "Laborleiter Head of Laboratory Laboratory Manager",
             "berufsfeld": ""
         },
 
@@ -1289,9 +1320,9 @@ with st.sidebar:
         "Jobarten",
         list(queries.keys()),
         default=[
-            "Technisches Produktmanagement",
-            "Application / Technical Support",
+            "Application / Applikation",
             "Projektleitung technisch",
+            "Technisches Produktmanagement"
         ]
     )
     
