@@ -579,15 +579,56 @@ def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float,
 
 def build_queries() -> Dict[str, str]:
     return {
-        "Breit (ohne Suchtext)": "",
-        "Leitung (breit)": "Leiter Teamleiter Laborleiter Gruppenleiter Abteilungsleiter Bereichsleiter Head Director",
-        "Projektmanagement": "Projektmanager Project Manager Program Manager Technical Project",
-        "Technischer Vertrieb": "Sales Engineer Technischer Vertrieb Key Account Business Development",
-        "R&D / Entwicklung": "Forschung Entwicklung R&D Engineer Scientist",
-        "Laborleitung": "Thermoanalyse Thermophysik thermophysikalische Eigenschaften Materialprüfung Werkstoffprüfung",
+
+        "Thermoanalyse / Thermophysik": (
+            '"Thermoanalyse" OR "Thermophysik" OR '
+            '"thermal analysis" OR "thermophysical" OR '
+            'DSC OR TGA OR LFA OR HFM OR '
+            '"laser flash" OR "heat flow meter" OR '
+            '"thermal conductivity" OR "Wärmeleitfähigkeit" OR '
+            'Diffusivität OR diffusivity'
+        ),
+
+        "Materialcharakterisierung / Analytik": (
+            '"Materialcharakterisierung" OR "material characterization" OR '
+            'Analytik OR Instrumentierung OR Messtechnik OR Messgerät OR '
+            'Labor OR Werkstoff OR Werkstoffe OR Polymer OR Keramik OR Metall OR '
+            'Thermoanalyse OR Thermophysik OR "thermophysikalische Eigenschaften" OR '
+            'Materialprüfung OR Werkstoffprüfung',
+        ),
+
+        "Laborleitung / Gruppenleitung": (
+            'Laborleiter OR Teamleiter OR Gruppenleiter OR '
+            'Abteilungsleiter OR Bereichsleiter OR '
+            '"Head of Laboratory" OR "Head of R&D" OR '
+            'Laborleitung OR Gruppenleitung'
+        ),
+
+        "F&E Werkstoffe / Entwicklung": (
+            '"Forschung und Entwicklung" OR F&E OR R&D OR '
+            'Research OR Development OR Scientist OR Engineer OR '
+            'Werkstoff OR Werkstoffe OR Thermodynamik OR '
+            'Wärmeübertragung OR "thermal simulation"'
+        ),
+
+        "Applikation / Technical Expert": (
+            'Applikationsingenieur OR Anwendungstechniker OR '
+            '"Technical Expert" OR "Product Specialist" OR '
+            '"Application Scientist" OR "Application Engineer" OR '
+            '"Technical Support Scientist"'
+        ),
+
+        "Projektleitung technisch": (
+            'Projektleiter OR Projektmanagement OR '
+            '"Project Manager" OR "Technical Project Manager" OR '
+            '"Program Manager"'
+        ),
+
+        # Optional bewusst breit – nicht als Default auswählen
+        "Breit / Testsuche": ""
     }
-
-
+        
+    
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
     if not c.strip():
