@@ -1354,7 +1354,8 @@ with col1:
             all_items = []
             errs: List[str] = []
             qmap = build_queries()
-            profile_counter = {}
+        
+            profile_counter = {name: 0 for name in selected_profiles}
 
             total_limit = int(max_results)
             pages_limit = int(max_pages)
