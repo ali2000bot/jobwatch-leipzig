@@ -770,13 +770,57 @@ if False:
                 "berufsfeld": ""
             }
         }
-# ENDE Code wird nicht ausgeführt ---------------------------------------------------
 
+if False:
+    def build_queries(): #schon ganz gut
+        return {
+    
+            "Produktmanagement / Product Line": {
+                "was": "Produktmanager Product Manager Product Line Manager",
+                "berufsfeld": ""
+            },
+    
+            "Projektleitung technisch": {
+                "was": "Projektleiter technischer Projektleiter Projektmanager",
+                "berufsfeld": ""
+            },
+    
+            "Engineer / Technical": {
+                "was": "Engineer Technical Engineer Senior Engineer",
+                "berufsfeld": ""
+            },
+    
+            "Scientist / Forschung": {
+                "was": "Scientist Research Scientist",
+                "berufsfeld": ""
+            },
+    
+            "Laborleitung / Applikation": {
+                "was": "Laborleiter Teamleiter Labor Application Manager Section Manager",
+                "berufsfeld": ""
+            },
+    
+            "Application / Technical Support": {
+                "was": "Application Engineer Application Manager Technical Support",
+                "berufsfeld": ""
+            },
+    
+            "Standortleitung / Betriebsleitung": {
+                "was": "Standortleiter Betriebsleiter Werkleiter",
+                "berufsfeld": ""
+            },
+    
+            "Breit": {
+                "was": "",
+                "berufsfeld": ""
+            }
+        }
+# ENDE Code wird nicht ausgeführt ---------------------------------------------------
 def build_queries():
     return {
 
         "Produktmanagement / Product Line": {
-            "was": "Produktmanager Product Manager Product Line Manager",
+            "was": "Product Line Manager Produktmanager Technical Product Manager",
             "berufsfeld": ""
         },
 
@@ -785,8 +829,8 @@ def build_queries():
             "berufsfeld": ""
         },
 
-        "Engineer / Technical": {
-            "was": "Engineer Technical Engineer Senior Engineer",
+        "Application / Technical Support": {
+            "was": "Application Engineer Application Manager Technical Support Technical Specialist",
             "berufsfeld": ""
         },
 
@@ -800,21 +844,12 @@ def build_queries():
             "berufsfeld": ""
         },
 
-        "Application / Technical Support": {
-            "was": "Application Engineer Application Manager Technical Support",
-            "berufsfeld": ""
-        },
-
-        "Standortleitung / Betriebsleitung": {
-            "was": "Standortleiter Betriebsleiter Werkleiter",
-            "berufsfeld": ""
-        },
-
         "Breit": {
             "was": "",
             "berufsfeld": ""
         }
     }
+
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
     if not c.strip():
