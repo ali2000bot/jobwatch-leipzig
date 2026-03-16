@@ -839,8 +839,19 @@ def score_breakdown(
 
 
 def is_probably_irrelevant(it: Dict[str, Any], negative_keywords: List[str]) -> bool:
-    text = f"{item_title(it)} {it.get('kurzbeschreibung','')}".lower()
-    return any(h in text for h in negative_keywords if h)
+    text = " ".join([
+        item_title(it),
+        item_company(it),
+        it.get("kurzbeschreibung", ""),
+    ]).lower()
+
+    text = text.replace("-", " ")
+
+    for kw in negative_keywords:
+        if kw and kw in text:
+            return True
+
+    return False
 
 
 def is_recruiting_company(company: str) -> bool:
