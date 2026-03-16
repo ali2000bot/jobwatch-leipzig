@@ -1245,17 +1245,17 @@ with st.sidebar:
             "Thermophysical",
             "Wissenschaftlicher Mitarbeiter Thermodynamik",
             "Product Line Manager Instruments",
-            "Product Specialist",
+            #"Product Specialist",
             "Application Scientist",
             "Scientist Materials",
-            "Application Manager",
-            "Technical Specialist",
+            #"Application Manager",
+            #"Technical Specialist",
             "Scientific Consultant",
             "Produktmanager Messtechnik",
             "Technical Product Manager Instruments"
         ]
     )
-
+    
     st.divider()
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
