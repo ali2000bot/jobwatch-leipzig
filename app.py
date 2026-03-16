@@ -792,8 +792,8 @@ def build_queries():
             "berufsfeld": ""
         }
         "Leiter Prüflabor": {
-    "was": "Leiter Prüflabor",
-    "berufsfeld": ""
+            "was": "Leiter Prüflabor",
+            "berufsfeld": ""
         },
         "Laborleiter Qualitätskontrolle": {
             "was": "Laborleiter Qualitätskontrolle",
