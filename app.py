@@ -144,7 +144,8 @@ LAB_LEADERSHIP_TITLE_KEYWORDS = [
     "head of laboratory", "laboratory manager",
     "teamleiter labor", "teamleiter analytik",
     "gruppenleiter labor", "laborleiter qualitätskontrolle",
-    "stellvertretender laborleiter",
+    "stellvertretender laborleiter", "teamleiter qualitätskontrolle",
+    "leiter qualitätskontrolle",
 ]
 
 INDUSTRY_TERMS_TO_TRACK = [
