@@ -123,6 +123,12 @@ COMPANY_BOOST_KEYWORDS = [
     "air liquide", "siemens energy", "fraunhofer", "ufz", "dbfz", "iom", "imws",
 ]
 
+TITLE_BOOST_KEYWORDS = [
+    "instrumentation", "instrument", "measurement", "measuring", "metrology", "materials",
+    "material testing", "materials testing", "laboratory", "lab", "thermal", "scientific",
+    "analytical", "messtechnik", "prüftechnik", "materialprüfung", "werkstoff",
+]
+
 TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
     {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
@@ -243,6 +249,17 @@ def company_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
     for kw in keywords:
         if kw and kw in company:
             score += 4
+
+    return score
+
+def title_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
+    title = str(item_title(it)).lower()
+
+    score = 0
+
+    for kw in keywords:
+        if kw and kw in title:
+            score += 3
 
     return score
 
@@ -803,6 +820,12 @@ def enrich_item(
     
     if company_boost > 0:
         parts.append(f"+{company_boost} firma")
+
+    title_boost = title_score_boost(it, TITLE_BOOST_KEYWORDS)
+    score += title_boost
+    
+    if title_boost > 0:
+        parts.append(f"+{title_boost} titel")
     
     dist = distance_from_home_km(it, float(home_lat), float(home_lon))
     t_min = travel_time_minutes(dist, float(speed_kmh))
