@@ -88,10 +88,12 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "data scientist", "data engineer", "machine learning", "ai engineer", "fullstack",
     "web developer", "cloud engineer", "devops", "react", "angular", "nodejs", "php developer",
     "javascript developer", "mobile developer", "ios developer", "android developer",
-    "campaign manager", "automotive software", "software", "security engineer",
-    "data processing", "streaming", "sap", "procurement", "commodity manager", "digital",
-    "campaign", "audience", "data strategy", "automotive software", "procurement",
-    "tendering", "food systems", "libya", "middle east", "security",
+    "campaign manager", "automotive software", "security engineer",
+    "data processing", "streaming", "procurement", "commodity manager", "digital",
+    "campaign", "audience", "data strategy", 
+    "tendering", "food systems", "libya", "middle east", 
+    "crm campaign", "audience manager", "marketing manager", "social media manager",
+    "advertising", "growth manager",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
@@ -115,7 +117,7 @@ RECRUITING_TEXT_PATTERNS = [
 
 INDUSTRY_KEYWORDS = [
     "instrument", "instrumentation", "measurement", "measuring", "metrology", "testing", "test system",
-    "laboratory", "lab", "materials", "material testing", "material analysis", "thermal", "therm",
+    "laboratory", "labor", "materials", "material testing", "material analysis", "thermal", "therm",
     "physics", "scientific", "analytical", "instrumente", "messtechnik", "prüftechnik", "werkstoff",
     "materialprüfung",
 ]
@@ -129,13 +131,13 @@ COMPANY_BOOST_KEYWORDS = [
 
 TITLE_BOOST_KEYWORDS = [
     "instrumentation", "instrument", "measurement", "measuring", "metrology", "materials",
-    "material testing", "materials testing", "laboratory", "lab", "thermal", "scientific",
+    "material testing", "materials testing", "laboratory", "labor", "thermal", "scientific",
     "analytical", "messtechnik", "prüftechnik", "materialprüfung", "werkstoff",
 ]
 
 INDUSTRY_TERMS_TO_TRACK = [
     "instrumentation", "instrument", "measurement", "measuring", "metrology", "materials",
-    "material testing", "materials testing", "laboratory", "lab", "thermal", "scientific",
+    "material testing", "materials testing", "laboratory", "labor", "thermal", "scientific",
     "analytical", "messtechnik", "prüftechnik", "materialprüfung", "werkstoff",
 ]
 
