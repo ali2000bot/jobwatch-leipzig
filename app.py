@@ -1239,13 +1239,10 @@ with st.sidebar:
             "Teamleiter Materialprüfung",
             "Gruppenleiter Messtechnik",                     
             "Teamleiter Labor",
-            #"Messtechnik",
-            #"Materialprüfung",
             "Thermoanalyse",
             "Thermophysik",
             "Thermal Analysis",
             "Thermophysical",
-            #"Heat Transfer",
             "Wissenschaftlicher Mitarbeiter Thermodynamik",
             "Product Line Manager Instruments",
             "Product Specialist",
@@ -1256,8 +1253,6 @@ with st.sidebar:
             "Scientific Consultant",
             "Produktmanager Messtechnik",
             "Technical Product Manager Instruments"
-            #"Research Engineer",
-            #"Technical Sales Support"
         ]
     )
 
