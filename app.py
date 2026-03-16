@@ -129,6 +129,12 @@ TITLE_BOOST_KEYWORDS = [
     "analytical", "messtechnik", "prüftechnik", "materialprüfung", "werkstoff",
 ]
 
+INDUSTRY_TERMS_TO_TRACK = [
+    "instrumentation", "instrument", "measurement", "measuring", "metrology", "materials",
+    "material testing", "materials testing", "laboratory", "lab", "thermal", "scientific",
+    "analytical", "messtechnik", "prüftechnik", "materialprüfung", "werkstoff",
+]
+
 TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
     {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
@@ -1325,6 +1331,7 @@ with col1:
         
             profile_counter = {name: 0 for name in selected_profiles}
             title_counter = {}
+            industry_term_counter = {}
 
             total_limit = int(max_results)
             pages_limit = int(max_pages)
@@ -1379,6 +1386,19 @@ with col1:
                         title = normalize_job_title(item_title(it))
                         if title:
                             title_counter[title] = title_counter.get(title, 0) + 1
+                    
+                        text_for_terms = " ".join(
+                            [
+                                str(item_title(it)),
+                                str(it.get("kurzbeschreibung", "")),
+                                str(it.get("beschreibung", "")),
+                                str(item_company(it)),
+                            ]
+                        ).lower()
+                    
+                        for term in INDUSTRY_TERMS_TO_TRACK:
+                            if term in text_for_terms:
+                                industry_term_counter[term] = industry_term_counter.get(term, 0) + 1
 
                     if len(items_local) < int(size):
                         break
@@ -1552,6 +1572,11 @@ with col1:
             parts = [f"{t} {c}" for t, c in top_titles]
         
             st.caption("Häufigste Jobtitel: " + " | ".join(parts))
+
+        if industry_term_counter:
+            top_terms = sorted(industry_term_counter.items(), key=lambda x: x[1], reverse=True)[:10]
+            parts = [f"{term} {count}" for term, count in top_terms]
+            st.caption("Top-Industriebegriffe: " + " | ".join(parts))
         
         company_counter: Dict[str, int] = {}
         for it in items_sorted:
