@@ -11,6 +11,7 @@ import requests
 import streamlit as st
 import streamlit.components.v1 as components
 import urllib3
+import re
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -222,8 +223,6 @@ def ba_headers(api_key: str) -> Dict[str, str]:
         "Connection": "keep-alive",
     }
 
-import re
-
 def normalize_job_title(title: str) -> str:
     t = (title or "").strip()
 
@@ -250,7 +249,7 @@ def industry_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
     score = 0
 
     for kw in keywords:
-        if kw and kw in text:
+        if keyword_match(text, kw):
             score += 2
 
     return score
@@ -276,6 +275,13 @@ def title_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
             score += 6
 
     return score
+
+def keyword_match(text: str, kw: str) -> bool:
+    if not kw:
+        return False
+
+    pattern = r"\b" + re.escape(kw.lower()) + r"\b"
+    return re.search(pattern, text.lower()) is not None
 
 # ============================================================
 # Persistente Daten laden / speichern
@@ -769,17 +775,17 @@ def score_breakdown(
     parts: List[str] = []
 
     for k in focus_keywords:
-        if k and k in text:
+        if keyword_match(text, k):
             score += 8
             parts.append(f"+8 {k}")
 
     for k in leadership_keywords:
-        if k and k in text:
+        if keyword_match(text, k):
             score += 5
             parts.append(f"+5 {k}")
 
     for k in negative_keywords:
-        if k and k in text:
+        if keyword_match(text, k):
             score -= 4
             parts.append(f"−4 {k}")
 
@@ -803,7 +809,7 @@ def is_probably_irrelevant(it: Dict[str, Any], negative_keywords: List[str]) -> 
     text = text.replace("-", " ")
 
     for kw in negative_keywords:
-        if kw and kw in text:
+        if keyword_match(text, kw):
             return True
 
     return False
@@ -1479,8 +1485,8 @@ with col1:
         removed_recruiting = before_recruiting_filter - len(items_now)
 
         # 5) Negative Jobs raus
-        if hide_irrelevant:
-            items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
+        #if hide_irrelevant:
+        #    items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
         # 6) Einmalig anreichern
         items_now = [
