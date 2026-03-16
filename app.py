@@ -116,6 +116,13 @@ INDUSTRY_KEYWORDS = [
     "materialprüfung",
 ]
 
+COMPANY_BOOST_KEYWORDS = [
+    "netzsch", "zeiss", "spectris", "mettler", "mettler toledo", "anton paar", "perkinelmer",
+    "ta instruments", "waters", "bruker", "malvern", "malvern panalytical", "shimadzu",
+    "horiba", "agilent", "eurofins", "sgs", "gba", "dekra", "wacker", "basf", "linde",
+    "air liquide", "siemens energy", "fraunhofer", "ufz", "dbfz", "iom", "imws",
+]
+
 TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
     {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
@@ -225,6 +232,17 @@ def industry_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
     for kw in keywords:
         if kw and kw in text:
             score += 2
+
+    return score
+
+def company_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
+    company = str(item_company(it)).lower()
+
+    score = 0
+
+    for kw in keywords:
+        if kw and kw in company:
+            score += 4
 
     return score
 
@@ -774,16 +792,22 @@ def enrich_item(
         int(ho_bonus_val),
     )
 
-boost = industry_score_boost(it, INDUSTRY_KEYWORDS)
-score += boost
-
-if boost > 0:
-    parts.append(f"+{boost} industrie")
-
+    boost = industry_score_boost(it, INDUSTRY_KEYWORDS)
+    score += boost
+    
+    if boost > 0:
+        parts.append(f"+{boost} industrie")
+    
+    company_boost = company_score_boost(it, COMPANY_BOOST_KEYWORDS)
+    score += company_boost
+    
+    if company_boost > 0:
+        parts.append(f"+{company_boost} firma")
+    
     dist = distance_from_home_km(it, float(home_lat), float(home_lon))
     t_min = travel_time_minutes(dist, float(speed_kmh))
     org = match_target_org(company)
-
+    
     it["_title"] = title
     it["_title_safe"] = sanitize_md_text(title)
     it["_company"] = company
@@ -796,8 +820,8 @@ if boost > 0:
     it["_travel_min"] = t_min
     it["_org"] = org
     it["_is_leadership"] = looks_leadership_strict(it)
-    return it
 
+    return it
 
 def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
     rows = [(k, v) for (k, v) in rows if v is not None and str(v).strip() != ""]
