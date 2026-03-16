@@ -1158,10 +1158,13 @@ with st.sidebar:
         "Jobarten",
         list(queries.keys()),
         default=[
-            "Technische Projektleitung",
-            "Technisches Produktmanagement",
-            "Materialprüfung / Messtechnik",
-            "Scientific / Instruments",
+            "Laborleitung",
+            "Teamleiter Labor",
+            "Messtechnik",
+            "Thermophysik",
+            "Materialprüfung",
+            "Scientific",
+            "Forschung",
         ],
     )
     
