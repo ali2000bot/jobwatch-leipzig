@@ -1255,7 +1255,7 @@ with st.sidebar:
             "Technical Specialist",
             "Scientific Consultant",
             "Produktmanager Messtechnik",
-            "Technical Product Manager Instruments",
+            "Technical Product Manager Instruments"
             #"Research Engineer",
             #"Technical Sales Support"
         ]
