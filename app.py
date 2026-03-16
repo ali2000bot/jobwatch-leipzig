@@ -663,22 +663,58 @@ def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float,
         "&travelmode=driving"
     )
 
+#----daktiviert----------------------------------------
+if False: 
+    def build_queries(): #Zu allgemein, uviel CRM & Co
+        return {
+    
+            "Technische Projektleitung": {
+                "was": "Technical Project Manager Engineering Project Manager Projektleiter",
+                "berufsfeld": ""
+            },
+    
+            "Technisches Produktmanagement": {
+                "was": "Technical Product Manager Product Line Manager",
+                "berufsfeld": ""
+            },
+    
+            "Laborleitung": {
+                "was": "Laborleiter Head of Laboratory Laboratory Manager",
+                "berufsfeld": ""
+            },
+    
+            "Breit": {
+                "was": "",
+                "berufsfeld": ""
+            }
+        }
+#----Ende daktiviert----------------------------------------
 
 def build_queries():
     return {
 
         "Technische Projektleitung": {
-            "was": "Technical Project Manager Engineering Project Manager Projektleiter",
+            "was": "Engineering Project Manager Technical Project Manager Instrumentation Project Manager",
             "berufsfeld": ""
         },
 
         "Technisches Produktmanagement": {
-            "was": "Technical Product Manager Product Line Manager",
+            "was": "Technical Product Manager Product Line Manager Instrumentation Product Manager",
             "berufsfeld": ""
         },
 
         "Laborleitung": {
-            "was": "Laborleiter Head of Laboratory Laboratory Manager",
+            "was": "Laboratory Manager Head of Laboratory Laboratory Lead",
+            "berufsfeld": ""
+        },
+
+        "Scientific / Instruments": {
+            "was": "Scientific Instruments Instrumentation Measurement Systems",
+            "berufsfeld": ""
+        },
+
+        "Materialprüfung / Messtechnik": {
+            "was": "Materials Testing Measurement Engineer Test Systems",
             "berufsfeld": ""
         },
 
@@ -1117,7 +1153,8 @@ with st.sidebar:
         default=[
             "Technische Projektleitung",
             "Technisches Produktmanagement",
-            "Laborleitung",
+            "Scientific / Instruments",
+            "Materialprüfung / Messtechnik",
         ],
     )
     
