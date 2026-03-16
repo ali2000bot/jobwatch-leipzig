@@ -139,6 +139,14 @@ TITLE_BOOST_KEYWORDS = [
     "analytical", "messtechnik", "prüftechnik", "materialprüfung", "werkstoff",
 ]
 
+LAB_LEADERSHIP_TITLE_KEYWORDS = [
+    "laborleiter", "leiter prüflabor", "leiter materiallabor",
+    "head of laboratory", "laboratory manager",
+    "teamleiter labor", "teamleiter analytik",
+    "gruppenleiter labor", "laborleiter qualitätskontrolle",
+    "stellvertretender laborleiter",
+]
+
 INDUSTRY_TERMS_TO_TRACK = [
     "instrumentation", "instrument", "measurement", "measuring", "metrology", "materials",
     "material testing", "materials testing", "laboratory", "labor", "thermal", "scientific",
@@ -274,6 +282,16 @@ def title_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
     for kw in keywords:
         if kw and kw in title:
             score += 6
+
+    return score
+
+def lab_leadership_title_boost(it: Dict[str, Any], keywords: List[str]) -> int:
+    title = str(item_title(it)).lower()
+    score = 0
+
+    for kw in keywords:
+        if keyword_match(title, kw):
+            score += 10
 
     return score
 
@@ -997,6 +1015,12 @@ def enrich_item(
     
     if title_boost > 0:
         parts.append(f"+{title_boost} titel")
+
+    lab_title_boost = lab_leadership_title_boost(it, LAB_LEADERSHIP_TITLE_KEYWORDS)
+    score += lab_title_boost
+    
+    if lab_title_boost > 0:
+        parts.append(f"+{lab_title_boost} labor-leitung")
     
     dist = distance_from_home_km(it, float(home_lat), float(home_lon))
     t_min = travel_time_minutes(dist, float(speed_kmh))
