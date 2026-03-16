@@ -73,7 +73,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "staplerfahrer", "gabelstaplerfahrer", "postbote", "produktionshelfer", "aushilfe",
     "maschinenbediener", "produktionsmitarbeiter", "montagehelfer", "schlosser", "busfahrer",
     "lkw-fahrer", "elektriker", "maurer", "monteurin", "mechatroniker", "elektroniker",
-    "schweißer", "bauleiter", "polymerchemiker", "chemiker", "kraftfahrer", "schichtleiter",
+    "schweißer", "bauleiter", "kraftfahrer", "schichtleiter",
     "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
     "metallbearbeitung",
     "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer",
@@ -109,6 +109,12 @@ RECRUITING_TEXT_PATTERNS = [
     "zeitarbeit", "arbeitnehmerüberlassung", "aü", "aueg", "arbeitnehmerueberlassung", "temp to perm",
 ]
 
+INDUSTRY_KEYWORDS = [
+    "instrument", "instrumentation", "measurement", "measuring", "metrology", "testing", "test system",
+    "laboratory", "lab", "materials", "material testing", "material analysis", "thermal", "therm",
+    "physics", "scientific", "analytical", "instrumente", "messtechnik", "prüftechnik", "werkstoff",
+    "materialprüfung",
+]
 
 TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
@@ -202,6 +208,25 @@ def normalize_job_title(title: str) -> str:
     t = re.sub(r"\s+", " ", t).strip()
 
     return t
+
+def industry_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
+    text = " ".join(
+        [
+            str(item_title(it)),
+            str(it.get("kurzbeschreibung", "")),
+            str(it.get("beschreibung", "")),
+            str(item_company(it)),
+            str(pretty_location(it)),
+        ]
+    ).lower()
+
+    score = 0
+
+    for kw in keywords:
+        if kw and kw in text:
+            score += 2
+
+    return score
 
 # ============================================================
 # Persistente Daten laden / speichern
@@ -748,6 +773,12 @@ def enrich_item(
         negative_keywords,
         int(ho_bonus_val),
     )
+
+boost = industry_score_boost(it, INDUSTRY_KEYWORDS)
+score += boost
+
+if boost > 0:
+    parts.append(f"+{boost} industrie")
 
     dist = distance_from_home_km(it, float(home_lat), float(home_lon))
     t_min = travel_time_minutes(dist, float(speed_kmh))
