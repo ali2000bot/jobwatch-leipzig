@@ -790,7 +790,7 @@ def build_queries():
         "Breit": {
             "was": "",
             "berufsfeld": ""
-        }
+        },
         "Leiter Prüflabor": {
             "was": "Leiter Prüflabor",
             "berufsfeld": ""
@@ -830,7 +830,7 @@ def build_queries():
         "Field Application Scientist": {
             "was": "Field Application Scientist",
             "berufsfeld": ""
-        },
+        }
     }
 
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
