@@ -88,6 +88,8 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "data scientist", "data engineer", "machine learning", "ai engineer", "fullstack",
     "web developer", "cloud engineer", "devops", "react", "angular", "nodejs", "php developer",
     "javascript developer", "mobile developer", "ios developer", "android developer",
+    "crm", "campaign manager", "automotive software", "software", "security engineer",
+    "data processing", "streaming", "sap", "procurement", "commodity manager", "digital",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
