@@ -1256,7 +1256,6 @@ with st.sidebar:
         ]
     )
 
-Scientist Materials
     st.divider()
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
