@@ -1233,17 +1233,32 @@ with st.sidebar:
         default=[
             "Laborleiter Messtechnik",
             "Laborleiter Materialprüfung",
+            "Laborleiter Analytik",
+            "Laboratory Manager Testing",
+            "Head of Laboratory Materials",
+            "Teamleiter Materialprüfung",
+            "Gruppenleiter Messtechnik",                     
             "Teamleiter Labor",
             "Messtechnik",
+            "Materialprüfung",
             "Thermoanalyse",
             "Thermophysik",
+            "Thermal Analysis",
+            "Thermophysical",
+            "Heat Transfer",
+            "Wissenschaftlicher Mitarbeiter Thermodynamik",
+            "Product Line Manager Instruments",
+            "Product Specialist",
             "Application Scientist",
             "Application Manager",
             "Technical Specialist",
+            "Scientific Consultant"
             "Produktmanager Messtechnik",
+            "Technical Product Manager Instruments",
+            "Technical Sales Support",
         ]
     )
-    
+
     st.divider()
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
