@@ -1239,13 +1239,13 @@ with st.sidebar:
             "Teamleiter Materialprüfung",
             "Gruppenleiter Messtechnik",                     
             "Teamleiter Labor",
-            "Messtechnik",
-            "Materialprüfung",
+            #"Messtechnik",
+            #"Materialprüfung",
             "Thermoanalyse",
             "Thermophysik",
             "Thermal Analysis",
             "Thermophysical",
-            "Heat Transfer",
+            #"Heat Transfer",
             "Wissenschaftlicher Mitarbeiter Thermodynamik",
             "Product Line Manager Instruments",
             "Product Specialist",
@@ -1256,11 +1256,12 @@ with st.sidebar:
             "Scientific Consultant",
             "Produktmanager Messtechnik",
             "Technical Product Manager Instruments",
-            "Research Engineer",
-            "Technical Sales Support"
+            #"Research Engineer",
+            #"Technical Sales Support"
         ]
     )
 
+Scientist Materials
     st.divider()
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
