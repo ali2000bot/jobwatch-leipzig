@@ -791,6 +791,46 @@ def build_queries():
             "was": "",
             "berufsfeld": ""
         }
+        "Leiter Prüflabor": {
+    "was": "Leiter Prüflabor",
+    "berufsfeld": ""
+        },
+        "Laborleiter Qualitätskontrolle": {
+            "was": "Laborleiter Qualitätskontrolle",
+            "berufsfeld": ""
+        },
+        "Teamleiter Analytik": {
+            "was": "Teamleiter Analytik",
+            "berufsfeld": ""
+        },
+        "Leiter Materiallabor": {
+            "was": "Leiter Materiallabor",
+            "berufsfeld": ""
+        },
+        "Prüflabor Messtechnik": {
+            "was": "Prüflabor Messtechnik",
+            "berufsfeld": ""
+        },
+        "Materialcharakterisierung": {
+            "was": "Materialcharakterisierung",
+            "berufsfeld": ""
+        },
+        "Werkstoffprüfung Labor": {
+            "was": "Werkstoffprüfung Labor",
+            "berufsfeld": ""
+        },
+        "Applikationslabor": {
+            "was": "Applikationslabor",
+            "berufsfeld": ""
+        },
+        "Application Engineer Scientific Instruments": {
+            "was": "Application Engineer Scientific Instruments",
+            "berufsfeld": ""
+        },
+        "Field Application Scientist": {
+            "was": "Field Application Scientist",
+            "berufsfeld": ""
+        },
     }
 
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
@@ -1234,25 +1274,25 @@ with st.sidebar:
             "Laborleiter Messtechnik",
             "Laborleiter Materialprüfung",
             "Laborleiter Analytik",
-            "Laboratory Manager Testing",
-            "Head of Laboratory Materials",
-            "Teamleiter Materialprüfung",
-            "Gruppenleiter Messtechnik",                     
+            "Leiter Prüflabor",
+            "Laborleiter Qualitätskontrolle",
             "Teamleiter Labor",
+            "Teamleiter Analytik",
+            "Teamleiter Materialprüfung",
+            "Leiter Materiallabor",
+            "Head of Laboratory Materials",
+            "Applikationslabor",
+            "Prüflabor Messtechnik",
+            "Materialcharakterisierung",
+            "Werkstoffprüfung Labor",
             "Thermoanalyse",
-            "Thermophysik",
             "Thermal Analysis",
-            "Thermophysical",
-            "Wissenschaftlicher Mitarbeiter Thermodynamik",
-            "Product Line Manager Instruments",
-            #"Product Specialist",
             "Application Scientist",
-            "Scientist Materials",
-            #"Application Manager",
-            #"Technical Specialist",
-            "Scientific Consultant",
+            "Application Engineer Scientific Instruments",
+            "Field Application Scientist",
             "Produktmanager Messtechnik",
-            "Technical Product Manager Instruments"
+            "Technical Product Manager Instruments",
+            "Product Line Manager Instruments",
         ]
     )
     
