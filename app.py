@@ -679,47 +679,114 @@ def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float,
 
 def build_queries():
     return {
-
-        "Laborleitung": {
-            "was": "Laborleiter Laboratory Manager Lab Manager Head of Laboratory",
+        "Laborleiter Messtechnik": {
+            "was": "Laborleiter Messtechnik",
             "berufsfeld": ""
         },
-
+        "Laborleiter Materialprüfung": {
+            "was": "Laborleiter Materialprüfung",
+            "berufsfeld": ""
+        },
+        "Laborleiter Analytik": {
+            "was": "Laborleiter Analytik",
+            "berufsfeld": ""
+        },
+        "Laboratory Manager Testing": {
+            "was": "Laboratory Manager Testing",
+            "berufsfeld": ""
+        },
+        "Head of Laboratory Materials": {
+            "was": "Head of Laboratory Materials",
+            "berufsfeld": ""
+        },
         "Teamleiter Labor": {
-            "was": "Teamleiter Labor Laboratory Team Lead Lab Supervisor",
+            "was": "Teamleiter Labor",
             "berufsfeld": ""
         },
-
+        "Teamleiter Materialprüfung": {
+            "was": "Teamleiter Materialprüfung",
+            "berufsfeld": ""
+        },
+        "Gruppenleiter Messtechnik": {
+            "was": "Gruppenleiter Messtechnik",
+            "berufsfeld": ""
+        },
         "Messtechnik": {
-            "was": "Messtechnik Measurement Engineer Testing Engineer Materials Testing",
+            "was": "Messtechnik",
             "berufsfeld": ""
         },
-
-        "Thermophysik": {
-            "was": "Thermal Analysis Thermophysical Heat Transfer",
-            "berufsfeld": ""
-        },
-
         "Materialprüfung": {
-            "was": "Materialprüfung Materials Testing Materials Characterization",
+            "was": "Materialprüfung",
             "berufsfeld": ""
         },
-
-        "Scientific": {
-            "was": "Scientific Instruments Measurement Systems",
+        "Thermoanalyse": {
+            "was": "Thermoanalyse",
             "berufsfeld": ""
         },
-
-        "Forschung": {
-            "was": "Research Engineer Scientist Scientific Staff",
+        "Thermophysik": {
+            "was": "Thermophysik",
             "berufsfeld": ""
         },
-
-        "Produktmanagement": {
-            "was": "Technical Product Manager Product Line Manager Scientific Instruments",
+        "Thermal Analysis": {
+            "was": "Thermal Analysis",
             "berufsfeld": ""
         },
-
+        "Thermophysical": {
+            "was": "Thermophysical",
+            "berufsfeld": ""
+        },
+        "Heat Transfer": {
+            "was": "Heat Transfer",
+            "berufsfeld": ""
+        },
+        "Research Engineer": {
+            "was": "Research Engineer",
+            "berufsfeld": ""
+        },
+        "Scientist Materials": {
+            "was": "Scientist Materials",
+            "berufsfeld": ""
+        },
+        "Wissenschaftlicher Mitarbeiter Thermodynamik": {
+            "was": "Wissenschaftlicher Mitarbeiter Thermodynamik",
+            "berufsfeld": ""
+        },
+        "Produktmanager Messtechnik": {
+            "was": "Produktmanager Messtechnik",
+            "berufsfeld": ""
+        },
+        "Technical Product Manager Instruments": {
+            "was": "Technical Product Manager Instruments",
+            "berufsfeld": ""
+        },
+        "Product Line Manager Instruments": {
+            "was": "Product Line Manager Instruments",
+            "berufsfeld": ""
+        },
+        "Application Scientist": {
+            "was": "Application Scientist",
+            "berufsfeld": ""
+        },
+        "Application Manager": {
+            "was": "Application Manager",
+            "berufsfeld": ""
+        },
+        "Technical Specialist": {
+            "was": "Technical Specialist",
+            "berufsfeld": ""
+        },
+        "Scientific Consultant": {
+            "was": "Scientific Consultant",
+            "berufsfeld": ""
+        },
+        "Product Specialist": {
+            "was": "Product Specialist",
+            "berufsfeld": ""
+        },
+        "Technical Sales Support": {
+            "was": "Technical Sales Support",
+            "berufsfeld": ""
+        },
         "Breit": {
             "was": "",
             "berufsfeld": ""
@@ -1164,14 +1231,17 @@ with st.sidebar:
         "Jobarten",
         list(queries.keys()),
         default=[
-            "Laborleitung",
+            "Laborleiter Messtechnik",
+            "Laborleiter Materialprüfung",
             "Teamleiter Labor",
             "Messtechnik",
+            "Thermoanalyse",
             "Thermophysik",
-            "Materialprüfung",
-            "Scientific",
-            "Forschung",
-        ],
+            "Application Scientist",
+            "Application Manager",
+            "Technical Specialist",
+            "Produktmanager Messtechnik",
+        ]
     )
     
     st.divider()
