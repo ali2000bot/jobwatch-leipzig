@@ -1252,7 +1252,7 @@ with st.sidebar:
             "Application Scientist",
             "Application Manager",
             "Technical Specialist",
-            "Scientific Consultant"
+            "Scientific Consultant",
             "Produktmanager Messtechnik",
             "Technical Product Manager Instruments",
             "Technical Sales Support"
