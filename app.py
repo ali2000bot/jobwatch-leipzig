@@ -96,7 +96,8 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "campaign", "audience", "data strategy", 
     "tendering", "food systems", "libya", "middle east", 
     "crm campaign", "audience manager", "marketing manager", "social media manager",
-    "advertising", "growth manager",
+    "advertising", "growth manager", "baustoff", "klinische chemie", "immunologie",
+    "mtla", "mta", "mtl", "fahrzeug", "automotive",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
