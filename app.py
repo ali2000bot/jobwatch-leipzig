@@ -1250,11 +1250,13 @@ with st.sidebar:
             "Product Line Manager Instruments",
             "Product Specialist",
             "Application Scientist",
+            "Scientist Materials",
             "Application Manager",
             "Technical Specialist",
             "Scientific Consultant",
             "Produktmanager Messtechnik",
             "Technical Product Manager Instruments",
+            "Research Engineer",
             "Technical Sales Support"
         ]
     )
