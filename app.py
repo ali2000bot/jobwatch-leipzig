@@ -1472,23 +1472,6 @@ with col1:
                     
                         profile_counter[name] = profile_counter.get(name, 0) + 1
                     
-                        title = normalize_job_title(item_title(it))
-                        if title:
-                            title_counter[title] = title_counter.get(title, 0) + 1
-                    
-                        text_for_terms = " ".join(
-                            [
-                                str(item_title(it)),
-                                str(it.get("kurzbeschreibung", "")),
-                                str(it.get("beschreibung", "")),
-                                str(item_company(it)),
-                            ]
-                        ).lower()
-                    
-                        for term in INDUSTRY_TERMS_TO_TRACK:
-                            if term in text_for_terms:
-                                industry_term_counter[term] = industry_term_counter.get(term, 0) + 1
-
                     if len(items_local) < int(size):
                         break
 
@@ -1556,6 +1539,27 @@ with col1:
             for it in items_now
         ]
 
+        title_counter = {}
+        industry_term_counter = {}
+        
+        for it in items_now:
+            title = normalize_job_title(item_title(it))
+            if title:
+                title_counter[title] = title_counter.get(title, 0) + 1
+        
+            text_for_terms = " ".join(
+                [
+                    str(item_title(it)),
+                    str(it.get("kurzbeschreibung", "")),
+                    str(it.get("beschreibung", "")),
+                    str(item_company(it)),
+                ]
+            ).lower()
+        
+            for term in INDUSTRY_TERMS_TO_TRACK:
+                if term in text_for_terms:
+                    industry_term_counter[term] = industry_term_counter.get(term, 0) + 1    
+        
         # 7) Mindestscore
         if only_focus:
             items_now = [it for it in items_now if int(it.get("_score", 0)) >= int(min_score)]
