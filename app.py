@@ -88,8 +88,10 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "data scientist", "data engineer", "machine learning", "ai engineer", "fullstack",
     "web developer", "cloud engineer", "devops", "react", "angular", "nodejs", "php developer",
     "javascript developer", "mobile developer", "ios developer", "android developer",
-    "crm", "campaign manager", "automotive software", "software", "security engineer",
+    "campaign manager", "automotive software", "software", "security engineer",
     "data processing", "streaming", "sap", "procurement", "commodity manager", "digital",
+    "campaign", "audience", "data strategy", "automotive software", "procurement",
+    "tendering", "food systems", "libya", "middle east", "security",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
@@ -690,18 +692,53 @@ if False:
                 "berufsfeld": ""
             }
         }
+
+if False:
+    def build_queries():
+        return {
+    
+            "Technische Projektleitung": {
+                "was": "Engineering Project Manager Technical Project Manager Instrumentation Project Manager",
+                "berufsfeld": ""
+            },
+    
+            "Technisches Produktmanagement": {
+                "was": "Technical Product Manager Product Line Manager Instrumentation Product Manager",
+                "berufsfeld": ""
+            },
+    
+            "Laborleitung": {
+                "was": "Laboratory Manager Head of Laboratory Laboratory Lead",
+                "berufsfeld": ""
+            },
+    
+            "Scientific / Instruments": {
+                "was": "Scientific Instruments Instrumentation Measurement Systems",
+                "berufsfeld": ""
+            },
+    
+            "Materialprüfung / Messtechnik": {
+                "was": "Materials Testing Measurement Engineer Test Systems",
+                "berufsfeld": ""
+            },
+    
+            "Breit": {
+                "was": "",
+                "berufsfeld": ""
+            }
+        }
 #----Ende daktiviert----------------------------------------
 
 def build_queries():
     return {
 
         "Technische Projektleitung": {
-            "was": "Engineering Project Manager Technical Project Manager Instrumentation Project Manager",
+            "was": "Engineering Project Manager Technical Project Manager",
             "berufsfeld": ""
         },
 
         "Technisches Produktmanagement": {
-            "was": "Technical Product Manager Product Line Manager Instrumentation Product Manager",
+            "was": "Technical Product Manager Product Line Manager",
             "berufsfeld": ""
         },
 
@@ -710,13 +747,13 @@ def build_queries():
             "berufsfeld": ""
         },
 
-        "Scientific / Instruments": {
-            "was": "Scientific Instruments Instrumentation Measurement Systems",
+        "Materialprüfung / Messtechnik": {
+            "was": "Materials Testing Measurement Engineer Test Systems",
             "berufsfeld": ""
         },
 
-        "Materialprüfung / Messtechnik": {
-            "was": "Materials Testing Measurement Engineer Test Systems",
+        "Scientific / Instruments": {
+            "was": "Scientific Instruments Instrumentation Measurement Systems",
             "berufsfeld": ""
         },
 
@@ -1155,8 +1192,8 @@ with st.sidebar:
         default=[
             "Technische Projektleitung",
             "Technisches Produktmanagement",
-            "Scientific / Instruments",
             "Materialprüfung / Messtechnik",
+            "Scientific / Instruments",
         ],
     )
     
