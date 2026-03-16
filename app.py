@@ -768,6 +768,10 @@ def build_queries():
             "was": "Application Scientist",
             "berufsfeld": ""
         },
+        "Application Engineer": {
+            "was": "Application Engineer",
+            "berufsfeld": ""
+        },
         "Application Manager": {
             "was": "Application Manager",
             "berufsfeld": ""
@@ -1289,6 +1293,7 @@ with st.sidebar:
             "Thermoanalyse",
             "Thermal Analysis",
             "Application Scientist",
+            "Application Engineer",
             "Application Engineer Scientific Instruments",
             "Field Application Scientist",
             "Produktmanager Messtechnik",
