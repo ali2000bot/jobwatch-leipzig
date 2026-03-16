@@ -53,12 +53,14 @@ DEFAULT_FOCUS_KEYWORDS = [
     "f&e", "forschung", "entwicklung", "r&d", "research", "development",
     "verfahrenstechnik", "thermodynamik", "wärmeübertragung",
     "thermische simulation", "physik", "physics",
+    "laborleitung", "laboratory", "testing", "measurement systems", "characterization",
+    "heat transfer", "materials science", "materials testing",
 ]
 
 DEFAULT_LEADERSHIP_KEYWORDS = [
     "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
     "leiter", "head", "lead", "director", "manager", "principal",
-    "sektionsleiter", "section manager",
+    "sektionsleiter", "section manager", "supervisor",
 ]
 
 DEFAULT_NEGATIVE_KEYWORDS = [
@@ -76,15 +78,15 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "schweißer", "bauleiter", "kraftfahrer", "schichtleiter",
     "metallhelfer", "metallbauer", "industriemechaniker", "chemielaborant", "vorarbeiter",
     "metallbearbeitung",
-    "lackierer", "monteur", "lüftungsbauer", "fachkraft", "blechbearbeiter", "helfer",
+    "lackierer", "monteur", "lüftungsbauer", "blechbearbeiter", "helfer",
     "maschinist", "rohrverrichter", "metallfacharbeiter", "metallbearbeiter", "tischler",
-    "assistant", "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
+    "assistenz", "sekretariat", "vorstandsassistenz", "marktleiter",
     "insurance", "versicherung", "minijob", "steuerfachangestellte", "sachbearbeiter",
-    "personalreferent", "junior", "bürosachbearbeitung", "referent", "büroassistenz", "büroassistent",
+    "personalreferent", "junior", "bürosachbearbeitung", "büroassistenz", "büroassistent",
     "facharzt", "integrationshelfer", "empfangsleiter", "schulbegleiter", "held", "filialleiter",
-    "personalentwicklung", "informatiker", "wirtschaftsinformatiker", "programmleiter",
-    "sap", "frontend", "backend", "developer", "software developer", "mobile", "android",
-    "ios", "retail", "marketing", "crm", "ecommerce", "seo", "social media", "content manager",
+    "informatiker", "wirtschaftsinformatiker", "programmleiter",
+    "frontend", "backend", "developer", "software developer", "mobile", "android",
+    "ios", "retail", "ecommerce", "seo", "social media", "content manager",
     "data scientist", "data engineer", "machine learning", "ai engineer", "fullstack",
     "web developer", "cloud engineer", "devops", "react", "angular", "nodejs", "php developer",
     "javascript developer", "mobile developer", "ios developer", "android developer",
@@ -260,7 +262,7 @@ def company_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
 
     for kw in keywords:
         if kw and kw in company:
-            score += 4
+            score += 6
 
     return score
 
@@ -271,7 +273,7 @@ def title_score_boost(it: Dict[str, Any], keywords: List[str]) -> int:
 
     for kw in keywords:
         if kw and kw in title:
-            score += 3
+            score += 6
 
     return score
 
@@ -669,93 +671,46 @@ def google_directions_url(origin_lat: float, origin_lon: float, dest_lat: float,
         "&travelmode=driving"
     )
 
-#----daktiviert----------------------------------------
-if False: 
-    def build_queries(): #Zu allgemein, uviel CRM & Co
-        return {
-    
-            "Technische Projektleitung": {
-                "was": "Technical Project Manager Engineering Project Manager Projektleiter",
-                "berufsfeld": ""
-            },
-    
-            "Technisches Produktmanagement": {
-                "was": "Technical Product Manager Product Line Manager",
-                "berufsfeld": ""
-            },
-    
-            "Laborleitung": {
-                "was": "Laborleiter Head of Laboratory Laboratory Manager",
-                "berufsfeld": ""
-            },
-    
-            "Breit": {
-                "was": "",
-                "berufsfeld": ""
-            }
-        }
-
-if False:
-    def build_queries():
-        return {
-    
-            "Technische Projektleitung": {
-                "was": "Engineering Project Manager Technical Project Manager Instrumentation Project Manager",
-                "berufsfeld": ""
-            },
-    
-            "Technisches Produktmanagement": {
-                "was": "Technical Product Manager Product Line Manager Instrumentation Product Manager",
-                "berufsfeld": ""
-            },
-    
-            "Laborleitung": {
-                "was": "Laboratory Manager Head of Laboratory Laboratory Lead",
-                "berufsfeld": ""
-            },
-    
-            "Scientific / Instruments": {
-                "was": "Scientific Instruments Instrumentation Measurement Systems",
-                "berufsfeld": ""
-            },
-    
-            "Materialprüfung / Messtechnik": {
-                "was": "Materials Testing Measurement Engineer Test Systems",
-                "berufsfeld": ""
-            },
-    
-            "Breit": {
-                "was": "",
-                "berufsfeld": ""
-            }
-        }
-#----Ende daktiviert----------------------------------------
-
 def build_queries():
     return {
 
-        "Technische Projektleitung": {
-            "was": "Engineering Project Manager Technical Project Manager",
-            "berufsfeld": ""
-        },
-
-        "Technisches Produktmanagement": {
-            "was": "Technical Product Manager Product Line Manager",
-            "berufsfeld": ""
-        },
-
         "Laborleitung": {
-            "was": "Laboratory Manager Head of Laboratory Laboratory Lead",
+            "was": "Laborleiter Laboratory Manager Lab Manager Head of Laboratory",
             "berufsfeld": ""
         },
 
-        "Materialprüfung / Messtechnik": {
-            "was": "Materials Testing Measurement Engineer Test Systems",
+        "Teamleiter Labor": {
+            "was": "Teamleiter Labor Laboratory Team Lead Lab Supervisor",
             "berufsfeld": ""
         },
 
-        "Scientific / Instruments": {
-            "was": "Scientific Instruments Instrumentation Measurement Systems",
+        "Messtechnik": {
+            "was": "Messtechnik Measurement Engineer Testing Engineer Materials Testing",
+            "berufsfeld": ""
+        },
+
+        "Thermophysik": {
+            "was": "Thermal Analysis Thermophysical Heat Transfer",
+            "berufsfeld": ""
+        },
+
+        "Materialprüfung": {
+            "was": "Materialprüfung Materials Testing Materials Characterization",
+            "berufsfeld": ""
+        },
+
+        "Scientific": {
+            "was": "Scientific Instruments Measurement Systems",
+            "berufsfeld": ""
+        },
+
+        "Forschung": {
+            "was": "Research Engineer Scientist Scientific Staff",
+            "berufsfeld": ""
+        },
+
+        "Produktmanagement": {
+            "was": "Technical Product Manager Product Line Manager Scientific Instruments",
             "berufsfeld": ""
         },
 
@@ -815,18 +770,18 @@ def score_breakdown(
 
     for k in focus_keywords:
         if k and k in text:
-            score += 10
-            parts.append(f"+10 {k}")
+            score += 8
+            parts.append(f"+8 {k}")
 
     for k in leadership_keywords:
         if k and k in text:
-            score += 6
-            parts.append(f"+6 {k}")
+            score += 5
+            parts.append(f"+5 {k}")
 
     for k in negative_keywords:
         if k and k in text:
-            score -= 12
-            parts.append(f"−12 {k}")
+            score -= 4
+            parts.append(f"−4 {k}")
 
     if is_homeoffice_item(it) and ho_bonus_val > 0:
         score += int(ho_bonus_val)
