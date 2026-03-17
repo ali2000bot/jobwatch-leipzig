@@ -1297,13 +1297,17 @@ with st.sidebar:
     
     def detect_mode(selection):
         selection_set = set(selection)
+    
         if selection_set == set(all_profiles):
             return "Alles"
+    
         if selection_set == set(default_profiles):
-            return "Std"
+            return "Standard"
+    
         if not selection_set:
             return "Reset"
-        return "Individuell"
+    
+        return "Eigene Auswahl"
     
     
     def group_state(selected, total):
@@ -1340,16 +1344,14 @@ with st.sidebar:
     # --- Modus bestimmen ---
     mode = detect_mode(st.session_state["selected_profiles_ui"])
     
-    # Anzeigeoptionen
-    radio_options = ["Alles", "Standard", "Reset"]
+    # Optionen (inkl. Eigene Auswahl)
+    radio_options = ["Alles", "Standard", "Eigene Auswahl", "Reset"]
     
-    # Mapping (falls intern noch "Empfohlen" existiert)
-    if mode == "Empfohlen":
-        mode_for_ui = "Standard"
-    elif mode in radio_options:
-        mode_for_ui = mode
+    # Fallback (sollte selten nötig sein)
+    if mode not in radio_options:
+        mode_for_ui = "Eigene Auswahl"
     else:
-        mode_for_ui = "Standard"  # fallback
+        mode_for_ui = mode
     
     # --- UI ---
     selected_mode = st.radio(
@@ -1375,6 +1377,9 @@ with st.sidebar:
         if st.session_state["selected_profiles_ui"]:
             set_profile_selection([])
             st.rerun()
+    
+    # 👉 Wichtig:
+    # Bei "Eigene Auswahl" passiert absichtlich nichts!
     
     
     # --- Gruppen ---
