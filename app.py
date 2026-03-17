@@ -745,6 +745,63 @@ def build_queries():
         }
     }
 
+def build_query_groups():
+    return {
+        "Laborleitung / Führung": [
+            "Laborleiter Messtechnik",
+            "Laborleiter Materialprüfung",
+            "Laborleiter Analytik",
+            "Leiter Prüflabor",
+            "Laborleiter Qualitätskontrolle",
+            "Teamleiter Labor",
+            "Teamleiter Analytik",
+            "Teamleiter Materialprüfung",
+            "Leiter Materiallabor",
+            "Head of Laboratory Materials",
+            "Gruppenleiter Messtechnik",
+        ],
+        "Labor / Materialcharakterisierung / Messtechnik": [
+            "Messtechnik",
+            "Materialprüfung",
+            "Materialcharakterisierung",
+            "Werkstoffprüfung Labor",
+            "Prüflabor Messtechnik",
+            "Applikationslabor",
+        ],
+        "Thermal / Thermoanalyse / Thermophysik": [
+            "Thermoanalyse",
+            "Thermophysik",
+            "Thermal Analysis",
+            "Thermophysical",
+            "Heat Transfer",
+            "Wissenschaftlicher Mitarbeiter Thermodynamik",
+        ],
+        "Application / Scientific Support": [
+            "Application Scientist",
+            "Application Engineer",
+            "Field Application Engineer",
+            "Application Engineer Scientific Instruments",
+            "Field Application Scientist",
+            "Application Manager",
+            "Technical Specialist",
+            "Scientific Consultant",
+            "Product Specialist",
+            "Technical Sales Support",
+        ],
+        "Produktmanagement / Strategie": [
+            "Produktmanager Messtechnik",
+            "Technical Product Manager Instruments",
+            "Product Line Manager Instruments",
+        ],
+        "Forschung / Entwicklung": [
+            "Research Engineer",
+            "Scientist Materials",
+        ],
+        "Breite Suche": [
+            "Breit",
+        ],
+    }
+
 def match_target_org(company: str) -> Optional[Dict[str, Any]]:
     c = (company or "").lower()
     if not c.strip():
@@ -1218,15 +1275,52 @@ with st.sidebar:
         )
     # Ende deaktiviert------------------------------------------------
     queries = build_queries()
-    options = list(queries.keys())
+    query_groups = build_query_groups()
+    all_profiles = list(queries.keys())
+    default_profiles = [k for k in all_profiles if k != "Breit"]
     
-    default_profiles = [k for k in options if k != "Breit"]
+    if "selected_profiles_ui" not in st.session_state:
+        st.session_state["selected_profiles_ui"] = default_profiles.copy()
     
-    selected_profiles = st.multiselect(
-        "Jobarten",
-        options,
-        default=default_profiles,
-    )
+    st.markdown("**Jobarten**")
+    
+    c1, c2, c3 = st.columns(3)
+    
+    with c1:
+        if st.button("Alle", use_container_width=True, key="jobtypes_all"):
+            st.session_state["selected_profiles_ui"] = all_profiles.copy()
+    
+    with c2:
+        if st.button("Standard", use_container_width=True, key="jobtypes_default"):
+            st.session_state["selected_profiles_ui"] = default_profiles.copy()
+    
+    with c3:
+        if st.button("Keine", use_container_width=True, key="jobtypes_none"):
+            st.session_state["selected_profiles_ui"] = []
+    
+    for group_name, group_items in query_groups.items():
+        current_selection = st.session_state["selected_profiles_ui"]
+    
+        with st.expander(group_name, expanded=False):
+            selected_in_group = st.multiselect(
+                group_name,
+                group_items,
+                default=[x for x in group_items if x in current_selection],
+                key=f"group_select_{group_name}",
+                label_visibility="collapsed",
+            )
+    
+            selected_set = set(st.session_state["selected_profiles_ui"])
+            group_set = set(group_items)
+    
+            selected_set -= group_set
+            selected_set |= set(selected_in_group)
+    
+            st.session_state["selected_profiles_ui"] = [
+                x for x in all_profiles if x in selected_set
+            ]
+    
+    selected_profiles = st.session_state["selected_profiles_ui"]
     
     st.divider()
     st.subheader("Filter")
