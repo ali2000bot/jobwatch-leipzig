@@ -1282,51 +1282,57 @@ with st.sidebar:
     if "selected_profiles_ui" not in st.session_state:
         st.session_state["selected_profiles_ui"] = default_profiles.copy()
     
+    def set_profile_selection(selection):
+        st.session_state["selected_profiles_ui"] = selection.copy()
+        for group_name, group_items in query_groups.items():
+            st.session_state[f"group_select_{group_name}"] = [
+                x for x in group_items if x in selection
+            ]
+    
     st.markdown("**Jobarten**")
     
     c1, c2, c3 = st.columns(3)
     
     with c1:
         if st.button("Alle", use_container_width=True, key="jobtypes_all"):
-            st.session_state["selected_profiles_ui"] = all_profiles.copy()
+            set_profile_selection(all_profiles)
+            st.rerun()
     
     with c2:
         if st.button("Standard", use_container_width=True, key="jobtypes_default"):
-            st.session_state["selected_profiles_ui"] = default_profiles.copy()
+            set_profile_selection(default_profiles)
+            st.rerun()
     
     with c3:
         if st.button("Keine", use_container_width=True, key="jobtypes_none"):
-            st.session_state["selected_profiles_ui"] = []
+            set_profile_selection([])
+            st.rerun()
     
     for group_name, group_items in query_groups.items():
-        current_selection = st.session_state["selected_profiles_ui"]
-
-        expanded_by_default = group_name in [
-            "Laborleitung / Führung",
-            "Thermal / Thermoanalyse / Thermophysik",
-            "Application / Scientific Support",
-        ]
-        
-        with st.expander(group_name, expanded=expanded_by_default):
-            selected_in_group = st.multiselect(
+        group_key = f"group_select_{group_name}"
+    
+        if group_key not in st.session_state:
+            st.session_state[group_key] = [
+                x for x in group_items
+                if x in st.session_state["selected_profiles_ui"]
+            ]
+    
+        with st.expander(group_name, expanded=False):
+            st.multiselect(
                 group_name,
                 group_items,
-                default=[x for x in group_items if x in current_selection],
-                key=f"group_select_{group_name}",
+                key=group_key,
                 label_visibility="collapsed",
             )
     
-            selected_set = set(st.session_state["selected_profiles_ui"])
-            group_set = set(group_items)
+    # Gesamtauswahl aus den Gruppen wieder zusammensetzen
+    selected_set = set()
+    for group_name, group_items in query_groups.items():
+        group_key = f"group_select_{group_name}"
+        selected_set.update(st.session_state.get(group_key, []))
     
-            selected_set -= group_set
-            selected_set |= set(selected_in_group)
-    
-            st.session_state["selected_profiles_ui"] = [
-                x for x in all_profiles if x in selected_set
-            ]
-    
-    selected_profiles = st.session_state["selected_profiles_ui"]
+    selected_profiles = [x for x in all_profiles if x in selected_set]
+    st.session_state["selected_profiles_ui"] = selected_profiles
     
     st.divider()
     st.subheader("Filter")
