@@ -1282,31 +1282,76 @@ with st.sidebar:
     if "selected_profiles_ui" not in st.session_state:
         st.session_state["selected_profiles_ui"] = default_profiles.copy()
     
-    def set_profile_selection(selection):
+    if "jobtype_mode" not in st.session_state:
+        st.session_state["jobtype_mode"] = "Standard"
+    
+    
+    def set_profile_selection(selection, mode_label):
         st.session_state["selected_profiles_ui"] = selection.copy()
+        st.session_state["jobtype_mode"] = mode_label
+    
         for group_name, group_items in query_groups.items():
             st.session_state[f"group_select_{group_name}"] = [
                 x for x in group_items if x in selection
             ]
     
+    
+    def detect_mode(selection):
+        selection_set = set(selection)
+        all_set = set(all_profiles)
+        default_set = set(default_profiles)
+    
+        if selection_set == all_set:
+            return "Alle"
+        if selection_set == default_set:
+            return "Standard"
+        if not selection_set:
+            return "Keine"
+        return "Individuell"
+    
+    
     st.markdown("**Jobarten**")
     
-    c1, c2, c3 = st.columns(3)
+    # Aktiven Modus sauber erkennen
+    st.session_state["jobtype_mode"] = detect_mode(st.session_state["selected_profiles_ui"])
+    
+    c1, c2, c3, c4 = st.columns([1, 1, 1, 1.4])
     
     with c1:
-        if st.button("Alle", use_container_width=True, key="jobtypes_all"):
-            set_profile_selection(all_profiles)
+        if st.button(
+            "🟢 Alle",
+            use_container_width=True,
+            key="jobtypes_all",
+            type="primary" if st.session_state["jobtype_mode"] == "Alle" else "secondary",
+        ):
+            set_profile_selection(all_profiles, "Alle")
             st.rerun()
     
     with c2:
-        if st.button("Standard", use_container_width=True, key="jobtypes_default"):
-            set_profile_selection(default_profiles)
+        if st.button(
+            "🔵 Standard",
+            use_container_width=True,
+            key="jobtypes_default",
+            type="primary" if st.session_state["jobtype_mode"] == "Standard" else "secondary",
+        ):
+            set_profile_selection(default_profiles, "Standard")
             st.rerun()
     
     with c3:
-        if st.button("Keine", use_container_width=True, key="jobtypes_none"):
-            set_profile_selection([])
+        if st.button(
+            "⚪ Keine",
+            use_container_width=True,
+            key="jobtypes_none",
+            type="primary" if st.session_state["jobtype_mode"] == "Keine" else "secondary",
+        ):
+            set_profile_selection([], "Keine")
             st.rerun()
+    
+    with c4:
+        mode = st.session_state["jobtype_mode"]
+        total_selected = len(st.session_state["selected_profiles_ui"])
+        st.caption(f"**Modus:** {mode}")
+        st.caption(f"**Aktiv:** {total_selected}/{len(all_profiles)}")
     
     for group_name, group_items in query_groups.items():
         group_key = f"group_select_{group_name}"
@@ -1317,7 +1362,45 @@ with st.sidebar:
                 if x in st.session_state["selected_profiles_ui"]
             ]
     
-        with st.expander(group_name, expanded=False):
+        selected_count = len(st.session_state[group_key])
+        total_count = len(group_items)
+    
+        if selected_count == 0:
+            group_icon = "⚪"
+            group_state = "leer"
+        elif selected_count == total_count:
+            group_icon = "✅"
+            group_state = "voll"
+        else:
+            group_icon = "🟢"
+            group_state = "aktiv"
+    
+        expanded_default = group_state == "aktiv"
+    
+        with st.expander(
+            f"{group_icon} {group_name} · {selected_count}/{total_count} aktiv",
+            expanded=expanded_default,
+        ):
+            col_a, col_b = st.columns([1, 1])
+    
+            with col_a:
+                if st.button(
+                    "Alle in Gruppe",
+                    key=f"select_all_{group_name}",
+                    use_container_width=True,
+                ):
+                    st.session_state[group_key] = group_items.copy()
+                    st.rerun()
+    
+            with col_b:
+                if st.button(
+                    "Keine in Gruppe",
+                    key=f"select_none_{group_name}",
+                    use_container_width=True,
+                ):
+                    st.session_state[group_key] = []
+                    st.rerun()
+    
             st.multiselect(
                 group_name,
                 group_items,
@@ -1325,14 +1408,17 @@ with st.sidebar:
                 label_visibility="collapsed",
             )
     
-    # Gesamtauswahl aus den Gruppen wieder zusammensetzen
+            st.caption(f"Status: {group_state} · {selected_count} von {total_count} aktiv")
+    
+    # Gesamtauswahl aus allen Gruppen zusammensetzen
     selected_set = set()
-    for group_name, group_items in query_groups.items():
+    for group_name in query_groups.keys():
         group_key = f"group_select_{group_name}"
         selected_set.update(st.session_state.get(group_key, []))
     
     selected_profiles = [x for x in all_profiles if x in selected_set]
     st.session_state["selected_profiles_ui"] = selected_profiles
+    st.session_state["jobtype_mode"] = detect_mode(selected_profiles)
     
     st.divider()
     st.subheader("Filter")
