@@ -1338,19 +1338,32 @@ with st.sidebar:
         
     # --- Buttons ---
     c1, c2, c3 = st.columns(3)
-    
+
     with c1:
-        if st.button("Alles", use_container_width=True):
+        if st.button(
+            "Alle",
+            use_container_width=True,
+            type="primary" if mode == "Alles" else "secondary",
+        ):
             set_profile_selection(all_profiles)
             st.rerun()
     
     with c2:
-        if st.button("Std", use_container_width=True):
+        if st.button(
+            "Std",
+            use_container_width=True,
+            help="Empfohlen (ohne Breit)",
+            type="primary" if mode == "Empfohlen" else "secondary",
+        ):
             set_profile_selection(default_profiles)
             st.rerun()
     
     with c3:
-        if st.button("Reset", use_container_width=True):
+        if st.button(
+            "Reset",
+            use_container_width=True,
+            type="primary" if mode == "Reset" else "secondary",
+        ):
             set_profile_selection([])
             st.rerun()
     
