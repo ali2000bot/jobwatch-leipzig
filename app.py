@@ -1320,9 +1320,22 @@ with st.sidebar:
     mode = detect_mode(st.session_state["selected_profiles_ui"])
     total_selected = len(st.session_state["selected_profiles_ui"])
     
-    st.caption(f"Modus: {mode} · Aktiv: {total_selected}/{len(all_profiles)}")
+    chip_html = f"""
+    <div style="
+        display:inline-block;
+        padding:4px 10px;
+        border-radius:999px;
+        background:#e0e0e0;
+        color:#333;
+        font-size:0.85rem;
+        font-weight:600;
+    ">
+        Modus: {mode} · {total_selected}/{len(all_profiles)}
+    </div>
+    """
     
-    
+    st.markdown(chip_html, unsafe_allow_html=True)
+        
     # --- Buttons ---
     c1, c2, c3 = st.columns(3)
     
