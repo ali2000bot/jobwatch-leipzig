@@ -12,24 +12,10 @@ import streamlit as st
 import streamlit.components.v1 as components
 import urllib3
 import re
+from persistence import *
+init_db()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-# ============================================================
-# Persistenz / Dateien
-# ============================================================
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
-STATE_DIR = os.path.join(APP_DIR, ".jobwatch_state")
-
-SNAPSHOT_FILE = os.path.join(STATE_DIR, "snapshot.json")
-COMPANY_STATE_FILE = os.path.join(STATE_DIR, "company_monitor.json")
-HIDDEN_JOBS_FILE = os.path.join(STATE_DIR, "hidden_jobs.json")
-FAVORITES_FILE = os.path.join(STATE_DIR, "favorites.json")
-HIDDEN_COMPANIES_FILE = os.path.join(STATE_DIR, "hidden_companies.json")
-
-
-def ensure_state_dir() -> None:
-    os.makedirs(STATE_DIR, exist_ok=True)
 
 
 # ============================================================
@@ -303,110 +289,8 @@ def keyword_match(text: str, kw: str) -> bool:
     pattern = r"\b" + re.escape(kw.lower()) + r"\b"
     return re.search(pattern, text.lower()) is not None
 
-# ============================================================
-# Persistente Daten laden / speichern
-# ============================================================
-def load_snapshot() -> Dict[str, Any]:
-    if not os.path.exists(SNAPSHOT_FILE):
-        return {"timestamp": None, "items": []}
-    with open(SNAPSHOT_FILE, "r", encoding="utf-8") as f:
-        try:
-            return json.load(f)
-        except Exception:
-            return {"timestamp": None, "items": []}
-
-
-def save_snapshot(items: List[Dict[str, Any]]) -> None:
-    ensure_state_dir()
-    payload = {"timestamp": datetime.now().isoformat(timespec="seconds"), "items": items}
-    with open(SNAPSHOT_FILE, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-
-
-def load_company_state() -> Dict[str, Any]:
-    if not os.path.exists(COMPANY_STATE_FILE):
-        return {}
-    with open(COMPANY_STATE_FILE, "r", encoding="utf-8") as f:
-        try:
-            data = json.load(f)
-            return data if isinstance(data, dict) else {}
-        except Exception:
-            return {}
-
-
-def save_company_state(state: Dict[str, Any]) -> None:
-    ensure_state_dir()
-    with open(COMPANY_STATE_FILE, "w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
-
-
-def load_favorites() -> Dict[str, Any]:
-    if not os.path.exists(FAVORITES_FILE):
-        return {}
-    try:
-        with open(FAVORITES_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            return data if isinstance(data, dict) else {}
-    except Exception:
-        return {}
-
-
-def save_favorites(favs: Dict[str, Any]) -> None:
-    ensure_state_dir()
-    with open(FAVORITES_FILE, "w", encoding="utf-8") as f:
-        json.dump(favs, f, ensure_ascii=False, indent=2)
-
-
 def is_favorited(job_key: str, favs: Dict[str, Any]) -> bool:
     return bool(job_key) and job_key in favs
-
-
-def load_hidden_jobs() -> Dict[str, Any]:
-    if not os.path.exists(HIDDEN_JOBS_FILE):
-        return {"hidden": [], "updated_at": None}
-    with open(HIDDEN_JOBS_FILE, "r", encoding="utf-8") as f:
-        try:
-            data = json.load(f)
-        except Exception:
-            return {"hidden": [], "updated_at": None}
-
-    if not isinstance(data, dict):
-        return {"hidden": [], "updated_at": None}
-    if "hidden" not in data or not isinstance(data["hidden"], list):
-        data["hidden"] = []
-    if "updated_at" not in data:
-        data["updated_at"] = None
-    return data
-
-
-def save_hidden_jobs(hidden_keys: Set[str]) -> None:
-    ensure_state_dir()
-    payload = {
-        "hidden": sorted(list(hidden_keys)),
-        "updated_at": datetime.now().isoformat(timespec="seconds"),
-    }
-    with open(HIDDEN_JOBS_FILE, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
-
-
-def load_hidden_companies() -> Set[str]:
-    if not os.path.exists(HIDDEN_COMPANIES_FILE):
-        return set()
-    try:
-        with open(HIDDEN_COMPANIES_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-            if isinstance(data, list):
-                return set(x.lower() for x in data)
-    except Exception:
-        pass
-    return set()
-
-
-def save_hidden_companies(companies: Set[str]) -> None:
-    ensure_state_dir()
-    with open(HIDDEN_COMPANIES_FILE, "w", encoding="utf-8") as f:
-        json.dump(sorted(list(companies)), f, ensure_ascii=False, indent=2)
-
 
 # ============================================================
 # API / Jobfelder
@@ -1457,10 +1341,9 @@ with col2:
         st.session_state["save_snapshot_requested"] = True
 
     if st.button("Stand löschen", use_container_width=True):
-        ensure_state_dir()
-        if os.path.exists(SNAPSHOT_FILE):
-            os.remove(SNAPSHOT_FILE)
-        st.success("Snapshot gelöscht. Seite neu laden.")
+        save_snapshot([])
+        st.success("Snapshot gelöscht.")
+        st.rerun()
 
     st.markdown("</div>", unsafe_allow_html=True)
 
