@@ -1337,37 +1337,42 @@ with st.sidebar:
     st.markdown(chip_html, unsafe_allow_html=True)
         
     # --- Buttons ---
-    c1, c2, c3 = st.columns(3)
-
-    label_all = "◼ Alle" if mode == "Alles" else "Alle"
-    label_std = "◼ Std" if mode == "Empfohlen" else "Std"
-    label_reset = "◼ Reset" if mode == "Reset" else "Reset"
+    # --- Modus bestimmen ---
+    mode = detect_mode(st.session_state["selected_profiles_ui"])
     
-    with c1:
-        if st.button(
-            label_all,
-            use_container_width=True,
-            key="btn_all_profiles",
-        ):
+    # Anzeigeoptionen
+    radio_options = ["Alles", "Standard", "Reset"]
+    
+    # Mapping (falls intern noch "Empfohlen" existiert)
+    if mode == "Empfohlen":
+        mode_for_ui = "Standard"
+    elif mode in radio_options:
+        mode_for_ui = mode
+    else:
+        mode_for_ui = "Standard"  # fallback
+    
+    # --- UI ---
+    selected_mode = st.radio(
+        "Schnellauswahl",
+        radio_options,
+        index=radio_options.index(mode_for_ui),
+        horizontal=True,
+        label_visibility="collapsed",
+    )
+    
+    # --- Reaktion auf Auswahl ---
+    if selected_mode == "Alles":
+        if set(st.session_state["selected_profiles_ui"]) != set(all_profiles):
             set_profile_selection(all_profiles)
             st.rerun()
     
-    with c2:
-        if st.button(
-            label_std,
-            use_container_width=True,
-            key="btn_default_profiles",
-            help="Empfohlen: alle sinnvollen Jobarten ohne 'Breit'",
-        ):
+    elif selected_mode == "Standard":
+        if set(st.session_state["selected_profiles_ui"]) != set(default_profiles):
             set_profile_selection(default_profiles)
             st.rerun()
     
-    with c3:
-        if st.button(
-            label_reset,
-            use_container_width=True,
-            key="btn_reset_profiles",
-        ):
+    elif selected_mode == "Reset":
+        if st.session_state["selected_profiles_ui"]:
             set_profile_selection([])
             st.rerun()
     
