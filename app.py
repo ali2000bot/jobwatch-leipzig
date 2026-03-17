@@ -1300,7 +1300,7 @@ with st.sidebar:
         if selection_set == set(all_profiles):
             return "Alles"
         if selection_set == set(default_profiles):
-            return "Empfohlen"
+            return "Std"
         if not selection_set:
             return "Reset"
         return "Individuell"
