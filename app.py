@@ -1299,10 +1299,9 @@ with st.sidebar:
     )
     aktualitaet = None if aktualitaet_option == "Alle" else int(aktualitaet_option.split()[0])
 
-    queries = build_queries()
-
     #----manuelle Auswahl deaktiviert -------------------------------
     if False: 
+        queries = build_queries()   
         selected_profiles = st.multiselect(
             "Jobarten",
             list(queries.keys()),
@@ -1335,11 +1334,14 @@ with st.sidebar:
         )
     # Ende deaktiviert------------------------------------------------
     queries = build_queries()
-
+    options = list(queries.keys())
+    
+    default_profiles = [k for k in options if k != "Breit"]
+    
     selected_profiles = st.multiselect(
         "Jobarten",
-        list(queries.keys()),
-        default=list(queries.keys()),
+        options,
+        default=default_profiles,
     )
     
     st.divider()
