@@ -1332,7 +1332,7 @@ with st.sidebar:
             st.rerun()
     
     with c2:
-        if st.button("Empfohlen", use_container_width=True):
+        if st.button("Std", use_container_width=True):
             set_profile_selection(default_profiles)
             st.rerun()
     
