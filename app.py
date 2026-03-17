@@ -1339,30 +1339,34 @@ with st.sidebar:
     # --- Buttons ---
     c1, c2, c3 = st.columns(3)
 
+    label_all = "◼ Alle" if mode == "Alles" else "Alle"
+    label_std = "◼ Std" if mode == "Empfohlen" else "Std"
+    label_reset = "◼ Reset" if mode == "Reset" else "Reset"
+    
     with c1:
         if st.button(
-            "Alle",
+            label_all,
             use_container_width=True,
-            type="primary" if mode == "Alles" else "secondary",
+            key="btn_all_profiles",
         ):
             set_profile_selection(all_profiles)
             st.rerun()
     
     with c2:
         if st.button(
-            "Std",
+            label_std,
             use_container_width=True,
-            help="Empfohlen (ohne Breit)",
-            type="primary" if mode == "Empfohlen" else "secondary",
+            key="btn_default_profiles",
+            help="Empfohlen: alle sinnvollen Jobarten ohne 'Breit'",
         ):
             set_profile_selection(default_profiles)
             st.rerun()
     
     with c3:
         if st.button(
-            "Reset",
+            label_reset,
             use_container_width=True,
-            type="primary" if mode == "Reset" else "secondary",
+            key="btn_reset_profiles",
         ):
             set_profile_selection([])
             st.rerun()
