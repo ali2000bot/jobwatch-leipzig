@@ -83,7 +83,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "tendering", "food systems", "libya", "middle east", 
     "crm campaign", "audience manager", "marketing manager", "social media manager",
     "advertising", "growth manager", "baustoff", "klinische chemie", "immunologie",
-    "mtla", "mta", "mtl", "fahrzeug", "automotive",
+    "mtla", "mta", "mtl", "fahrzeug", "automotive", "application manager sap",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
