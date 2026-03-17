@@ -1300,36 +1300,46 @@ with st.sidebar:
     aktualitaet = None if aktualitaet_option == "Alle" else int(aktualitaet_option.split()[0])
 
     queries = build_queries()
-    
+
+    #----manuelle Auswahl deaktiviert -------------------------------
+    if False: 
+        selected_profiles = st.multiselect(
+            "Jobarten",
+            list(queries.keys()),
+            default=[
+                "Laborleiter Messtechnik",
+                "Laborleiter Materialprüfung",
+                "Laborleiter Analytik",
+                "Leiter Prüflabor",
+                "Laborleiter Qualitätskontrolle",
+                "Teamleiter Labor",
+                "Teamleiter Analytik",
+                "Teamleiter Materialprüfung",
+                "Leiter Materiallabor",
+                "Head of Laboratory Materials",
+                "Applikationslabor",
+                "Prüflabor Messtechnik",
+                "Materialcharakterisierung",
+                "Werkstoffprüfung Labor",
+                "Thermoanalyse",
+                "Thermal Analysis",
+                "Application Scientist",
+                "Application Engineer",
+                "Field Application Engineer",
+                "Application Engineer Scientific Instruments",
+                "Field Application Scientist",
+                "Produktmanager Messtechnik",
+                "Technical Product Manager Instruments",
+                "Product Line Manager Instruments",
+            ]
+        )
+    # Ende deaktiviert------------------------------------------------
+    queries = build_queries()
+
     selected_profiles = st.multiselect(
         "Jobarten",
         list(queries.keys()),
-        default=[
-            "Laborleiter Messtechnik",
-            "Laborleiter Materialprüfung",
-            "Laborleiter Analytik",
-            "Leiter Prüflabor",
-            "Laborleiter Qualitätskontrolle",
-            "Teamleiter Labor",
-            "Teamleiter Analytik",
-            "Teamleiter Materialprüfung",
-            "Leiter Materiallabor",
-            "Head of Laboratory Materials",
-            "Applikationslabor",
-            "Prüflabor Messtechnik",
-            "Materialcharakterisierung",
-            "Werkstoffprüfung Labor",
-            "Thermoanalyse",
-            "Thermal Analysis",
-            "Application Scientist",
-            "Application Engineer",
-            "Field Application Engineer",
-            "Application Engineer Scientific Instruments",
-            "Field Application Scientist",
-            "Produktmanager Messtechnik",
-            "Technical Product Manager Instruments",
-            "Product Line Manager Instruments",
-        ]
+        default=list(queries.keys()),
     )
     
     st.divider()
