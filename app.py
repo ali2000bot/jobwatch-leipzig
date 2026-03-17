@@ -1300,8 +1300,14 @@ with st.sidebar:
     
     for group_name, group_items in query_groups.items():
         current_selection = st.session_state["selected_profiles_ui"]
-    
-        with st.expander(group_name, expanded=False):
+
+        expanded_by_default = group_name in [
+            "Laborleitung / Führung",
+            "Thermal / Thermoanalyse / Thermophysik",
+            "Application / Scientific Support",
+        ]
+        
+        with st.expander(group_name, expanded=expanded_by_default):
             selected_in_group = st.multiselect(
                 group_name,
                 group_items,
