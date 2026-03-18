@@ -780,10 +780,10 @@ def build_queries():
             "was": "Field Application Engineer",
             "berufsfeld": ""
         },
-        "Application Manager": {
-            "was": "Application Manager",
-            "berufsfeld": ""
-        },
+        #"Application Manager": {
+        #    "was": "Application Manager",
+        #    "berufsfeld": ""
+        #},
         "Technical Specialist": {
             "was": "Technical Specialist",
             "berufsfeld": ""
@@ -883,7 +883,7 @@ def build_query_groups():
             "Field Application Engineer",
             "Application Engineer Scientific Instruments",
             "Field Application Scientist",
-            "Application Manager",
+            # "Application Manager",
             "Technical Specialist",
             "Scientific Consultant",
             "Product Specialist",
