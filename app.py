@@ -105,41 +105,31 @@ BAD_MESSTECHNIK_TITLES = [
     "elektriker",
     "mechatroniker",
     "glasfaser",
-
     "cad-konstrukteur",
     "konstrukteur",
-    "cad",
-    "zeichner",
-    "technischer zeichner",
-    "planung",
-
     "einkäufer",
     "strategischer einkäufer",
     "cost manager",
     "cost engineer",
     "financial accountant",
-    "controller",
-    "controlling",
-    "buchhaltung",
-    "accountant",
-    "finance",
-
     "vertriebsinnendienst",
-    "vertrieb",
-    "sales",
-    "inside sales",
-    "account manager",
-    "customer service",
-
     "instandhalter",
     "instandhaltung",
     "msr",
     "emsr",
-    "betriebstechnik",
-    "betriebselektriker",
-
-    "erzieher",
-    "pflege",
+    "schlaflabor",
+    "nachtdienst",
+    "sachbearbeiter",
+    "kaufmännisch",
+    "innendienst",
+    "augenoptik",
+    "produktionsmitarbeiter",
+    "produktions",
+    "mitarbeiter",
+    "chemielaborant",
+    "chemielaborantin",
+    "laborant",
+    "laborantin",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
@@ -173,9 +163,6 @@ MESSTECHNIK_GOOD_TITLE_HINTS = [
     "wissenschaftlicher mitarbeiter",
     "application engineer",
     "application scientist",
-    "labor",
-    "analytik",
-    "prüftechnik",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
