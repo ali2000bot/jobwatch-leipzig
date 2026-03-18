@@ -1890,41 +1890,6 @@ with col1:
         #if hide_irrelevant:
         #    items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
-        # 6) Einmalig anreichern
-        items_now = [
-            enrich_item(
-                it,
-                float(home_lat),
-                float(home_lon),
-                FOCUS_KEYWORDS,
-                LEADERSHIP_KEYWORDS,
-                NEGATIVE_KEYWORDS,
-                int(ho_bonus),
-                float(speed_kmh),
-            )
-            for it in items_now
-        ]
-
-        title_counter = {}
-        industry_term_counter = {}
-        
-        for it in items_now:
-            title = normalize_job_title(item_title(it))
-            if title:
-                title_counter[title] = title_counter.get(title, 0) + 1
-        
-            text_for_terms = " ".join(
-                [
-                    str(item_title(it)),
-                    str(it.get("kurzbeschreibung", "")),
-                    str(it.get("beschreibung", "")),
-                    str(item_company(it)),
-                ]
-            ).lower()
-        
-            for term in INDUSTRY_TERMS_TO_TRACK:
-                if term in text_for_terms:
-                    industry_term_counter[term] = industry_term_counter.get(term, 0) + 1    
         
         # 7) Mindestscore
         if only_focus:
@@ -1955,6 +1920,29 @@ with col1:
                 items_now_filtered.append(it)
 
         items_sorted = sorted(items_now_filtered, key=sort_key)
+        title_counter = {}
+        industry_term_counter = {}
+        
+        for it in items_sorted:
+            title = normalize_job_title(item_title(it))
+            profile = str(it.get("_profile", "")).strip()
+        
+            if title:
+                key = f"{title} [{profile}]"
+                title_counter[key] = title_counter.get(key, 0) + 1
+        
+            text_for_terms = " ".join(
+                [
+                    str(item_title(it)),
+                    str(it.get("kurzbeschreibung", "")),
+                    str(it.get("beschreibung", "")),
+                    str(item_company(it)),
+                ]
+            ).lower()
+        
+            for term in INDUSTRY_TERMS_TO_TRACK:
+                if term in text_for_terms:
+                    industry_term_counter[term] = industry_term_counter.get(term, 0) + 1
        
         location_counter = {}
         location_distance = {}
