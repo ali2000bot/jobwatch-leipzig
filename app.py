@@ -86,6 +86,27 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "mtla", "mta", "mtl", "fahrzeug", "automotive", "application manager sap",
 ]
 
+EXCLUDE_KEYWORDS_MESSTECHNIK = [
+    "techniker",
+    "messtechniker",
+    "servicetechniker",
+    "obermonteur",
+    "monteur",
+    "montage",
+    "inbetriebnahme",
+    "wartung",
+    "installation",
+    "field service",
+    "außendienst",
+    "production",
+    "fertigung",
+    "schicht",
+    "schweißer",
+    "elektriker",
+    "mechatroniker",
+    "glasfaser",
+]
+
 RECRUITING_COMPANY_KEYWORDS = [
     "gmbh & co. kg personal", "personalvermittlung", "personalberatung", "personaldienst",
     "personaldienstleistung", "personaldienstleister", "recruiting", "headhunter",
@@ -1736,6 +1757,15 @@ with col1:
         items_now = [it for it in items_now if not is_recruiting_posting(it)]
 
         removed_recruiting = before_recruiting_filter - len(items_now)
+
+        # 4b) schlechte Keywords in Job Messtechnik raus
+        items_now = [
+            it for it in items_now
+            if not any(
+                bad in item_title(it).lower()
+                for bad in BAD_MESSTECHNIK_TITLES
+            )
+        ]
 
         # 5) Negative Jobs raus
         #if hide_irrelevant:
