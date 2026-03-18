@@ -173,7 +173,6 @@ MESSTECHNIK_GOOD_TITLE_HINTS = [
     "wissenschaftlicher mitarbeiter",
     "application engineer",
     "application scientist",
-    "specialist",
     "labor",
     "analytik",
     "prüftechnik",
