@@ -105,6 +105,41 @@ BAD_MESSTECHNIK_TITLES = [
     "elektriker",
     "mechatroniker",
     "glasfaser",
+
+    "cad-konstrukteur",
+    "konstrukteur",
+    "cad",
+    "zeichner",
+    "technischer zeichner",
+    "planung",
+
+    "einkäufer",
+    "strategischer einkäufer",
+    "cost manager",
+    "cost engineer",
+    "financial accountant",
+    "controller",
+    "controlling",
+    "buchhaltung",
+    "accountant",
+    "finance",
+
+    "vertriebsinnendienst",
+    "vertrieb",
+    "sales",
+    "inside sales",
+    "account manager",
+    "customer service",
+
+    "instandhalter",
+    "instandhaltung",
+    "msr",
+    "emsr",
+    "betriebstechnik",
+    "betriebselektriker",
+
+    "erzieher",
+    "pflege",
 ]
 
 RECRUITING_COMPANY_KEYWORDS = [
