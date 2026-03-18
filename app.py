@@ -1908,10 +1908,13 @@ with col1:
         title_counter = {}
         industry_term_counter = {}
         
-        for it in items_now:
+        for it in items_sorted:
             title = normalize_job_title(item_title(it))
+            profile = str(it.get("_profile", "")).strip()
+        
             if title:
-                title_counter[title] = title_counter.get(title, 0) + 1
+                key = f"{title} [{profile}]"
+                title_counter[key] = title_counter.get(key, 0) + 1
         
             text_for_terms = " ".join(
                 [
@@ -1924,7 +1927,7 @@ with col1:
         
             for term in INDUSTRY_TERMS_TO_TRACK:
                 if term in text_for_terms:
-                    industry_term_counter[term] = industry_term_counter.get(term, 0) + 1    
+                    industry_term_counter[term] = industry_term_counter.get(term, 0) + 1  
         
         # 7) Mindestscore
         if only_focus:
