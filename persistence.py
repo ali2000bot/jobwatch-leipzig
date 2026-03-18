@@ -1,62 +1,43 @@
-import sqlite3
-import json
-from pathlib import Path
+import streamlit as st
 from datetime import datetime
 from typing import Any, Dict, Set
+from supabase import create_client, Client
 
-DB_PATH = Path("jobwatch_state.db")
 
-
-def get_conn():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+def get_client() -> Client:
+    return create_client(
+        st.secrets["SUPABASE_URL"],
+        st.secrets["SUPABASE_KEY"]
+    )
 
 
 def init_db():
-    with get_conn() as conn:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS kv_store (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL,
-                updated_at TEXT NOT NULL
-            )
-        """)
-        conn.commit()
+    pass
 
 
 def _load_json(key: str, default: Any):
-    with get_conn() as conn:
-        row = conn.execute(
-            "SELECT value FROM kv_store WHERE key = ?",
-            (key,)
-        ).fetchone()
+    supabase = get_client()
+    res = (
+        supabase.table("jobwatch_state")
+        .select("value")
+        .eq("id", key)
+        .limit(1)
+        .execute()
+    )
 
-    if not row:
-        return default
-
-    try:
-        return json.loads(row["value"])
-    except Exception:
-        return default
+    data = getattr(res, "data", None) or []
+    return data[0]["value"] if data else default
 
 
 def _save_json(key: str, value: Any):
-    payload = json.dumps(value, ensure_ascii=False, indent=2)
-    now = datetime.now().isoformat(timespec="seconds")
-
-    with get_conn() as conn:
-        conn.execute("""
-            INSERT INTO kv_store (key, value, updated_at)
-            VALUES (?, ?, ?)
-            ON CONFLICT(key) DO UPDATE SET
-                value = excluded.value,
-                updated_at = excluded.updated_at
-        """, (key, payload, now))
-        conn.commit()
+    supabase = get_client()
+    supabase.table("jobwatch_state").upsert({
+        "id": key,
+        "value": value,
+        "updated_at": datetime.utcnow().isoformat()
+    }).execute()
 
 
-# --- Snapshot ---
 def load_snapshot():
     return _load_json("snapshot", {"timestamp": None, "items": []})
 
@@ -68,7 +49,6 @@ def save_snapshot(items):
     })
 
 
-# --- Favorites ---
 def load_favorites():
     return _load_json("favorites", {})
 
@@ -77,7 +57,6 @@ def save_favorites(favs: Dict[str, Any]):
     _save_json("favorites", favs)
 
 
-# --- Hidden Jobs ---
 def load_hidden_jobs():
     return _load_json("hidden_jobs", {"hidden": [], "updated_at": None})
 
@@ -89,19 +68,15 @@ def save_hidden_jobs(hidden_keys: Set[str]):
     })
 
 
-# --- Hidden Companies ---
 def load_hidden_companies():
     data = _load_json("hidden_companies", [])
-    if isinstance(data, list):
-        return set(x.lower() for x in data)
-    return set()
+    return set(x.lower() for x in data) if isinstance(data, list) else set()
 
 
 def save_hidden_companies(companies: Set[str]):
     _save_json("hidden_companies", sorted(list(companies)))
 
 
-# --- Company State ---
 def load_company_state():
     return _load_json("company_state", {})
 
