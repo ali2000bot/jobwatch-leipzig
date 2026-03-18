@@ -86,7 +86,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "mtla", "mta", "mtl", "fahrzeug", "automotive", "application manager sap",
 ]
 
-EXCLUDE_KEYWORDS_MESSTECHNIK = [
+BAD_MESSTECHNIK_TITLES = [
     "techniker",
     "messtechniker",
     "servicetechniker",
