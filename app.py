@@ -158,7 +158,6 @@ MESSTECHNIK_REQUIRED_HINTS = [
 MESSTECHNIK_GOOD_TITLE_HINTS = [
     "ingenieur",
     "engineer",
-    "physiker",
     "scientist",
     "wissenschaftlicher mitarbeiter",
     "application engineer",
