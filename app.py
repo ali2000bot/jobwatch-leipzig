@@ -84,15 +84,6 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "crm campaign", "audience manager", "marketing manager", "social media manager",
     "advertising", "growth manager", "baustoff", "klinische chemie", "immunologie",
     "mtla", "mta", "mtl", "fahrzeug", "automotive", "application manager sap",
-    "application manager",
-    "software",
-    "it ",
-    "cloud",
-    "saas",
-    "plattform",
-    "ki ",
-    "ai ",
-    "solution architect",
     ]
 
 BAD_MESSTECHNIK_TITLES = [
