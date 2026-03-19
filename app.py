@@ -168,6 +168,7 @@ BAD_MESSTECHNIK_TITLES = [
     "befristet",
     "doktorand",
     "embedded systems",
+    "data protection",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
