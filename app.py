@@ -1435,11 +1435,11 @@ div[data-testid="stMetric"] {
 
 /* Kleine Hilfskarten */
 .soft-card {
-    background: rgba(255,255,255,0.78);
-    border: 1px solid rgba(44, 83, 100, 0.10);
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.05);
     border-radius: 16px;
     padding: 14px 16px;
-    box-shadow: 0 2px 8px rgba(20, 40, 60, 0.04);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.03);
 }
 
 /* Hero Banner */
