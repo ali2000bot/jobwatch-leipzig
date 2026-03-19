@@ -179,6 +179,17 @@ GLOBAL_BAD_TITLE_HINTS = [
     "kathodischer",
 ]
 
+# Beruf und Titel werden beim BA unterschieden
+GLOBAL_BAD_BERUF_HINTS = [
+    "zerspanungsmechaniker",
+    "industriemechaniker",
+    "produktionsmechaniker",
+    "maschinenbediener",
+    "schweißer",
+    "mechatroniker",
+    "elektroniker",
+]
+
 # ============================================================
 # Profil: Messtechnik (profilspezifisch)
 # ============================================================
@@ -531,6 +542,10 @@ def find_jobs_by_title_or_company(
             out.append(it)
 
     return out
+
+def blocked_by_bad_beruf_global(it: Dict[str, Any]) -> bool:
+    beruf = normalize_text(str(it.get("beruf", "")))
+    return any(bad in beruf for bad in GLOBAL_BAD_BERUF_HINTS)
 
 # ============================================================
 # API / Jobfelder
@@ -1993,6 +2008,9 @@ with col1:
         items_now = [it for it in items_now if not is_recruiting_posting(it)]
 
         removed_recruiting = before_recruiting_filter - len(items_now)
+
+        # 4a) Unpassende Berufe raus
+        items_now = [it for it in items_now if not blocked_by_bad_beruf_global(it)]
         
 
         # 4b) schlechte Keywords in allen Jobs raus
