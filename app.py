@@ -1381,9 +1381,10 @@ st.markdown("""
 }
 
 /* Sidebar */
-section[data-testid="stSidebar"] {
-    background: #f5f5f7;
-    border-right: 1px solid rgba(0,0,0,0.06);
+section[data-testid="stSidebar"] h3,
+section[data-testid="stSidebar"] h4 {
+    color: #1d1d1f;
+    font-weight: 600;
 }
 
 /* Tabs etwas sauberer */
