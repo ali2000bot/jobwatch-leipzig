@@ -1940,7 +1940,7 @@ with col1:
                 seen.add(k)
                 it["_key"] = k
                 items_now.append(it)
-        st.write("DEBUG nach Dedup 1:", has_ref(items_now, TARGET_REF)) #DEBUG Itema
+        
         
         # 2) Deduplizierung per Titel/Firma/Ort
         dedup2: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
@@ -1954,7 +1954,7 @@ with col1:
                 dedup2[key2] = it
 
         items_now = list(dedup2.values())
-        st.write("DEBUG nach Dedup 2:", has_ref(items_now, TARGET_REF)) #Debug ITEMA
+        
         
         # 3) Hidden / Blocklisten
         if hide_marked:
@@ -1964,57 +1964,25 @@ with col1:
             it for it in items_now
             if item_company(it).strip().lower() not in hidden_companies
         ]
-        st.write("DEBUG nach Hidden/Blocklisten:", has_ref(items_now, TARGET_REF)) #Debug ITEMA
+        
 
         # 4) Recruiting automatisch raus
         before_recruiting_filter = len(items_now)
         items_now = [it for it in items_now if not is_recruiting_posting(it)]
 
         removed_recruiting = before_recruiting_filter - len(items_now)
-        st.write("DEBUG nach Recruiting-Filter:", has_ref(items_now, TARGET_REF)) #Debug ITEMA
+        
 
         # 4b) schlechte Keywords in allen Jobs raus (geändert, nicht nur Messtechnik!)
         # neu gemacht über def Helper-Funktion um ITEMA-Job durchzulassen
-        #items_now = [
-        #    it for it in items_now
-        #    if not any(
-        #        bad in item_title(it).lower()
-        #        for bad in BAD_MESSTECHNIK_TITLES
-        #    )
-        #]
         
-        
-        ref_before_4b = find_ref(items_now, TARGET_REF)
-        if ref_before_4b:
-            st.write("DEBUG Ref vor 4b:")
-            for it in ref_before_4b:
-                ctx_text = normalize_text(
-                    " ".join(
-                        [
-                            str(item_title(it)),
-                            str(it.get("kurzbeschreibung", "")),
-                            str(it.get("beschreibung", "")),
-                            str(item_company(it)),
-                            str(pretty_location(it)),
-                        ]
-                    )
-                )
-                st.write({
-                    "title": item_title(it),
-                    "company": item_company(it),
-                    "location": pretty_location(it),
-                    "kurzbeschreibung": str(it.get("kurzbeschreibung", ""))[:300],
-                    "beschreibung": str(it.get("beschreibung", ""))[:300],
-                    "strong_context": has_strong_messtechnik_context(it),
-                    "ctx_text_preview": ctx_text[:500],
-                })
         #neu:
         items_now = [it for it in items_now if not blocked_by_bad_title_global(it)]
-        st.write("DEBUG nach 4b:", has_ref(items_now, TARGET_REF)) #Itema Debug
+        
         
         # 4c) Positivdefinition für bestimmte Profile
         items_now = [it for it in items_now if passes_profile_specific_filter(it)]
-        st.write("DEBUG nach 4c:", has_ref(items_now, TARGET_REF))
+       
         
         # 4d) IT / Software hart rausfiltern
         items_now = [
@@ -2026,7 +1994,7 @@ with col1:
                 for bad in GLOBAL_BAD_KEYWORDS
             )
         ]
-        st.write("DEBUG nach 4d:", has_ref(items_now, TARGET_REF))
+        
         
         # 5) Negative Jobs raus
         if hide_irrelevant:
@@ -2046,7 +2014,7 @@ with col1:
             )
             for it in items_now
         ]
-        st.write("DEBUG nach Enrichment:", has_ref(items_now, TARGET_REF)) #Itema debug
+        
         
         title_counter = {}
         industry_term_counter = {}
@@ -2076,7 +2044,7 @@ with col1:
         if only_focus:
             items_now = [it for it in items_now if int(it.get("_score", 0)) >= int(min_score)]
 
-        st.write("DEBUG nach Mindestscore:", has_ref(items_now, TARGET_REF))
+        
 
         prev_items = snap.get("items", [])
         prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items if isinstance(x, dict)}
