@@ -428,6 +428,13 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
 
     return True
 
+def has_bad_messtechnik_title(it: Dict[str, Any]) -> bool:
+    if str(it.get("_profile", "")).strip().lower() != "messtechnik":
+        return False
+
+    title = normalize_text(item_title(it))
+    return any(bad in title for bad in BAD_MESSTECHNIK_TITLES)
+
 # ============================================================
 # API / Jobfelder
 # ============================================================
@@ -1873,14 +1880,8 @@ with col1:
 
         removed_recruiting = before_recruiting_filter - len(items_now)
 
-        # 4b) schlechte Keywords in Job Messtechnik raus
-        items_now = [
-            it for it in items_now
-            if not any(
-                bad in item_title(it).lower()
-                for bad in BAD_MESSTECHNIK_TITLES
-            )
-        ]
+        # 4b) schlechte Titel nur für Messtechnik-Profil raus
+        items_now = [it for it in items_now if not has_bad_messtechnik_title(it)]
 
         # 4c) Positivdefinition für bestimmte Profile
         items_now = [it for it in items_now if passes_profile_specific_filter(it)]
