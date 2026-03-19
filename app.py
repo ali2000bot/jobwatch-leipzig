@@ -417,23 +417,31 @@ def is_favorited(job_key: str, favs: Dict[str, Any]) -> bool:
 def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
     profile = str(it.get("_profile", "")).strip().lower()
 
-    text = " ".join(
-        [
-            str(item_title(it)),
-            str(it.get("kurzbeschreibung", "")),
-            str(it.get("beschreibung", "")),
-            str(item_company(it)),
-            str(pretty_location(it)),
-        ]
-    ).lower()
+    text = normalize_text(
+        " ".join(
+            [
+                str(item_title(it)),
+                str(it.get("kurzbeschreibung", "")),
+                str(it.get("beschreibung", "")),
+                str(item_company(it)),
+                str(pretty_location(it)),
+            ]
+        )
+    )
 
-    title = str(item_title(it)).lower()
+    title = normalize_text(str(item_title(it)))
 
     if profile == "messtechnik":
-        has_content_hint = any(h in text for h in MESSTECHNIK_REQUIRED_HINTS)
-        has_title_hint = any(h in title for h in MESSTECHNIK_GOOD_TITLE_HINTS)
+        has_content_hint = any(h.lower() in text for h in MESSTECHNIK_REQUIRED_HINTS)
+        has_title_hint = any(h.lower() in title for h in MESSTECHNIK_GOOD_TITLE_HINTS)
 
-        return has_content_hint and has_title_hint
+        if has_content_hint and has_title_hint:
+            return True
+
+        if has_strong_messtechnik_context(it):
+            return True
+
+        return False
 
     return True
 
