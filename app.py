@@ -1,4 +1,3 @@
-
 import json
 import math
 import os 
@@ -437,6 +436,14 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
         return has_content_hint and has_title_hint
 
     return True
+
+def find_ref(items: List[Dict[str, Any]], ref: str) -> List[Dict[str, Any]]:
+    out = []
+    for it in items:
+        rid = str(it.get("refnr") or it.get("refNr") or "").strip()
+        if rid == ref:
+            out.append(it)
+    return out
 
 # ============================================================
 # API / Jobfelder
@@ -1717,6 +1724,7 @@ with col1:
     tab_ba, tab_company = st.tabs(["BA-Suche", "Firmencheck (manuell)"])
     markers = []
     with tab_ba:
+        TARGET_REF = "10000-1204991070-S"
         if not selected_profiles:
             st.warning("Bitte mindestens eine Jobart auswählen.")
             st.stop()
@@ -1845,6 +1853,21 @@ with col1:
             for e in errs:
                 st.code(e)
 
+        ref_hits_raw = find_ref(all_items, TARGET_REF)
+
+        if ref_hits_raw:
+            st.success(f"DEBUG: Ref {TARGET_REF} roh gefunden: {len(ref_hits_raw)}x")
+            for it in ref_hits_raw:
+                st.write({
+                    "title": item_title(it),
+                    "company": item_company(it),
+                    "location": pretty_location(it),
+                    "profile": it.get("_profile"),
+                    "ref": str(it.get("refnr") or it.get("refNr") or "").strip(),
+                })
+        else:
+            st.warning(f"DEBUG: Ref {TARGET_REF} ist NICHT in all_items enthalten.")
+        
         # 1) Deduplizierung per Key
         items_now: List[Dict[str, Any]] = []
         seen: Set[str] = set()
