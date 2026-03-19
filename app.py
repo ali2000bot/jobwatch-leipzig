@@ -1391,6 +1391,13 @@ section[data-testid="stSidebar"] {
     font-size: 0.9rem;
 }
 
+section[data-testid="stSidebar"] label,
+section[data-testid="stSidebar"] .stMarkdown,
+section[data-testid="stSidebar"] p {
+    font-size: 0.85rem;
+    color: #515154;
+}
+
 /* Tabs etwas sauberer */
 button[data-baseweb="tab"] {
     border-radius: 10px 10px 0 0 !important;
