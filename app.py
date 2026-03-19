@@ -480,23 +480,7 @@ def has_strong_messtechnik_context(it: Dict[str, Any]) -> bool:
 
 def blocked_by_bad_title_global(it: Dict[str, Any]) -> bool:
     title = normalize_text(item_title(it))
-
-    soft_bad_terms = {"techniker", "messtechniker"}
-    hard_bad_terms = [
-        bad for bad in BAD_MESSTECHNIK_TITLES
-        if bad not in soft_bad_terms
-    ]
-
-    # Alle anderen problematischen Titel bleiben global hart blockiert
-    if any(bad in title for bad in hard_bad_terms):
-        return True
-
-    # techniker / messtechniker nur blockieren, wenn KEIN starker Fachkontext vorliegt
-    if any(bad in title for bad in soft_bad_terms):
-        if not has_strong_messtechnik_context(it):
-            return True
-
-    return False
+    return any(bad in title for bad in BAD_MESSTECHNIK_TITLES)
 
 # Debug für die Suche nach ITEMA-Job------------------
 def find_ref(items: List[Dict[str, Any]], ref: str) -> List[Dict[str, Any]]:
