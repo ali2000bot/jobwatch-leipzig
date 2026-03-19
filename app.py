@@ -206,6 +206,15 @@ MESSTECHNIK_GOOD_TITLE_HINTS = [
     "application scientist",
 ]
 
+MESSTECHNIK_HYBRID_TITLE_HINTS = [
+    "messtechniker",
+    "vertriebstechniker",
+    "vertriebsingenieur",
+    "application",
+    "product specialist",
+    "technical specialist",
+]
+
 RECRUITING_COMPANY_KEYWORDS = [
     "gmbh & co. kg personal", "personalvermittlung", "personalberatung", "personaldienst",
     "personaldienstleistung", "personaldienstleister", "recruiting", "headhunter",
@@ -434,17 +443,8 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
     if profile == "messtechnik":
         has_content_hint = any(h.lower() in text for h in MESSTECHNIK_REQUIRED_HINTS)
         has_title_hint = any(h.lower() in title for h in MESSTECHNIK_GOOD_TITLE_HINTS)
-
-        hybrid_title_hints = [
-            "messtechniker",
-            "vertriebstechniker",
-            "vertriebsingenieur",
-            "application",
-            "product specialist",
-            "technical specialist",
-        ]
-        has_hybrid_title_hint = any(h in title for h in hybrid_title_hints)
-
+         
+        has_hybrid_title_hint = any(h in title for h in MESSTECHNIK_HYBRID_TITLE_HINTS)
         return (has_content_hint and has_title_hint) or has_hybrid_title_hint
 
     return True
