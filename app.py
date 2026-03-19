@@ -164,6 +164,7 @@ BAD_MESSTECHNIK_TITLES = [
     "elektrotechnik",
     "betriebskosten",
     "emv",
+    "biotech",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
