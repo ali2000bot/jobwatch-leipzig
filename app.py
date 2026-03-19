@@ -395,26 +395,36 @@ def keyword_match(text: str, kw: str) -> bool:
 def is_favorited(job_key: str, favs: Dict[str, Any]) -> bool:
     return bool(job_key) and job_key in favs
 
+MESSTECHNIK_REQUIRED_HINTS = [x.lower() for x in MESSTECHNIK_REQUIRED_HINTS]
+MESSTECHNIK_GOOD_TITLE_HINTS = [x.lower() for x in MESSTECHNIK_GOOD_TITLE_HINTS]
+
 def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
     profile = str(it.get("_profile", "")).strip().lower()
 
-    text = " ".join(
-        [
+    text = normalize_text(
+        " ".join([
             str(item_title(it)),
             str(it.get("kurzbeschreibung", "")),
             str(it.get("beschreibung", "")),
             str(item_company(it)),
             str(pretty_location(it)),
-        ]
-    ).lower()
-
-    title = str(item_title(it)).lower()
+        ])
+    )
+    title = normalize_text(str(item_title(it)))
 
     if profile == "messtechnik":
-        has_content_hint = any(h in text for h in MESSTECHNIK_REQUIRED_HINTS)
-        has_title_hint = any(h in title for h in MESSTECHNIK_GOOD_TITLE_HINTS)
+        title_hits = sum(1 for h in MESSTECHNIK_GOOD_TITLE_HINTS if keyword_match(title, h))
+        content_hits = sum(1 for h in MESSTECHNIK_REQUIRED_HINTS if keyword_match(text, h))
 
-        return has_content_hint and has_title_hint
+        # gute Titel direkt durchlassen
+        if title_hits >= 1 and content_hits >= 1:
+            return True
+
+        # oder starker Fachkontext im Gesamttest
+        if content_hits >= 2:
+            return True
+
+        return False
 
     return True
 
