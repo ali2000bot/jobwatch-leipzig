@@ -1404,6 +1404,11 @@ section[data-testid="stSidebar"] h4 {
     color: #1d1d1f;
     margin-bottom: 4px;
 }
+section[data-testid="stSidebar"] .stNumberInput,
+section[data-testid="stSidebar"] .stTextInput,
+section[data-testid="stSidebar"] .stSelectbox {
+    font-size: 0.85rem;
+}
 
 /* Tabs etwas sauberer */
 button[data-baseweb="tab"] {
