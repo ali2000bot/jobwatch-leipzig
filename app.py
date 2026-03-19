@@ -1364,24 +1364,157 @@ def leaflet_map_html(
 # App-Start
 # ============================================================
 st.set_page_config(page_title="JobWatch Leipzig", layout="wide")
-st.markdown(
-    """
-<div style="
-font-size:1.6rem;
-font-weight:700;
-margin-bottom:6px;">
-🧭 JobWatch Leipzig
-</div>
 
-<div style="
-font-size:0.95rem;
-opacity:0.8;
-margin-bottom:14px;">
-Jobs im Raum Leipzig entdecken, vergleichen und priorisieren
+st.markdown("""
+<style>
+/* Gesamte App */
+.stApp {
+    background: linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
+}
+
+/* Hauptcontainer etwas luftiger */
+.block-container {
+    padding-top: 1.2rem;
+    padding-bottom: 2rem;
+    max-width: 1450px;
+}
+
+/* Sidebar */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #f7fafc 0%, #edf3f8 100%);
+    border-right: 1px solid rgba(44, 83, 100, 0.10);
+}
+
+/* Tabs etwas sauberer */
+button[data-baseweb="tab"] {
+    border-radius: 10px 10px 0 0 !important;
+    font-weight: 600 !important;
+}
+
+/* Expander */
+details {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(44, 83, 100, 0.10);
+    border-radius: 12px;
+    padding: 0.2rem 0.5rem;
+    margin-bottom: 0.45rem;
+}
+
+/* Container mit border schöner */
+div[data-testid="stVerticalBlock"] div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 16px;
+}
+
+/* Buttons generell etwas runder */
+div[data-testid="stButton"] > button {
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+/* Download-Buttons */
+div[data-testid="stDownloadButton"] > button {
+    border-radius: 999px;
+    font-weight: 600;
+}
+
+/* Inputs */
+div[data-baseweb="input"] > div,
+div[data-baseweb="select"] > div,
+div[data-baseweb="textarea"] > div {
+    border-radius: 12px !important;
+}
+
+/* Metriken */
+div[data-testid="stMetric"] {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(44, 83, 100, 0.10);
+    padding: 12px;
+    border-radius: 14px;
+}
+
+/* Kleine Hilfskarten */
+.soft-card {
+    background: rgba(255,255,255,0.78);
+    border: 1px solid rgba(44, 83, 100, 0.10);
+    border-radius: 16px;
+    padding: 14px 16px;
+    box-shadow: 0 2px 8px rgba(20, 40, 60, 0.04);
+}
+
+/* Hero Banner */
+.hero-wrap {
+    background: linear-gradient(135deg, #163447 0%, #244b63 55%, #2f617d 100%);
+    border-radius: 20px;
+    padding: 22px 24px 18px 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 10px 24px rgba(20, 40, 60, 0.16);
+}
+.hero-topline {
+    color: rgba(255,255,255,0.82);
+    font-size: 0.92rem;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+}
+.hero-title {
+    color: white;
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 6px;
+}
+.hero-sub {
+    color: rgba(255,255,255,0.88);
+    font-size: 1rem;
+    margin-bottom: 14px;
+}
+.hero-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.hero-chip {
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 999px;
+    padding: 6px 11px;
+    font-size: 0.84rem;
+    font-weight: 600;
+}
+
+/* Abschnittsüberschrift */
+.section-title {
+    font-size: 1.08rem;
+    font-weight: 800;
+    color: #1f3545;
+    margin-top: 6px;
+    margin-bottom: 2px;
+}
+.section-sub {
+    font-size: 0.92rem;
+    color: #607284;
+    margin-bottom: 10px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="hero-wrap">
+    <div class="hero-topline">Messtechnik · Forschung · Scientific Instruments · Zielorganisationen</div>
+    <div class="hero-title">🧭 JobWatch Leipzig</div>
+    <div class="hero-sub">
+        Relevante Jobs im Raum Leipzig und darüber hinaus finden, filtern und priorisieren.
+    </div>
+    <div class="hero-chip-row">
+        <div class="hero-chip">🔬 Messtechnik</div>
+        <div class="hero-chip">🏛️ Forschung & Institute</div>
+        <div class="hero-chip">⭐ Priorisierte Treffer</div>
+        <div class="hero-chip">🗺️ Distanz & Karte</div>
+        <div class="hero-chip">📌 Favoriten & Snapshot</div>
+    </div>
 </div>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
+
 if "kw_focus" not in st.session_state:
     st.session_state["kw_focus"] = keywords_to_text(DEFAULT_FOCUS_KEYWORDS)
 if "kw_lead" not in st.session_state:
