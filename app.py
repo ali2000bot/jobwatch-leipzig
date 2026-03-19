@@ -1369,7 +1369,8 @@ st.markdown("""
 <style>
 /* Gesamte App */
 .stApp {
-    background: linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
+    #background: linear-gradient(180deg, #f4f7fb 0%, #eef3f8 100%);
+    background: #f5f5f7;
 }
 
 /* Hauptcontainer etwas luftiger */
