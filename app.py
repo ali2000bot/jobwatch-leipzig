@@ -494,19 +494,6 @@ def blocked_by_bad_title_global(it: Dict[str, Any]) -> bool:
     title = normalize_text(item_title(it))
     return any(bad in title for bad in BAD_MESSTECHNIK_TITLES)
 
-# Debug für die Suche nach ITEMA-Job------------------
-def find_ref(items: List[Dict[str, Any]], ref: str) -> List[Dict[str, Any]]:
-    out = []
-    for it in items:
-        rid = str(it.get("refnr") or it.get("refNr") or "").strip()
-        if rid == ref:
-            out.append(it)
-    return out
-
-def has_ref(items: List[Dict[str, Any]], ref: str) -> bool:
-    return len(find_ref(items, ref)) > 0
-
-# Ende ITEMA debug----------------------------------
 
 # ============================================================
 # API / Jobfelder
