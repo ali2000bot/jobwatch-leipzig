@@ -1889,8 +1889,8 @@ with col1:
         ]
         
         # 5) Negative Jobs raus
-        #if hide_irrelevant:
-        #    items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
+        if hide_irrelevant:
+            items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
         # 6) Einmalig anreichern
         items_now = [
