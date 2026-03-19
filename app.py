@@ -112,6 +112,7 @@ GLOBAL_BAD_TEXT_HINTS = [
     "enterprise",
     "sap",
     "ppap",
+    "schichtsystem",
 ]
 
 #---Wenn viel Müll reinkommt-------------
