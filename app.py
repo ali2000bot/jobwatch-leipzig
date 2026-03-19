@@ -437,6 +437,66 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
 
     return True
 
+def has_strong_messtechnik_context(it: Dict[str, Any]) -> bool:
+    text = normalize_text(
+        " ".join(
+            [
+                str(item_title(it)),
+                str(it.get("kurzbeschreibung", "")),
+                str(it.get("beschreibung", "")),
+                str(item_company(it)),
+                str(pretty_location(it)),
+            ]
+        )
+    )
+
+    strong_terms = [
+        "thermografie",
+        "infrarot",
+        "messtechnik",
+        "measurement",
+        "metrology",
+        "instrument",
+        "instrumentation",
+        "wissenschaft",
+        "forschung",
+        "physik",
+        "physics",
+        "gasdetektion",
+        "kamera",
+        "akustikkamera",
+        "scientific",
+        "automatisierung",
+        "analytik",
+        "prüfung",
+        "prüftechnik",
+        "material",
+        "werkstoff",
+    ]
+
+    hits = sum(1 for term in strong_terms if term in text)
+    return hits >= 3
+
+def blocked_by_bad_title_global(it: Dict[str, Any]) -> bool:
+    title = normalize_text(item_title(it))
+
+    soft_bad_terms = {"techniker", "messtechniker"}
+    hard_bad_terms = [
+        bad for bad in BAD_MESSTECHNIK_TITLES
+        if bad not in soft_bad_terms
+    ]
+
+    # Alles außer techniker / messtechniker bleibt hart global blockiert
+    if any(bad in title for bad in hard_bad_terms):
+        return True
+
+    # techniker / messtechniker nur blockieren, wenn KEIN starker Fachkontext da ist
+    if any(bad in title for bad in soft_bad_terms):
+        if not has_strong_messtechnik_context(it):
+            return True
+
+    return False
+
 # ============================================================
 # API / Jobfelder
 # ============================================================
@@ -1882,14 +1942,8 @@ with col1:
 
         removed_recruiting = before_recruiting_filter - len(items_now)
 
-        # 4b) schlechte Keywords in allen Jobs raus (geändert, nicht nur Messtechnik!)
-        items_now = [
-            it for it in items_now
-            if not any(
-                bad in item_title(it).lower()
-                for bad in BAD_MESSTECHNIK_TITLES
-            )
-        ]
+        # 4b) schlechte Titel global raus, techniker/messtechniker nur mit starkem Fachkontext erlauben (ITEMA-Job soll gefunden werden)
+        items_now = [it for it in items_now if not blocked_by_bad_title_global(it)]
 
         # 4c) Positivdefinition für bestimmte Profile
         items_now = [it for it in items_now if passes_profile_specific_filter(it)]
