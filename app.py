@@ -113,6 +113,7 @@ GLOBAL_BAD_TEXT_HINTS = [
     "sap",
 ]
 
+#---Wenn viel Müll reinkommt-------------
 GLOBAL_BAD_TITLE_HINTS = [
     #"techniker",
     #"messtechniker",
@@ -212,7 +213,7 @@ MESSTECHNIK_HINTS = {
     "Application Scientist",
     "application scientist",
     ],
-    "title_hybrid": [
+    "title_hybrid": [  #----- Wenn gute Jobs fehlen werden Keywords in diesem Profil reingenommen (nicht global), Bsp. ITEMA ---------
     "messtechniker",
     "vertriebstechniker",
     "vertriebsingenieur",
