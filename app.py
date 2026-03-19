@@ -167,7 +167,7 @@ BAD_MESSTECHNIK_TITLES = [
     "biotech",
     "befristet",
     "doktorand",
-    "embedded eystems",
+    "embedded systems",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
