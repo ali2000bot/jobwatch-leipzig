@@ -1892,7 +1892,7 @@ with col1:
         ]
 
         # 4c) Positivdefinition für bestimmte Profile
-        items_now = [it for it in items_now if passes_profile_specific_filter(it)]
+        #items_now = [it for it in items_now if passes_profile_specific_filter(it)]
 
         # 4d) IT / Software hart rausfiltern
         items_now = [
