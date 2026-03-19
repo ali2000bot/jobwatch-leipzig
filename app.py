@@ -174,6 +174,7 @@ GLOBAL_BAD_TITLE_HINTS = [
     "embedded systems",
     "data protection",
     "discipline expert",
+    "kathodischer",
 ]
 
 # ============================================================
