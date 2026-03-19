@@ -95,7 +95,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "solution architect",  
 ]
 
-GLOBAL_BAD_KEYWORDS = [
+GLOBAL_BAD_TEXT_HINTS = [
     "software",
     "it ",
     "cloud",
@@ -110,7 +110,7 @@ GLOBAL_BAD_KEYWORDS = [
 ]
 
 # ist für alle Jobarten aktiv:
-BAD_MESSTECHNIK_TITLES = [
+GLOBAL_BAD_TITLE_HINTS = [
     #"techniker",
     #"messtechniker",
     "servicetechniker",
@@ -172,7 +172,8 @@ BAD_MESSTECHNIK_TITLES = [
     "discipline expert",
 ]
 
-MESSTECHNIK_REQUIRED_HINTS = [
+MESSTECHNIK_HINTS = {
+    "required": [
     "labor",
     "analytik",
     "analysis",
@@ -193,9 +194,8 @@ MESSTECHNIK_REQUIRED_HINTS = [
     "scientific",
     "applikation",
     "application",
-]
-
-MESSTECHNIK_GOOD_TITLE_HINTS = [
+    ],
+    "title_good": [
     "ingenieur",
     "engineer",
     "scientist",
@@ -204,16 +204,16 @@ MESSTECHNIK_GOOD_TITLE_HINTS = [
     "Field Application Scientist",
     "Application Scientist",
     "application scientist",
-]
-
-MESSTECHNIK_HYBRID_TITLE_HINTS = [
+    ],
+    "title_hybrid": [
     "messtechniker",
     "vertriebstechniker",
     "vertriebsingenieur",
     "application",
     "product specialist",
     "technical specialist",
-]
+    ]
+}
 
 RECRUITING_COMPANY_KEYWORDS = [
     "gmbh & co. kg personal", "personalvermittlung", "personalberatung", "personaldienst",
@@ -441,10 +441,9 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
     title = normalize_text(str(item_title(it)))
 
     if profile == "messtechnik":
-        has_content_hint = any(h.lower() in text for h in MESSTECHNIK_REQUIRED_HINTS)
-        has_title_hint = any(h.lower() in title for h in MESSTECHNIK_GOOD_TITLE_HINTS)
-         
-        has_hybrid_title_hint = any(h in title for h in MESSTECHNIK_HYBRID_TITLE_HINTS)
+        has_content_hint = any(h in text for h in MESSTECHNIK_HINTS["required"])
+        has_title_hint = any(h in title for h in MESSTECHNIK_HINTS["title_good"])
+        has_hybrid_title_hint = any(h in title for h in MESSTECHNIK_HINTS["title_hybrid"])
         return (has_content_hint and has_title_hint) or has_hybrid_title_hint
 
     return True
@@ -492,7 +491,7 @@ def has_strong_messtechnik_context(it: Dict[str, Any]) -> bool:
 
 def blocked_by_bad_title_global(it: Dict[str, Any]) -> bool:
     title = normalize_text(item_title(it))
-    return any(bad in title for bad in BAD_MESSTECHNIK_TITLES)
+    return any(bad in title for bad in GLOBAL_BAD_TITLE_HINTS)
 
 
 # ============================================================
@@ -1963,7 +1962,7 @@ with col1:
                 bad in (
                     item_title(it) + " " + str(it.get("beschreibung", ""))
                 ).lower()
-                for bad in GLOBAL_BAD_KEYWORDS
+                for bad in GLOBAL_BAD_TEXT_HINTS
             )
         ]
         
