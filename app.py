@@ -1382,8 +1382,8 @@ st.markdown("""
 
 /* Sidebar */
 section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #f7fafc 0%, #edf3f8 100%);
-    border-right: 1px solid rgba(44, 83, 100, 0.10);
+    background: #f5f5f7;
+    border-right: 1px solid rgba(0,0,0,0.06);
 }
 
 /* Tabs etwas sauberer */
