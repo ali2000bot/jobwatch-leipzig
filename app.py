@@ -1409,6 +1409,10 @@ section[data-testid="stSidebar"] .stTextInput,
 section[data-testid="stSidebar"] .stSelectbox {
     font-size: 0.85rem;
 }
+section[data-testid="stSidebar"] button {
+    font-size: 0.85rem;
+    padding: 4px 10px;
+}
 
 /* Tabs etwas sauberer */
 button[data-baseweb="tab"] {
