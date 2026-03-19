@@ -158,6 +158,8 @@ BAD_MESSTECHNIK_TITLES = [
     "laborantin",
     "kristallzucht",
     "sharepoint",
+    "chemisch-technischer",
+    "cta",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
