@@ -1386,6 +1386,11 @@ section[data-testid="stSidebar"] {
     border-right: 1px solid rgba(0,0,0,0.06);
 }
 
+/* Sidebar Text kleiner & ruhiger */
+section[data-testid="stSidebar"] {
+    font-size: 0.9rem;
+}
+
 /* Tabs etwas sauberer */
 button[data-baseweb="tab"] {
     border-radius: 10px 10px 0 0 !important;
