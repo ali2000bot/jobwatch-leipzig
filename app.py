@@ -1374,7 +1374,7 @@ st.markdown("""
 
 /* Hauptcontainer etwas luftiger */
 .block-container {
-    padding-top: 2.5rem;
+    padding-top: 3.0rem;
     padding-bottom: 2rem;
     max-width: 1450px;
 }
