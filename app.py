@@ -169,6 +169,7 @@ BAD_MESSTECHNIK_TITLES = [
     "doktorand",
     "embedded systems",
     "data protection",
+    "discipline expert",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
