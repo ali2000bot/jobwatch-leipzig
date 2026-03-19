@@ -96,7 +96,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "plattform",
     "ki ",
     "ai ",
-    "solution architect",  
+    "solution architect", "schichtsystem",   
 ]
 
 GLOBAL_BAD_TEXT_HINTS = [
