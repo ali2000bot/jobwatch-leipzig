@@ -111,8 +111,8 @@ GLOBAL_BAD_KEYWORDS = [
 
 # ist für alle Jobarten aktiv:
 BAD_MESSTECHNIK_TITLES = [
-    #"techniker",
-    #"messtechniker",
+    "techniker",
+    "messtechniker",
     "servicetechniker",
     "schweißtechniker",
     "welding",
@@ -1957,15 +1957,15 @@ with col1:
         items_now = [it for it in items_now if passes_profile_specific_filter(it)]
 
         # 4d) IT / Software hart rausfiltern
-        items_now = [
-            it for it in items_now
-            if not any(
-                bad in (
-                    item_title(it) + " " + str(it.get("beschreibung", ""))
-                ).lower()
-                for bad in GLOBAL_BAD_KEYWORDS
-            )
-        ]
+        #items_now = [
+        #    it for it in items_now
+        #    if not any(
+         #       bad in (
+         #           item_title(it) + " " + str(it.get("beschreibung", ""))
+          #      ).lower()
+         #       for bad in GLOBAL_BAD_KEYWORDS
+         #   )
+       # ]
         
         # 5) Negative Jobs raus
         if hide_irrelevant:
