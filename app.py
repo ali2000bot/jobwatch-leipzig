@@ -395,45 +395,28 @@ def keyword_match(text: str, kw: str) -> bool:
 def is_favorited(job_key: str, favs: Dict[str, Any]) -> bool:
     return bool(job_key) and job_key in favs
 
-MESSTECHNIK_REQUIRED_HINTS = [x.lower() for x in MESSTECHNIK_REQUIRED_HINTS]
-MESSTECHNIK_GOOD_TITLE_HINTS = [x.lower() for x in MESSTECHNIK_GOOD_TITLE_HINTS]
-
 def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
     profile = str(it.get("_profile", "")).strip().lower()
 
-    text = normalize_text(
-        " ".join([
+    text = " ".join(
+        [
             str(item_title(it)),
             str(it.get("kurzbeschreibung", "")),
             str(it.get("beschreibung", "")),
             str(item_company(it)),
             str(pretty_location(it)),
-        ])
-    )
-    title = normalize_text(str(item_title(it)))
+        ]
+    ).lower()
+
+    title = str(item_title(it)).lower()
 
     if profile == "messtechnik":
-        title_hits = sum(1 for h in MESSTECHNIK_GOOD_TITLE_HINTS if keyword_match(title, h))
-        content_hits = sum(1 for h in MESSTECHNIK_REQUIRED_HINTS if keyword_match(text, h))
+        has_content_hint = any(h in text for h in MESSTECHNIK_REQUIRED_HINTS)
+        has_title_hint = any(h in title for h in MESSTECHNIK_GOOD_TITLE_HINTS)
 
-        # gute Titel direkt durchlassen
-        if title_hits >= 1 and content_hits >= 1:
-            return True
-
-        # oder starker Fachkontext im Gesamttest
-        if content_hits >= 2:
-            return True
-
-        return False
+        return has_content_hint and has_title_hint
 
     return True
-
-def has_bad_messtechnik_title(it: Dict[str, Any]) -> bool:
-    if str(it.get("_profile", "")).strip().lower() != "messtechnik":
-        return False
-
-    title = normalize_text(item_title(it))
-    return any(bad in title for bad in BAD_MESSTECHNIK_TITLES)
 
 # ============================================================
 # API / Jobfelder
@@ -1880,8 +1863,14 @@ with col1:
 
         removed_recruiting = before_recruiting_filter - len(items_now)
 
-        # 4b) schlechte Titel nur für Messtechnik-Profil raus
-        items_now = [it for it in items_now if not has_bad_messtechnik_title(it)]
+        # 4b) schlechte Keywords in Job Messtechnik raus
+        items_now = [
+            it for it in items_now
+            if not any(
+                bad in item_title(it).lower()
+                for bad in BAD_MESSTECHNIK_TITLES
+            )
+        ]
 
         # 4c) Positivdefinition für bestimmte Profile
         items_now = [it for it in items_now if passes_profile_specific_filter(it)]
