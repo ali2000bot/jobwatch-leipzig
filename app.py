@@ -166,6 +166,7 @@ BAD_MESSTECHNIK_TITLES = [
     "emv",
     "biotech",
     "befristet",
+    "doktorand",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
