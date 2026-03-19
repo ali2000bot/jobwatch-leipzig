@@ -1987,9 +1987,7 @@ with col1:
         #    )
         #]
         
-        #neu:
-        items_now = [it for it in items_now if not blocked_by_bad_title_global(it)]
-
+        
         ref_before_4b = find_ref(items_now, TARGET_REF)
         if ref_before_4b:
             st.write("DEBUG Ref vor 4b:")
@@ -2014,7 +2012,8 @@ with col1:
                     "strong_context": has_strong_messtechnik_context(it),
                     "ctx_text_preview": ctx_text[:500],
                 })
-        
+        #neu:
+        items_now = [it for it in items_now if not blocked_by_bad_title_global(it)]
         st.write("DEBUG nach 4b:", has_ref(items_now, TARGET_REF)) #Itema Debug
         
         # 4c) Positivdefinition für bestimmte Profile
