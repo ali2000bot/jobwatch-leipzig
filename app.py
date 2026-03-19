@@ -163,6 +163,7 @@ BAD_MESSTECHNIK_TITLES = [
     "cta",
     "elektrotechnik",
     "betriebskosten",
+    "EMV",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
