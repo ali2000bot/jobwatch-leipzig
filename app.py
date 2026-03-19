@@ -521,27 +521,6 @@ def blocked_by_bad_title_global(it: Dict[str, Any]) -> bool:
     title = normalize_text(item_title(it))
     return any(bad in title for bad in GLOBAL_BAD_TITLE_HINTS)
 
-#für Debug:
-def find_jobs_by_title_or_company(
-    items: List[Dict[str, Any]],
-    title_part: str = "",
-    company_part: str = "",
-) -> List[Dict[str, Any]]:
-    out = []
-    title_part = normalize_text(title_part)
-    company_part = normalize_text(company_part)
-
-    for it in items:
-        title = normalize_text(item_title(it))
-        company = normalize_text(item_company(it))
-
-        title_ok = not title_part or title_part in title
-        company_ok = not company_part or company_part in company
-
-        if title_ok and company_ok:
-            out.append(it)
-
-    return out
 
 def blocked_by_bad_beruf_global(it: Dict[str, Any]) -> bool:
     beruf = normalize_text(str(it.get("beruf", "")))
@@ -1953,20 +1932,7 @@ with col1:
             st.error("Fehler / Hinweise")
             for e in errs:
                 st.code(e)
-        #-------Debug ----------------------------
-        tallag_hits_raw = find_jobs_by_title_or_company(
-            all_items,
-            title_part="messtechniker",
-            company_part="tallag"
-        )
-
-        if tallag_hits_raw:
-            st.warning(f"DEBUG TALLAG roh gefunden: {len(tallag_hits_raw)}x")
-            for it in tallag_hits_raw:
-                st.write(it)
-        else:
-            st.info("DEBUG TALLAG roh nicht in all_items gefunden.")        
-        #--------- Ende debug---------------
+        
         
         # 1) Deduplizierung per Key
         items_now: List[Dict[str, Any]] = []
