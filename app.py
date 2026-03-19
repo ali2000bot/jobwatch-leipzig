@@ -29,6 +29,10 @@ BASE = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service"
 SEARCH_URL = f"{BASE}/pc/v4/app/jobs"
 API_KEY_DEFAULT = "jobboerse-jobsuche"
 
+# ============================================================
+# Globale Positiv-/Negativregeln
+# ============================================================
+
 DEFAULT_FOCUS_KEYWORDS = [
     "thermoanalyse", "thermophysik", "thermal analysis", "thermophysical",
     "dsc", "tga", "lfa", "hfm", "heat flow meter", "laser flash", "laser flash analysis",
@@ -109,7 +113,6 @@ GLOBAL_BAD_TEXT_HINTS = [
     "sap",
 ]
 
-# ist für alle Jobarten aktiv:
 GLOBAL_BAD_TITLE_HINTS = [
     #"techniker",
     #"messtechniker",
@@ -172,6 +175,10 @@ GLOBAL_BAD_TITLE_HINTS = [
     "discipline expert",
 ]
 
+# ============================================================
+# Profil: Messtechnik (profilspezifisch)
+# ============================================================
+
 MESSTECHNIK_HINTS = {
     "required": [
     "labor",
@@ -214,6 +221,10 @@ MESSTECHNIK_HINTS = {
     "technical specialist",
     ]
 }
+
+# ============================================================
+# Firmen / Industrie / Boosts
+# ============================================================
 
 RECRUITING_COMPANY_KEYWORDS = [
     "gmbh & co. kg personal", "personalvermittlung", "personalberatung", "personaldienst",
@@ -313,6 +324,7 @@ TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "HTWK Leipzig (Stellen)", "match": ["htwk"], "url": "https://www.htwk-leipzig.de/hochschule/stellenangebote"},
     {"name": "MFPA Leipzig GmbH", "match": ["mfpa leipzig", "mfpa", "prüfanstalt", "materialforschungs"], "url": "https://www.mfpa-leipzig.de/", "priority": "high"},
 ]
+
 # ============================================================
 # Allgemeine Helper
 # ============================================================
@@ -1944,10 +1956,7 @@ with col1:
         removed_recruiting = before_recruiting_filter - len(items_now)
         
 
-        # 4b) schlechte Keywords in allen Jobs raus (geändert, nicht nur Messtechnik!)
-        # neu gemacht über def Helper-Funktion um ITEMA-Job durchzulassen
-        
-        #neu:
+        # 4b) schlechte Keywords in allen Jobs raus
         items_now = [it for it in items_now if not blocked_by_bad_title_global(it)]
         
         
