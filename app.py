@@ -160,6 +160,7 @@ BAD_MESSTECHNIK_TITLES = [
     "sharepoint",
     "chemisch-technischer",
     "cta",
+    "elektrotechnik",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
