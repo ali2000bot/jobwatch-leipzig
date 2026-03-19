@@ -111,8 +111,8 @@ GLOBAL_BAD_KEYWORDS = [
 
 # ist für alle Jobarten aktiv:
 BAD_MESSTECHNIK_TITLES = [
-    "techniker",
-    "messtechniker",
+    #"techniker",
+    #"messtechniker",
     "servicetechniker",
     "schweißtechniker",
     "welding",
