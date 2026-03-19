@@ -1453,10 +1453,8 @@ div[data-testid="stMetric"] {
     box-shadow: 0 6px 20px rgba(0,0,0,0.04);
 }
 .hero-title {
-    color: #1d1d1f;
-    font-size: 1.9rem;
-    font-weight: 700;
-    margin-bottom: 6px;
+    font-size: 1.7rem;
+    font-weight: 600;
 }
 
 .hero-topline {
