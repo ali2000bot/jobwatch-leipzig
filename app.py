@@ -183,9 +183,9 @@ MESSTECHNIK_GOOD_TITLE_HINTS = [
     "engineer",
     "scientist",
     "wissenschaftlicher mitarbeiter",
-    "Application Engineer Scientific Instruments"
-    "Field Application Scientist"
-    "Application Scientist"
+    "Application Engineer Scientific Instruments",
+    "Field Application Scientist",
+    "Application Scientist",
     "application scientist",
 ]
 
