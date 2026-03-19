@@ -109,6 +109,7 @@ GLOBAL_BAD_KEYWORDS = [
     "sap",
 ]
 
+# ist für alle Jobarten aktiv:
 BAD_MESSTECHNIK_TITLES = [
     "techniker",
     "messtechniker",
@@ -161,6 +162,7 @@ BAD_MESSTECHNIK_TITLES = [
     "chemisch-technischer",
     "cta",
     "elektrotechnik",
+    "betriebskosten",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
