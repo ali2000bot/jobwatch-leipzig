@@ -1397,6 +1397,13 @@ section[data-testid="stSidebar"] p {
     font-size: 0.85rem;
     color: #515154;
 }
+section[data-testid="stSidebar"] h3,
+section[data-testid="stSidebar"] h4 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin-bottom: 4px;
+}
 
 /* Tabs etwas sauberer */
 button[data-baseweb="tab"] {
