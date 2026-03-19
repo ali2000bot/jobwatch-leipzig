@@ -1374,7 +1374,7 @@ with st.sidebar:
     st.divider()
     st.subheader("Suche")
 
-    max_distance_filter = st.slider("Maximale Entfernung (km)", 10, 200, 50, 5)
+    max_distance_filter = st.slider("Maximale Entfernung (km)", 10, 600, 50, 5)
     st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
     umkreis = int(max_distance_filter)
 
