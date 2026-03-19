@@ -111,6 +111,7 @@ GLOBAL_BAD_TEXT_HINTS = [
     "solution architect",
     "enterprise",
     "sap",
+    "ppap",
 ]
 
 #---Wenn viel Müll reinkommt-------------
