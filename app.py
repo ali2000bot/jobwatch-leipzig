@@ -1443,30 +1443,30 @@ div[data-testid="stMetric"] {
 
 /* Hero Banner */
 .hero-wrap {
-    background: linear-gradient(135deg, #2f855a 0%, #38a169 50%, #68d391 100%);
-    #background: linear-gradient(135deg, #4c6ef5 0%, #6ea8fe 60%, #a5c9ff 100%);
-    #background: linear-gradient(135deg, #3a7bd5 0%, #4f9cf9 50%, #6bb7ff 100%);
+    background: linear-gradient(180deg, #ffffff 0%, #f5f7fb 100%);
     border-radius: 20px;
     padding: 22px 24px 18px 24px;
-    margin-bottom: 16px;
-    box-shadow: 0 10px 24px rgba(20, 40, 60, 0.16);
-}
-.hero-topline {
-    color: rgba(255,255,255,0.82);
-    font-size: 0.92rem;
-    letter-spacing: 0.02em;
-    margin-bottom: 6px;
+    margin-top: 12px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.04);
 }
 .hero-title {
-    color: white;
-    font-size: 2rem;
-    font-weight: 800;
-    line-height: 1.15;
+    color: #1d1d1f;
+    font-size: 1.9rem;
+    font-weight: 700;
     margin-bottom: 6px;
 }
+
+.hero-topline {
+    color: #6e6e73;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+}
+
 .hero-sub {
-    color: rgba(255,255,255,0.88);
-    font-size: 1rem;
+    color: #515154;
+    font-size: 0.95rem;
     margin-bottom: 14px;
 }
 .hero-chip-row {
@@ -1475,13 +1475,13 @@ div[data-testid="stMetric"] {
     gap: 8px;
 }
 .hero-chip {
-    background: rgba(255,255,255,0.12);
-    color: white;
-    border: 1px solid rgba(255,255,255,0.14);
+    background: #f1f3f6;
+    color: #1d1d1f;
+    border: 1px solid rgba(0,0,0,0.06);
     border-radius: 999px;
-    padding: 6px 11px;
-    font-size: 0.84rem;
-    font-weight: 600;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    font-weight: 500;
 }
 
 /* Abschnittsüberschrift */
