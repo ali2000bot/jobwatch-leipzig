@@ -1378,8 +1378,8 @@ st.markdown("""
     padding-top: 3.0rem;
     padding-bottom: 2rem;
     max-width: 1450px;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    padding-left: 1.2rem;
+    padding-right: 1.2rem;
 }
 
 /* Sidebar */
