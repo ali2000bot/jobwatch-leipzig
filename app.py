@@ -1413,6 +1413,9 @@ section[data-testid="stSidebar"] button {
     font-size: 0.85rem;
     padding: 4px 10px;
 }
+section[data-testid="stSidebar"] {
+    opacity: 0.95;
+}
 
 /* Tabs etwas sauberer */
 button[data-baseweb="tab"] {
