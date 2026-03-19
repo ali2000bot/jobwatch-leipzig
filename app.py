@@ -156,6 +156,7 @@ BAD_MESSTECHNIK_TITLES = [
     "chemielaborantin",
     "laborant",
     "laborantin",
+    "kristallzucht",
 ]
 
 MESSTECHNIK_REQUIRED_HINTS = [
