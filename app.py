@@ -309,10 +309,12 @@ def sanitize_md_text(s: str) -> str:
         .replace("`", "´")
     )
 
-
 def normalize_text(s: str) -> str:
-    return " ".join((s or "").lower().replace("\n", " ").replace("\r", " ").split())
-
+    s = (s or "").lower()
+    s = s.replace("-", " ")
+    s = s.replace("/", " ")
+    s = s.replace("\n", " ").replace("\r", " ")
+    return " ".join(s.split())
 
 def ba_headers(api_key: str) -> Dict[str, str]:
     return {
@@ -1863,7 +1865,7 @@ with col1:
 
         removed_recruiting = before_recruiting_filter - len(items_now)
 
-        # 4b) schlechte Keywords in Job Messtechnik raus
+        # 4b) schlechte Keywords in allen Jobs raus (geändert, nicht nur Messtechnik!)
         items_now = [
             it for it in items_now
             if not any(
