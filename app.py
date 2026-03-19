@@ -1443,7 +1443,7 @@ div[data-testid="stMetric"] {
 
 /* Hero Banner */
 .hero-wrap {
-    background: linear-gradient(135deg, #163447 0%, #244b63 55%, #2f617d 100%);
+    background: linear-gradient(135deg, #3a7bd5 0%, #4f9cf9 50%, #6bb7ff 100%);
     border-radius: 20px;
     padding: 22px 24px 18px 24px;
     margin-bottom: 16px;
