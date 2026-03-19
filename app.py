@@ -239,7 +239,7 @@ RECRUITING_COMPANY_KEYWORDS = [
     "bindan", "alpha consult", "timepartner", "permacon", "tempton", "piening", "dekra arbeit",
     "hofmann", "i. k. hofmann", "run zeitarbeit", "unique personalservice", "meteor personaldienste",
     "aerb personal", "jobkraft personalmanagement", "walter-fach-kraft industrie", "ifas personalmanagement",
-    "alphaconsult",
+    "alphaconsult", "diepa",
 ]
 
 RECRUITING_TEXT_PATTERNS = [
