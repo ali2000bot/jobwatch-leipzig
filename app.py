@@ -2446,57 +2446,67 @@ with col1:
             key=lambda it: int(it.get("_score", 0)),
             reverse=True
         )[:5]
-
-        if top_items:
-            st.markdown(
-                """
-        <div style="
-        font-size:1.1rem;
-        font-weight:700;
-        margin-top:6px;
-        margin-bottom:2px;">
-        ⭐ Beste Treffer
-        </div>
-        <div style="
-        font-size:0.9rem;
-        opacity:0.75;
-        margin-bottom:10px;">
-        Die aktuell relevantesten Treffer nach Score
-        </div>
-        """,
-                unsafe_allow_html=True,
-            )
         
-            for rank, it in enumerate(top_items, start=1):    
-                dist = it.get("_distance_km")
-                dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
-                score_val = int(it.get("_score", 0))
-                org = it.get("_org")
-
-                target_tag = ""
-                if org:
-                    target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
-
-                k = it.get("_key") or item_key(it)
-                fav_tag = " 📌" if is_favorited(k, favorites) else ""
-
-                safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
-                safe_company = it.get("_company_safe", sanitize_md_text(item_company(it)))
-                safe_location = it.get("_location_safe", sanitize_md_text(pretty_location(it)))
-
-                with st.container(border=True):
-                    st.markdown(
-                        f"**{rank}. {safe_title}**{fav_tag}{target_tag}  \n"
-                        f"{safe_company} · {safe_location}  \n"
-                        f"Entfernung: {dist_txt} · Score: {score_val}"
-                    )
-
-                    if st.button("🔎 In Liste anzeigen", key=f"jump_{rank}_{it.get('_key', rank)}"):
-                        st.session_state["jump_to_job"] = it.get("_key")
-                        st.session_state["focus_company"] = None
-                        st.rerun()
-
-            #st.divider()
+        top_col, map_col = st.columns([5, 4], gap="medium")
+        
+        with top_col:
+            if top_items:
+                st.markdown("""
+                <div class="section-title">⭐ Beste Treffer</div>
+                <div class="section-sub">Die aktuell relevantesten Treffer nach Score</div>
+                """, unsafe_allow_html=True)
+        
+                for rank, it in enumerate(top_items, start=1):
+                    dist = it.get("_distance_km")
+                    dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
+                    score_val = int(it.get("_score", 0))
+                    org = it.get("_org")
+        
+                    target_tag = ""
+                    if org:
+                        target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
+        
+                    k = it.get("_key") or item_key(it)
+                    fav_tag = " 📌" if is_favorited(k, favorites) else ""
+        
+                    safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+                    safe_company = it.get("_company_safe", sanitize_md_text(item_company(it)))
+                    safe_location = it.get("_location_safe", sanitize_md_text(pretty_location(it)))
+        
+                    with st.container(border=True):
+                        st.markdown(
+                            f"**{rank}. {safe_title}**{fav_tag}{target_tag}  \n"
+                            f"{safe_company} · {safe_location}  \n"
+                            f"Entfernung: {dist_txt} · Score: {score_val}"
+                        )
+        
+                        if st.button("🔎 In Liste anzeigen", key=f"jump_{rank}_{it.get('_key', rank)}"):
+                            st.session_state["jump_to_job"] = it.get("_key")
+                            st.session_state["focus_company"] = None
+                            st.rerun()
+        
+        with map_col:
+            if markers:
+                st.markdown("""
+                <div class="section-title">🗺️ Karte</div>
+                <div class="section-sub">Treffer nach Entfernung visualisiert</div>
+                """, unsafe_allow_html=True)
+        
+                st.markdown('<div class="soft-card">', unsafe_allow_html=True)
+        
+                components.html(
+                    leaflet_map_html(
+                        float(home_lat),
+                        float(home_lon),
+                        home_label,
+                        markers[:60],
+                        float(max_distance_filter),
+                        height_px=420,
+                    ),
+                    height=440,
+                )
+        
+                st.markdown("</div>", unsafe_allow_html=True)
 
         # Merkliste
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
@@ -2708,49 +2718,7 @@ with col1:
         
         # status_top.caption(" | ".join(status_parts))
 
-        if markers:
-            st.markdown(
-                """
-            <div style="
-            font-size:1.1rem;
-            font-weight:700;
-            margin-top:6px;
-            margin-bottom:2px;">
-            🗺️ Karte
-            </div>
-            <div style="
-            font-size:0.9rem;
-            opacity:0.75;
-            margin-bottom:10px;">
-            Treffer nach Entfernung visualisiert
-            </div>
-            """,
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                """
-            <div style="
-            border:1px solid rgba(128,128,128,0.18);
-            border-radius:12px;
-            overflow:hidden;
-            margin-bottom:10px;">
-            """,
-                unsafe_allow_html=True,
-            )
-            
-            components.html(
-                leaflet_map_html(
-                    float(home_lat),
-                    float(home_lon),
-                    home_label,
-                    markers[:80],
-                    float(max_distance_filter),
-                    height_px=700,
-                ),
-                height=740,
-            )
-            
-            st.markdown("</div>", unsafe_allow_html=True)
+        
 
         # Ergebnisse 
         st.divider()
