@@ -437,6 +437,7 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
 
     return True
 
+# Debug für die Suche nach ITEMA-Job------------------
 def find_ref(items: List[Dict[str, Any]], ref: str) -> List[Dict[str, Any]]:
     out = []
     for it in items:
@@ -444,6 +445,11 @@ def find_ref(items: List[Dict[str, Any]], ref: str) -> List[Dict[str, Any]]:
         if rid == ref:
             out.append(it)
     return out
+
+def has_ref(items: List[Dict[str, Any]], ref: str) -> bool:
+    return len(find_ref(items, ref)) > 0
+
+# Ende ITEMA debug----------------------------------
 
 # ============================================================
 # API / Jobfelder
@@ -1877,7 +1883,8 @@ with col1:
                 seen.add(k)
                 it["_key"] = k
                 items_now.append(it)
-
+        st.write("DEBUG nach Dedup 1:", has_ref(items_now, TARGET_REF)) #DEBUG Itema
+        
         # 2) Deduplizierung per Titel/Firma/Ort
         dedup2: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
         for it in items_now:
@@ -1890,7 +1897,8 @@ with col1:
                 dedup2[key2] = it
 
         items_now = list(dedup2.values())
-
+        st.write("DEBUG nach Dedup 2:", has_ref(items_now, TARGET_REF)) #Debug ITEMA
+        
         # 3) Hidden / Blocklisten
         if hide_marked:
             items_now = [it for it in items_now if (it.get("_key") or item_key(it)) not in hidden_keys]
@@ -1899,12 +1907,14 @@ with col1:
             it for it in items_now
             if item_company(it).strip().lower() not in hidden_companies
         ]
+        st.write("DEBUG nach Hidden/Blocklisten:", has_ref(items_now, TARGET_REF)) #Debug ITEMA
 
         # 4) Recruiting automatisch raus
         before_recruiting_filter = len(items_now)
         items_now = [it for it in items_now if not is_recruiting_posting(it)]
 
         removed_recruiting = before_recruiting_filter - len(items_now)
+        st.write("DEBUG nach Recruiting-Filter:", has_ref(items_now, TARGET_REF)) #Debug ITEMA
 
         # 4b) schlechte Keywords in allen Jobs raus (geändert, nicht nur Messtechnik!)
         items_now = [
@@ -1914,10 +1924,12 @@ with col1:
                 for bad in BAD_MESSTECHNIK_TITLES
             )
         ]
-
+        st.write("DEBUG nach 4b:", has_ref(items_now, TARGET_REF)) #Itema Debug
+        
         # 4c) Positivdefinition für bestimmte Profile
         items_now = [it for it in items_now if passes_profile_specific_filter(it)]
-
+        st.write("DEBUG nach 4c:", has_ref(items_now, TARGET_REF))
+        
         # 4d) IT / Software hart rausfiltern
         items_now = [
             it for it in items_now
@@ -1928,6 +1940,7 @@ with col1:
                 for bad in GLOBAL_BAD_KEYWORDS
             )
         ]
+        st.write("DEBUG nach 4d:", has_ref(items_now, TARGET_REF))
         
         # 5) Negative Jobs raus
         if hide_irrelevant:
@@ -1947,7 +1960,8 @@ with col1:
             )
             for it in items_now
         ]
-
+        st.write("DEBUG nach Enrichment:", has_ref(items_now, TARGET_REF)) #Itema debug
+        
         title_counter = {}
         industry_term_counter = {}
         
@@ -1975,6 +1989,8 @@ with col1:
         # 7) Mindestscore
         if only_focus:
             items_now = [it for it in items_now if int(it.get("_score", 0)) >= int(min_score)]
+
+        st.write("DEBUG nach Mindestscore:", has_ref(items_now, TARGET_REF))
 
         prev_items = snap.get("items", [])
         prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items if isinstance(x, dict)}
