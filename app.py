@@ -1989,6 +1989,31 @@ with col1:
         
         #neu:
         items_now = [it for it in items_now if not blocked_by_bad_title_global(it)]
+
+        ref_before_4b = find_ref(items_now, TARGET_REF)
+        if ref_before_4b:
+            st.write("DEBUG Ref vor 4b:")
+            for it in ref_before_4b:
+                ctx_text = normalize_text(
+                    " ".join(
+                        [
+                            str(item_title(it)),
+                            str(it.get("kurzbeschreibung", "")),
+                            str(it.get("beschreibung", "")),
+                            str(item_company(it)),
+                            str(pretty_location(it)),
+                        ]
+                    )
+                )
+                st.write({
+                    "title": item_title(it),
+                    "company": item_company(it),
+                    "location": pretty_location(it),
+                    "kurzbeschreibung": str(it.get("kurzbeschreibung", ""))[:300],
+                    "beschreibung": str(it.get("beschreibung", ""))[:300],
+                    "strong_context": has_strong_messtechnik_context(it),
+                    "ctx_text_preview": ctx_text[:500],
+                })
         
         st.write("DEBUG nach 4b:", has_ref(items_now, TARGET_REF)) #Itema Debug
         
