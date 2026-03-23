@@ -1618,29 +1618,6 @@ div[data-testid="stButton"] > button {
     background: rgba(255,255,255,0.03);
     margin-bottom: 8px;
 }
-
-/* ===== Kompakte Action-Buttons ===== */
-
-div[data-testid="stButton"] > button {
-    border-radius: 999px;
-    padding: 0.12rem 0.45rem !important;
-    min-height: 0 !important;
-    font-size: 0.78rem !important;
-    line-height: 1.0 !important;
-}
-
-/* Link Buttons kleiner */
-div[data-testid="stLinkButton"] > a {
-    padding: 0.12rem 0.45rem !important;
-    font-size: 0.78rem !important;
-    border-radius: 999px !important;
-}
-
-/* Input (Notizfeld) kompakter */
-div[data-baseweb="input"] > div {
-    min-height: 32px !important;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
