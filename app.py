@@ -1221,18 +1221,23 @@ def render_fact_grid(rows: List[Tuple[str, str]]) -> None:
     rows = [(k, v) for (k, v) in rows if v is not None and str(v).strip() != ""]
     if not rows:
         return
-    n = len(rows)
-    half = (n + 1) // 2
-    left = rows[:half]
-    right = rows[half:]
 
-    c1, c2 = st.columns(2)
+    half = (len(rows) + 1) // 2
+    c1, c2 = st.columns(2, gap="small")
+
     with c1:
-        for k, v in left:
-            st.markdown(f"**{k}:** {v}")
+        for k, v in rows[:half]:
+            st.markdown(
+                f"<div style='font-size:0.88rem; margin-bottom:3px;'><b>{k}:</b> {v}</div>",
+                unsafe_allow_html=True,
+            )
+
     with c2:
-        for k, v in right:
-            st.markdown(f"**{k}:** {v}")
+        for k, v in rows[half:]:
+            st.markdown(
+                f"<div style='font-size:0.88rem; margin-bottom:3px;'><b>{k}:</b> {v}</div>",
+                unsafe_allow_html=True,
+            )
 
 # ============================================================
 # Karte
@@ -1528,6 +1533,90 @@ div[data-testid="stMetric"] {
     font-size: 0.92rem;
     color: #607284;
     margin-bottom: 10px;
+}
+/* ===== Kompaktere Darstellung ===== */
+
+details {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(44, 83, 100, 0.10);
+    border-radius: 12px;
+    padding: 0.08rem 0.45rem;
+    margin-bottom: 0.32rem;
+}
+
+div[data-testid="stVerticalBlock"] {
+    gap: 0.35rem;
+}
+
+summary {
+    padding-top: 0.1rem;
+    padding-bottom: 0.1rem;
+}
+
+div[data-testid="stButton"] > button {
+    padding-top: 0.28rem !important;
+    padding-bottom: 0.28rem !important;
+    min-height: 0 !important;
+}
+
+/* ===== Kompakte Abschnittsköpfe ===== */
+
+.compact-section-title {
+    font-size: 1.02rem;
+    font-weight: 700;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.compact-section-sub {
+    font-size: 0.84rem;
+    color: #6b7280;
+    margin-bottom: 8px;
+}
+
+/* ===== Beste-Treffer-Karten ===== */
+
+.top-hit-card {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 14px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.top-hit-title {
+    font-size: 0.96rem;
+    font-weight: 700;
+    line-height: 1.25;
+    margin-bottom: 3px;
+}
+
+.top-hit-meta {
+    font-size: 0.83rem;
+    color: #555;
+    line-height: 1.35;
+}
+
+/* ===== Kartenpanel ===== */
+
+.map-panel {
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 16px;
+    padding: 10px 10px 6px 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+    margin-bottom: 10px;
+}
+
+/* ===== Statusbox kompakter ===== */
+
+.status-panel {
+    padding: 8px 10px;
+    border: 1px solid rgba(128,128,128,0.18);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    margin-bottom: 8px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -2440,63 +2529,99 @@ with col1:
                             st.session_state["jump_to_job"] = None
                             st.rerun()
 
-        # Beste Treffer
+        # Beste Treffer + Karte nebeneinander
         top_items = sorted(
             items_sorted,
             key=lambda it: int(it.get("_score", 0)),
             reverse=True
         )[:5]
-
-        if top_items:
+        
+        top_col, map_col = st.columns([1.2, 0.8], gap="medium")
+        
+        with top_col:
             st.markdown(
                 """
-        <div style="
-        font-size:1.1rem;
-        font-weight:700;
-        margin-top:6px;
-        margin-bottom:2px;">
-        ⭐ Beste Treffer
-        </div>
-        <div style="
-        font-size:0.9rem;
-        opacity:0.75;
-        margin-bottom:10px;">
-        Die aktuell relevantesten Treffer nach Score
-        </div>
-        """,
+                <div class="compact-section-title">⭐ Beste Treffer</div>
+                <div class="compact-section-sub">Die aktuell relevantesten Treffer nach Score</div>
+                """,
                 unsafe_allow_html=True,
             )
         
-            for rank, it in enumerate(top_items, start=1):    
-                dist = it.get("_distance_km")
-                dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
-                score_val = int(it.get("_score", 0))
-                org = it.get("_org")
-
-                target_tag = ""
-                if org:
-                    target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
-
-                k = it.get("_key") or item_key(it)
-                fav_tag = " 📌" if is_favorited(k, favorites) else ""
-
-                safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
-                safe_company = it.get("_company_safe", sanitize_md_text(item_company(it)))
-                safe_location = it.get("_location_safe", sanitize_md_text(pretty_location(it)))
-
-                with st.container(border=True):
+            if top_items:
+                for rank, it in enumerate(top_items, start=1):
+                    dist = it.get("_distance_km")
+                    dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
+                    score_val = int(it.get("_score", 0))
+                    org = it.get("_org")
+        
+                    target_tag = ""
+                    if org:
+                        target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
+        
+                    k = it.get("_key") or item_key(it)
+                    fav_tag = " 📌" if is_favorited(k, favorites) else ""
+        
+                    safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+                    safe_company = it.get("_company_safe", sanitize_md_text(item_company(it)))
+                    safe_location = it.get("_location_safe", sanitize_md_text(pretty_location(it)))
+        
                     st.markdown(
-                        f"**{rank}. {safe_title}**{fav_tag}{target_tag}  \n"
-                        f"{safe_company} · {safe_location}  \n"
-                        f"Entfernung: {dist_txt} · Score: {score_val}"
+                        f"""
+                        <div class="top-hit-card">
+                            <div class="top-hit-title">{rank}. {safe_title}{fav_tag}{target_tag}</div>
+                            <div class="top-hit-meta">
+                                {safe_company}<br>
+                                {safe_location} · {dist_txt} · Score {score_val}
+                            </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
                     )
-
-                    if st.button("🔎 In Liste anzeigen", key=f"jump_{rank}_{it.get('_key', rank)}"):
+        
+                    if st.button(
+                        "🔎 In Liste anzeigen",
+                        key=f"jump_{rank}_{it.get('_key', rank)}",
+                        use_container_width=True
+                    ):
                         st.session_state["jump_to_job"] = it.get("_key")
                         st.session_state["focus_company"] = None
                         st.rerun()
-
-            #st.divider()
+            else:
+                st.info("Keine Top-Treffer vorhanden.")
+        
+        with map_col:
+            st.markdown(
+                """
+                <div class="compact-section-title">🗺️ Karte</div>
+                <div class="compact-section-sub">Treffer im aktuellen Radius</div>
+                """,
+                unsafe_allow_html=True,
+            )
+        
+            if markers:
+                st.markdown('<div class="map-panel">', unsafe_allow_html=True)
+                components.html(
+                    leaflet_map_html(
+                        float(home_lat),
+                        float(home_lon),
+                        home_label,
+                        markers,
+                        float(max_distance_filter),
+                        height_px=420,
+                    ),
+                    height=430,
+                    scrolling=False,
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+        
+                map_info = f"{len(markers)} Marker"
+                if missing_coords:
+                    map_info += f" · {missing_coords} ohne Koordinaten"
+                if enable_job_geocode and geocode_used:
+                    map_info += f" · {geocode_used} nachgeocodet"
+                st.caption(map_info)
+            else:
+                st.info("Keine Marker für die Karte verfügbar.")
 
         # Merkliste
         with st.expander(f"📌 Merkliste ({len(favorites)})", expanded=False):
@@ -2697,9 +2822,8 @@ with col1:
             )
         
         status_html = (
-            f'<div style="padding:10px 12px;border:1px solid rgba(128,128,128,0.18);'
-            f'border-radius:12px;background:rgba(255,255,255,0.03);margin-bottom:8px;">'
-            f'<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">{chips}</div>'
+            f'<div class="status-panel">'
+            f'<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">{chips}</div>'
             f'{location_html}'
             f'</div>'
         )
@@ -2707,50 +2831,6 @@ with col1:
         status_top.markdown(status_html, unsafe_allow_html=True)
         
         # status_top.caption(" | ".join(status_parts))
-
-        if markers:
-            st.markdown(
-                """
-            <div style="
-            font-size:1.1rem;
-            font-weight:700;
-            margin-top:6px;
-            margin-bottom:2px;">
-            🗺️ Karte
-            </div>
-            <div style="
-            font-size:0.9rem;
-            opacity:0.75;
-            margin-bottom:10px;">
-            Treffer nach Entfernung visualisiert
-            </div>
-            """,
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                """
-            <div style="
-            border:1px solid rgba(128,128,128,0.18);
-            border-radius:12px;
-            overflow:hidden;
-            margin-bottom:10px;">
-            """,
-                unsafe_allow_html=True,
-            )
-            
-            components.html(
-                leaflet_map_html(
-                    float(home_lat),
-                    float(home_lon),
-                    home_label,
-                    markers[:80],
-                    float(max_distance_filter),
-                    height_px=700,
-                ),
-                height=740,
-            )
-            
-            st.markdown("</div>", unsafe_allow_html=True)
 
         # Ergebnisse 
         st.divider()
@@ -2912,7 +2992,7 @@ with col1:
             badge_prefix = " ".join(badges)
             badge_prefix = f"{badge_prefix} " if badge_prefix else ""
             
-            label = f"{emo} {num_txt} · {dist_txt} · {badge_prefix}{safe_title}"
+            label = f"{emo} {num_txt} · {dist_txt} · S{score} · {badge_prefix}{safe_title}"
             
             meta_text = " · ".join(
                 [
