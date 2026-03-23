@@ -3009,18 +3009,24 @@ with col1:
 
             with st.expander(label, expanded=expanded):
                 if is_focused_company:
-                    st.info(f"Fokusfirma: {company_name}")
-
+                    st.caption(f"🏢 Fokusfirma: {company_name}")
+            
                 badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                 st.markdown(
-                    badge
-                    + f' <span style="opacity:0.78;font-size:0.92rem;">{meta_text}</span>',
+                    f"""
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:6px;">
+                        {badge}
+                        <span style="font-size:0.86rem;opacity:0.82;">{meta_text}</span>
+                    </div>
+                    """,
                     unsafe_allow_html=True,
                 )
-                cFav1, cFav2 = st.columns([1.2, 3.8])
-                with cFav1:
+            
+                c_action1, c_action2, c_action3, c_action4 = st.columns([1.05, 1.1, 1.2, 3.65], gap="small")
+            
+                with c_action1:
                     if not fav:
-                        if st.button("📌 Merken", key=f"fav_add_{k}"):
+                        if st.button("📌 Merken", key=f"fav_add_{k}", use_container_width=True):
                             favorites[k] = {
                                 "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
                                 "note": favorites.get(k, {}).get("note", ""),
@@ -3028,110 +3034,115 @@ with col1:
                             save_favorites(favorites)
                             st.rerun()
                     else:
-                        if st.button("🗑️ Entfernen", key=f"fav_del_{k}"):
+                        if st.button("🗑️ Entfernen", key=f"fav_del_{k}", use_container_width=True):
                             favorites.pop(k, None)
                             save_favorites(favorites)
                             st.rerun()
-
-                with cFav2:
-                    if fav:
-                        note_key = f"fav_note_{k}"
-                        note_val = (favorites.get(k, {}) or {}).get("note", "")
-                        new_note = st.text_input("Notiz (optional)", value=note_val, key=note_key)
-                        if new_note != note_val:
-                            favorites[k]["note"] = new_note
-                            save_favorites(favorites)
-
-                cH1, cH2 = st.columns([1.4, 6.6])
-                with cH1:
+            
+                with c_action2:
                     if not is_hidden:
-                        if st.button("🙈 Ausblenden", key=f"hide_{k}"):
+                        if st.button("🙈 Ausblenden", key=f"hide_{k}", use_container_width=True):
                             hidden_keys.add(k)
                             save_hidden_jobs(hidden_keys)
                             st.rerun()
                     else:
-                        if st.button("👁️ Einblenden", key=f"unhide_{k}"):
+                        if st.button("👁️ Einblenden", key=f"unhide_{k}", use_container_width=True):
                             hidden_keys.discard(k)
                             save_hidden_jobs(hidden_keys)
                             st.rerun()
-                with cH2:
-                    st.caption("Ausgeblendete Jobs werden bei künftigen Suchen automatisch versteckt.")
-
-                if company_name:
-                    if st.button("🚫 Firma blockieren", key=f"hide_company_{k}"):
-                        hidden_companies.add(company_name.lower())
-                        save_hidden_companies(hidden_companies)
-                        st.rerun()
-
+            
+                with c_action3:
+                    if company_name:
+                        if st.button("🚫 Firma block.", key=f"hide_company_{k}", use_container_width=True):
+                            hidden_companies.add(company_name.lower())
+                            save_hidden_companies(hidden_companies)
+                            st.rerun()
+            
+                with c_action4:
+                    if fav:
+                        note_key = f"fav_note_{k}"
+                        note_val = (favorites.get(k, {}) or {}).get("note", "")
+                        new_note = st.text_input("Notiz", value=note_val, key=note_key, label_visibility="collapsed", placeholder="Notiz zum Treffer")
+                        if new_note != note_val:
+                            favorites[k]["note"] = new_note
+                            save_favorites(favorites)
+                    else:
+                        st.caption(" ")
+            
                 rid = item_id_raw(it) or "—"
                 facts = [
                     ("Nr.", num_txt),
                     ("Distanz", dist_txt),
-                    ("Fahrzeit (Schätzung)", f"~{t_min} min" if t_min is not None else "—"),
-                    ("Ziel-Organisation", org["name"] if org else "—"),
+                    ("Fahrzeit", f"~{t_min} min" if t_min is not None else "—"),
+                    ("Score", str(score)),
+                    ("Profil", it.get("_profile", "")),
                     ("Arbeitgeber", company_name or "—"),
                     ("Ort", location_name),
-                    ("Profil", it.get("_profile", "")),
                     ("Quelle", it.get("_bucket", "")),
-                    ("Score", str(score)),
                     ("RefNr/BA-ID", rid),
+                    ("Ziel-Organisation", org["name"] if org else "—"),
                 ]
                 render_fact_grid(facts)
-
+            
                 if org:
-                    if org:
-                        st.markdown(
-                            '<div style="font-weight:600;margin-top:6px;margin-bottom:4px;">Karriereseite (Ziel-Organisation)</div>',
-                            unsafe_allow_html=True,
-                        )
+                    st.markdown(
+                        '<div style="font-weight:600;margin-top:4px;margin-bottom:3px;font-size:0.92rem;">Karriereseite</div>',
+                        unsafe_allow_html=True,
+                    )
                     try:
                         st.link_button("🏢 Karriereseite öffnen", org["url"])
                     except Exception:
                         st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
-
-                st.markdown(
-                    '<div style="font-weight:600;margin-top:6px;margin-bottom:4px;">Score-Aufschlüsselung</div>',
-                    unsafe_allow_html=True,
-                )
-                st.caption(" · ".join(parts))
-
+            
+                if parts:
+                    st.markdown(
+                        '<div style="font-weight:600;margin-top:6px;margin-bottom:2px;font-size:0.92rem;">Score-Aufschlüsselung</div>',
+                        unsafe_allow_html=True,
+                    )
+                    st.caption(" · ".join(parts))
+            
                 web_url = jobsuche_web_url(it)
                 ll = extract_latlon_from_item(it)
+            
                 if web_url or ll:
-                    cL, cR = st.columns(2)
+                    cL, cR = st.columns(2, gap="small")
                     with cL:
                         if web_url:
                             try:
-                                st.link_button("🔗 In BA Jobsuche öffnen", web_url)
+                                st.link_button("🔗 BA öffnen", web_url, use_container_width=True)
                             except Exception:
-                                st.markdown(f"[🔗 In BA Jobsuche öffnen]({web_url})")
+                                st.markdown(f"[🔗 BA öffnen]({web_url})")
                     with cR:
                         if ll:
                             gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
                             try:
-                                st.link_button("🚗 Route in Google Maps", gdir)
+                                st.link_button("🚗 Route", gdir, use_container_width=True)
                             except Exception:
-                                st.markdown(f"[🚗 Route in Google Maps]({gdir})")
-
-                st.divider()
-
+                                st.markdown(f"[🚗 Route]({gdir})")
+            
                 api_url = details_url_api(it)
                 if not api_url:
-                    st.info("Keine API-Detail-URL im Suchtreffer vorhanden – Basisinfos aus Ergebnisliste.")
                     kurz = short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext")
-                    st.write("**Kurzbeschreibung**")
-                    st.write(kurz if kurz else "—")
+                    if kurz:
+                        st.markdown(
+                            '<div style="font-weight:600;margin-top:6px;margin-bottom:2px;font-size:0.92rem;">Kurzbeschreibung</div>',
+                            unsafe_allow_html=True,
+                        )
+                        st.write(kurz)
+                    else:
+                        st.caption("Keine weiteren Details im Suchtreffer.")
                     continue
-
+            
                 details, derr = fetch_details(api_key, api_url)
                 if derr:
                     st.error(derr)
-                    st.info("Wenn Details per API nicht gehen: nutze den BA-Link oben.")
+                    st.caption("Nutze ggf. den BA-Link oben.")
                     continue
+            
                 if not details:
-                    st.info("Keine Details erhalten.")
+                    st.caption("Keine Details erhalten.")
                     continue
-
+            
                 desc = (
                     details.get("stellenbeschreibung")
                     or details.get("beschreibung")
@@ -3139,12 +3150,12 @@ with col1:
                     or details.get("aufgaben")
                     or details.get("anforderungen")
                 )
-
-                st.write("**Beschreibung / Aufgaben / Anforderungen**")
+            
                 if isinstance(desc, str) and desc.strip():
-                    st.write(desc)
+                    with st.expander("Beschreibung / Aufgaben / Anforderungen", expanded=False):
+                        st.write(desc)
                 else:
-                    st.info("Keine ausführliche Beschreibung im Detail-Response gefunden. Nutze ggf. den BA-Link oben.")
+                    st.caption("Keine ausführliche Beschreibung im Detail-Response gefunden.")
 
     with tab_company:
         st.subheader("Firmencheck (manuell, pro Firma)")
