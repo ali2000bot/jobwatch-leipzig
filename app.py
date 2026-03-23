@@ -3022,11 +3022,13 @@ with col1:
                     unsafe_allow_html=True,
                 )
             
-                c_action1, c_action2, c_action3, c_action4 = st.columns([1.05, 1.1, 1.2, 3.65], gap="small")
-            
+                c_action1, c_action2, c_action3, c_action4, c_action5 = st.columns(
+                    [1, 1, 1, 1.2, 3.8], gap="small"
+                )
+                
                 with c_action1:
                     if not fav:
-                        if st.button("📌 Merken", key=f"fav_add_{k}", use_container_width=True):
+                        if st.button("📌", key=f"fav_add_{k}", use_container_width=True):
                             favorites[k] = {
                                 "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
                                 "note": favorites.get(k, {}).get("note", ""),
@@ -3034,40 +3036,52 @@ with col1:
                             save_favorites(favorites)
                             st.rerun()
                     else:
-                        if st.button("🗑️ Entfernen", key=f"fav_del_{k}", use_container_width=True):
+                        if st.button("🗑️", key=f"fav_del_{k}", use_container_width=True):
                             favorites.pop(k, None)
                             save_favorites(favorites)
                             st.rerun()
-            
+                
                 with c_action2:
                     if not is_hidden:
-                        if st.button("🙈 Ausblenden", key=f"hide_{k}", use_container_width=True):
+                        if st.button("🙈", key=f"hide_{k}", use_container_width=True):
                             hidden_keys.add(k)
                             save_hidden_jobs(hidden_keys)
                             st.rerun()
                     else:
-                        if st.button("👁️ Einblenden", key=f"unhide_{k}", use_container_width=True):
+                        if st.button("👁️", key=f"unhide_{k}", use_container_width=True):
                             hidden_keys.discard(k)
                             save_hidden_jobs(hidden_keys)
                             st.rerun()
-            
+                
                 with c_action3:
                     if company_name:
-                        if st.button("🚫 Firma block.", key=f"hide_company_{k}", use_container_width=True):
+                        if st.button("🚫", key=f"hide_company_{k}", use_container_width=True):
                             hidden_companies.add(company_name.lower())
                             save_hidden_companies(hidden_companies)
                             st.rerun()
-            
+                
                 with c_action4:
+                    web_url = jobsuche_web_url(it)
+                    if web_url:
+                        try:
+                            st.link_button("🔗", web_url, use_container_width=True)
+                        except Exception:
+                            st.markdown(f"[🔗]({web_url})")
+                
+                with c_action5:
                     if fav:
                         note_key = f"fav_note_{k}"
                         note_val = (favorites.get(k, {}) or {}).get("note", "")
-                        new_note = st.text_input("Notiz", value=note_val, key=note_key, label_visibility="collapsed", placeholder="Notiz zum Treffer")
+                        new_note = st.text_input(
+                            "Notiz",
+                            value=note_val,
+                            key=note_key,
+                            label_visibility="collapsed",
+                            placeholder="Notiz..."
+                        )
                         if new_note != note_val:
                             favorites[k]["note"] = new_note
                             save_favorites(favorites)
-                    else:
-                        st.caption(" ")
             
                 rid = item_id_raw(it) or "—"
                 facts = [
