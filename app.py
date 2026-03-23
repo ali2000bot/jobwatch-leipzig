@@ -1662,6 +1662,7 @@ div[data-baseweb="input"] > div {
     color: inherit;
 
     box-sizing: border-box;
+    min-height: 0 !important;
 }
 
 .mini-action-link:hover {
