@@ -2529,6 +2529,61 @@ with col1:
                             st.session_state["jump_to_job"] = None
                             st.rerun()
 
+        # Karte
+        raw_markers: List[Dict[str, Any]] = []
+        missing_coords = 0
+        geocode_used = 0
+
+        enable_job_geocode = bool(locals().get("enable_job_geocode", False))
+        max_job_geocodes = int(locals().get("max_job_geocodes", 0))
+
+        for it in items_sorted:
+            ll = extract_latlon_from_item(it)
+
+            if not ll:
+                if enable_job_geocode and geocode_used < int(max_job_geocodes):
+                    loc_text = it.get("_location", pretty_location(it))
+                    ll = geocode_job_location(loc_text)
+                    geocode_used += 1
+
+                if not ll:
+                    missing_coords += 1
+                    continue
+
+            dist = haversine_km(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
+            d = float(dist)
+            bucket = distance_bucket(d, int(near_km), int(mid_km))
+
+            raw_markers.append(
+                {
+                    "idx": int(it.get("_idx", 0)),
+                    "lat": float(ll[0]),
+                    "lon": float(ll[1]),
+                    "title": it.get("_title", item_title(it)),
+                    "company": it.get("_company", item_company(it)),
+                    "dist_km": d,
+                    "pin": bucket,
+                }
+            )
+
+        groups = defaultdict(list)
+        for m in raw_markers:
+            key = (round(m["lat"], 6), round(m["lon"], 6))
+            groups[key].append(m)
+
+        markers: List[Dict[str, Any]] = []
+        for (_lat, _lon), group in groups.items():
+            if len(group) == 1:
+                markers.append(group[0])
+            else:
+                idxs = sorted([g["idx"] for g in group if isinstance(g.get("idx"), int) and g["idx"] > 0])
+                idx_label = f"{idxs[0]}–{idxs[-1]}" if idxs else "?"
+                base = group[0].copy()
+                base["idx"] = idx_label
+                base["title"] = f"{len(group)} Treffer an diesem Ort"
+                markers.append(base)
+
+        
         # Beste Treffer + Karte nebeneinander
         top_items = sorted(
             items_sorted,
@@ -2694,61 +2749,7 @@ with col1:
             save_snapshot(items_sorted)
             st.session_state["save_snapshot_requested"] = False
             st.success("Snapshot gespeichert.")
-
-        # Karte
-        raw_markers: List[Dict[str, Any]] = []
-        missing_coords = 0
-        geocode_used = 0
-
-        enable_job_geocode = bool(locals().get("enable_job_geocode", False))
-        max_job_geocodes = int(locals().get("max_job_geocodes", 0))
-
-        for it in items_sorted:
-            ll = extract_latlon_from_item(it)
-
-            if not ll:
-                if enable_job_geocode and geocode_used < int(max_job_geocodes):
-                    loc_text = it.get("_location", pretty_location(it))
-                    ll = geocode_job_location(loc_text)
-                    geocode_used += 1
-
-                if not ll:
-                    missing_coords += 1
-                    continue
-
-            dist = haversine_km(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
-            d = float(dist)
-            bucket = distance_bucket(d, int(near_km), int(mid_km))
-
-            raw_markers.append(
-                {
-                    "idx": int(it.get("_idx", 0)),
-                    "lat": float(ll[0]),
-                    "lon": float(ll[1]),
-                    "title": it.get("_title", item_title(it)),
-                    "company": it.get("_company", item_company(it)),
-                    "dist_km": d,
-                    "pin": bucket,
-                }
-            )
-
-        groups = defaultdict(list)
-        for m in raw_markers:
-            key = (round(m["lat"], 6), round(m["lon"], 6))
-            groups[key].append(m)
-
-        markers: List[Dict[str, Any]] = []
-        for (_lat, _lon), group in groups.items():
-            if len(group) == 1:
-                markers.append(group[0])
-            else:
-                idxs = sorted([g["idx"] for g in group if isinstance(g.get("idx"), int) and g["idx"] > 0])
-                idx_label = f"{idxs[0]}–{idxs[-1]}" if idxs else "?"
-                base = group[0].copy()
-                base["idx"] = idx_label
-                base["title"] = f"{len(group)} Treffer an diesem Ort"
-                markers.append(base)
-
+        
         last_page_count = len(items_local) if "items_local" in locals() else 0
 
         status_parts = [
