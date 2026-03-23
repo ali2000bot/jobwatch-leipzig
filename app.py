@@ -1641,6 +1641,31 @@ div[data-baseweb="input"] > div {
     min-height: 32px !important;
 }
 
+/* Mini-Linkbuttons für BA / Route */
+.mini-action-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 30px;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    border: 1px solid rgba(128,128,128,0.22);
+    background: rgba(255,255,255,0.03);
+    color: inherit;
+    text-decoration: none;
+    font-size: 0.78rem;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
+.mini-action-link:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(128,128,128,0.40);
+    color: inherit;
+    text-decoration: none;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -3045,8 +3070,8 @@ with col1:
                     unsafe_allow_html=True,
                 )
             
-                c_action1, c_action2, c_action3, c_action4, c_action5 = st.columns(
-                    [1, 1, 1, 1.2, 3.8], gap="small"
+                c_action1, c_action2, c_action3, c_action4, c_action5, c_action6 = st.columns(
+                    [0.9, 0.9, 0.9, 0.9, 0.9, 3.5], gap="small"
                 )
                 
                 with c_action1:
@@ -3086,12 +3111,25 @@ with col1:
                 with c_action4:
                     web_url = jobsuche_web_url(it)
                     if web_url:
-                        try:
-                            st.link_button("🔗", web_url, use_container_width=True)
-                        except Exception:
-                            st.markdown(f"[🔗]({web_url})")
+                        st.markdown(
+                            f"""
+                            <a href="{web_url}" target="_blank" class="mini-action-link">🔗</a>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                 
                 with c_action5:
+                    ll = extract_latlon_from_item(it)
+                    if ll:
+                        gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
+                        st.markdown(
+                            f"""
+                            <a href="{gdir}" target="_blank" class="mini-action-link">🚗</a>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                
+                with c_action6:
                     if fav:
                         note_key = f"fav_note_{k}"
                         note_val = (favorites.get(k, {}) or {}).get("note", "")
@@ -3138,24 +3176,7 @@ with col1:
                     )
                     st.caption(" · ".join(parts))
             
-                web_url = jobsuche_web_url(it)
                 ll = extract_latlon_from_item(it)
-            
-                if web_url or ll:
-                    cL, cR = st.columns(2, gap="small")
-                    with cL:
-                        if web_url:
-                            try:
-                                st.link_button("🔗 BA öffnen", web_url, use_container_width=True)
-                            except Exception:
-                                st.markdown(f"[🔗 BA öffnen]({web_url})")
-                    with cR:
-                        if ll:
-                            gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
-                            try:
-                                st.link_button("🚗 Route", gdir, use_container_width=True)
-                            except Exception:
-                                st.markdown(f"[🚗 Route]({gdir})")
             
                 api_url = details_url_api(it)
                 if not api_url:
