@@ -1641,22 +1641,34 @@ div[data-baseweb="input"] > div {
     min-height: 32px !important;
 }
 
-/* Mini-Linkbuttons für BA / Route */
+/* Mini-Linkbuttons exakt wie kleine Buttons */
+
 .mini-action-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100%;
-    min-height: 30px;
-    padding: 0.12rem 0.45rem;
+
+    height: 28px;              /* FIXE Höhe → wichtig */
+    padding: 0;                /* kein zusätzliches Padding */
+
     border-radius: 999px;
     border: 1px solid rgba(128,128,128,0.22);
     background: rgba(255,255,255,0.03);
-    color: inherit;
-    text-decoration: none;
+
     font-size: 0.78rem;
     line-height: 1;
+
+    text-decoration: none;
+    color: inherit;
+
     box-sizing: border-box;
+}
+
+.mini-action-link:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(128,128,128,0.40);
+    color: inherit;
+    text-decoration: none;
 }
 
 .mini-action-link:hover {
