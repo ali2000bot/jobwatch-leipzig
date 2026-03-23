@@ -3083,10 +3083,8 @@ with col1:
                     unsafe_allow_html=True,
                 )
             
-                st.markdown("<div class='result-action-row'>", unsafe_allow_html=True)
-
                 c_action1, c_action2, c_action3, c_action4, c_action5, c_action6 = st.columns(
-                    [0.72, 0.72, 0.72, 0.72, 0.72, 2.2], gap="small"
+                    [0.9, 0.9, 0.9, 0.9, 0.9, 3.5], gap="small"
                 )
                 
                 with c_action1:
@@ -3122,23 +3120,27 @@ with col1:
                             hidden_companies.add(company_name.lower())
                             save_hidden_companies(hidden_companies)
                             st.rerun()
-                    else:
-                        st.caption(" ")
                 
                 with c_action4:
                     web_url = jobsuche_web_url(it)
                     if web_url:
-                        st.link_button("🔗", web_url, use_container_width=True)
-                    else:
-                        st.caption(" ")
+                        st.markdown(
+                            f"""
+                            <a href="{web_url}" target="_blank" class="mini-action-link">🔗</a>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                 
                 with c_action5:
                     ll = extract_latlon_from_item(it)
                     if ll:
                         gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
-                        st.link_button("🚗", gdir, use_container_width=True)
-                    else:
-                        st.caption(" ")
+                        st.markdown(
+                            f"""
+                            <a href="{gdir}" target="_blank" class="mini-action-link">🚗</a>
+                            """,
+                            unsafe_allow_html=True,
+                        )
                 
                 with c_action6:
                     if fav:
@@ -3154,37 +3156,6 @@ with col1:
                         if new_note != note_val:
                             favorites[k]["note"] = new_note
                             save_favorites(favorites)
-                    else:
-                        st.caption(" ")
-                
-                st.markdown("</div>", unsafe_allow_html=True)
-                
-                rid = item_id_raw(it) or "—"
-                facts = [
-                    ("Nr.", num_txt),
-                    ("Distanz", dist_txt),
-                    ("Fahrzeit", f"~{t_min} min" if t_min is not None else "—"),
-                    ("Score", str(score)),
-                    ("Profil", it.get("_profile", "")),
-                    ("Arbeitgeber", company_name or "—"),
-                    ("Ort", location_name),
-                    ("Quelle", it.get("_bucket", "")),
-                    ("RefNr/BA-ID", rid),
-                    ("Ziel-Organisation", org["name"] if org else "—"),
-                ]
-                render_fact_grid(facts)
-                
-                if org:
-                    st.markdown(
-                        '<div style="font-weight:600;margin-top:4px;margin-bottom:3px;font-size:0.92rem;">Karriereseite</div>',
-                        unsafe_allow_html=True,
-                    )
-                    try:
-                        st.link_button("🏢 Karriereseite öffnen", org["url"])
-                    except Exception:
-                        st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
-                
-                if parts:
             
                 rid = item_id_raw(it) or "—"
                 facts = [
