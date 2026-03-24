@@ -1723,6 +1723,38 @@ div[data-baseweb="input"] input {
     line-height: 1.1 !important;
 }
 
+/* Jobarten / Schnellauswahl kompakter */
+div[role="radiogroup"] {
+    gap: 0.35rem !important;
+}
+
+div[role="radiogroup"] label {
+    margin-right: 0.2rem !important;
+}
+
+div[role="radiogroup"] p {
+    font-size: 0.84rem !important;
+}
+
+details summary {
+    font-size: 0.88rem;
+}
+
+section[data-testid="stSidebar"] div[data-testid="stButton"] > button {
+    height: 28px !important;
+    min-height: 28px !important;
+    padding: 0.1rem 0.5rem !important;
+    font-size: 0.78rem !important;
+}
+
+section[data-testid="stSidebar"] div[data-baseweb="tag"] {
+    font-size: 0.76rem !important;
+}
+
+section[data-testid="stSidebar"] div[data-baseweb="select"] {
+    font-size: 0.82rem !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
