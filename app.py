@@ -1853,7 +1853,7 @@ with st.sidebar:
     home_lon = float(st.session_state.get("home_lon") or DEFAULT_HOME_LON)
     home_label = str(st.session_state.get("home_display") or home_query)
 
-    st.divider()
+    #st.divider()
     st.subheader("Suche")
 
     max_distance_filter = st.slider("Maximale Entfernung (km)", 10, 200, 50, 5)
