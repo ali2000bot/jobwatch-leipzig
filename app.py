@@ -3088,7 +3088,7 @@ with col1:
             unsafe_allow_html=True,
         )
 
-        cSort, cFilter = st.columns([1.1, 0.9], gap="none")
+        cSort, cFilter = st.columns([1.1, 0.9], gap="small")
 
         with cSort:
             st.radio(
