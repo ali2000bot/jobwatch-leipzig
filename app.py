@@ -1809,7 +1809,10 @@ max_pages = 100
 max_results = 1000
 
 with st.sidebar:
-    st.header("JobWatch – Einstellungen")
+    st.markdown(
+        "<div style='font-size:1.4rem;font-weight:700;margin-bottom:6px;'>⚙️ JobWatch Einstellungen</div>",
+        unsafe_allow_html=True,
+    )
 
     if "home_query" not in st.session_state:
         st.session_state["home_query"] = DEFAULT_HOME_LABEL
