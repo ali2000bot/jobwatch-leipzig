@@ -3229,41 +3229,12 @@ with col1:
                         st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
                 
                 if parts:
-         #----------------           
-                rid = item_id_raw(it) or "—"
-                facts = [
-                    ("Nr.", num_txt),
-                    ("Distanz", dist_txt),
-                    ("Fahrzeit", f"~{t_min} min" if t_min is not None else "—"),
-                    ("Score", str(score)),
-                    ("Profil", it.get("_profile", "")),
-                    ("Arbeitgeber", company_name or "—"),
-                    ("Ort", location_name),
-                    ("Quelle", it.get("_bucket", "")),
-                    ("RefNr/BA-ID", rid),
-                    ("Ziel-Organisation", org["name"] if org else "—"),
-                ]
-                render_fact_grid(facts)
-            
-                if org:
-                    st.markdown(
-                        '<div style="font-weight:600;margin-top:4px;margin-bottom:3px;font-size:0.92rem;">Karriereseite</div>',
-                        unsafe_allow_html=True,
-                    )
-                    try:
-                        st.link_button("🏢 Karriereseite öffnen", org["url"])
-                    except Exception:
-                        st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
-            
-                if parts:
                     st.markdown(
                         '<div style="font-weight:600;margin-top:6px;margin-bottom:2px;font-size:0.92rem;">Score-Aufschlüsselung</div>',
                         unsafe_allow_html=True,
                     )
                     st.caption(" · ".join(parts))
-            
-                ll = extract_latlon_from_item(it)
-            
+                
                 api_url = details_url_api(it)
                 if not api_url:
                     kurz = short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext")
@@ -3276,17 +3247,17 @@ with col1:
                     else:
                         st.caption("Keine weiteren Details im Suchtreffer.")
                     continue
-            
+                
                 details, derr = fetch_details(api_key, api_url)
                 if derr:
                     st.error(derr)
                     st.caption("Nutze ggf. den BA-Link oben.")
                     continue
-            
+                
                 if not details:
                     st.caption("Keine Details erhalten.")
                     continue
-            
+                
                 desc = (
                     details.get("stellenbeschreibung")
                     or details.get("beschreibung")
@@ -3294,7 +3265,7 @@ with col1:
                     or details.get("aufgaben")
                     or details.get("anforderungen")
                 )
-            
+                
                 if isinstance(desc, str) and desc.strip():
                     with st.expander("Beschreibung / Aufgaben / Anforderungen", expanded=False):
                         st.write(desc)
