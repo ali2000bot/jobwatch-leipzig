@@ -1810,7 +1810,7 @@ max_results = 1000
 
 with st.sidebar:
     st.markdown(
-        "<div style='font-size:1.4rem;font-weight:700;margin-bottom:6px;'>⚙️ JobWatch Einstellungen</div>",
+        "<div style='font-size:1.4rem;font-weight:700;margin-bottom:6px;'>⚙️ Einstellungen</div>",
         unsafe_allow_html=True,
     )
 
