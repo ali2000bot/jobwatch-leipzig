@@ -2029,7 +2029,7 @@ with st.sidebar:
     selected_profiles = [x for x in all_profiles if x in selected_set]
     st.session_state["selected_profiles_ui"] = selected_profiles
     
-    st.divider()
+    #st.divider()
     st.subheader("Filter")
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
     min_score = st.slider("Mindest-Relevanz", 0, 80, 6, 1)
