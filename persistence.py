@@ -57,15 +57,31 @@ def save_favorites(favs: Dict[str, Any]):
     _save_json("favorites", favs)
 
 
-def load_hidden_jobs():
-    return _load_json("hidden_jobs", {"hidden": [], "updated_at": None})
+def load_hidden_jobs() -> Dict[str, Any]:
+    if not os.path.exists(HIDDEN_JOBS_FILE):
+        return {"hidden": [], "items": {}, "updated_at": None}
 
+    try:
+        with open(HIDDEN_JOBS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, dict):
+            return {"hidden": [], "items": {}, "updated_at": None}
 
-def save_hidden_jobs(hidden_keys: Set[str]):
-    _save_json("hidden_jobs", {
-        "hidden": sorted(list(hidden_keys)),
-        "updated_at": datetime.now().isoformat(timespec="seconds")
-    })
+        data.setdefault("hidden", [])
+        data.setdefault("items", {})
+        data.setdefault("updated_at", None)
+        return data
+    except Exception:
+        return {"hidden": [], "items": {}, "updated_at": None}
+
+def save_hidden_jobs(hidden_keys: Set[str], items: Optional[Dict[str, Any]] = None):
+    payload = {
+        "updated_at": datetime.now().isoformat(timespec="seconds"),
+        "hidden": sorted(hidden_keys),
+        "items": items or {},
+    }
+    with open(HIDDEN_JOBS_FILE, "w", encoding="utf-8") as f:
+        json.dump(payload, f, ensure_ascii=False, indent=2)
 
 
 def load_hidden_companies():
