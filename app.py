@@ -1921,13 +1921,15 @@ with st.sidebar:
     
     chip_html = f"""
     <div style="
-        display:inline-block;
-        padding:4px 10px;
+        display:inline-flex;
+        align-items:center;
+        padding:5px 12px;
         border-radius:999px;
         background:#e0e0e0;
         color:#333;
         font-size:0.85rem;
         font-weight:600;
+        margin-bottom:8px;
     ">
         Modus: {mode} · {total_selected}/{len(all_profiles)}
     </div>
@@ -1949,6 +1951,7 @@ with st.sidebar:
         mode_for_ui = mode
     
     # --- UI ---
+    st.markdown("<div style='margin-top:6px;'></div>", unsafe_allow_html=True)
     selected_mode = st.radio(
         "Schnellauswahl",
         radio_options,
