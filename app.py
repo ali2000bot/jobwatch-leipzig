@@ -3079,15 +3079,11 @@ with col1:
         )
 
         st.markdown(
-            f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:2px;">'
+            f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:12px;">'
             f'📋 Ergebnisse ({len(items_sorted)})'
-            f'</div>'
-            f'<div style="font-size:0.9rem;opacity:0.75;margin-bottom:8px;">'
-            f'- '
             f'</div>',
             unsafe_allow_html=True,
         )
-
         cSort, cFilter = st.columns([1.1, 0.9], gap="small")
 
         with cSort:
