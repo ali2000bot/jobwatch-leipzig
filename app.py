@@ -2028,15 +2028,24 @@ with st.sidebar:
     
     selected_profiles = [x for x in all_profiles if x in selected_set]
     st.session_state["selected_profiles_ui"] = selected_profiles
-    
-    #st.divider()
+      
     st.subheader("Filter")
-    min_score = st.slider("Mindest-Relevanz", 0, 80, 6, 1)
-    only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
-    hide_irrelevant = st.checkbox("Unpassende Treffer ausblenden", value=True)
+
+    filter_mode = st.radio(
+        "Filtermodus",
+        ["Alle Treffer", "Relevante Treffer", "Streng (Top-Treffer)"],
+        index=1,
+        horizontal=True
+    )
+    
+    # Slider NUR bei streng anzeigen
+    if filter_mode == "Streng (Top-Treffer)":
+        min_score = st.slider("Mindest-Relevanz", 0, 80, 6, 1)
+    else:
+        min_score = 0  # Dummy, wird nicht genutzt
+    
     hide_marked = st.checkbox("Bereits ausgeblendete Jobs verbergen", value=True)
     show_hidden_manage = st.checkbox("Ausblend-Liste verwalten", value=False)
-
     #st.divider()
 
     with st.expander("Erweitert", expanded=False):
@@ -2367,8 +2376,8 @@ with col1:
         
         
         # 5) Negative Jobs raus
-        if hide_irrelevant:
-            items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
+        #if hide_irrelevant:
+        #    items_now = [it for it in items_now if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)]
 
         # 6) Einmalig anreichern
         items_now = [
@@ -2411,9 +2420,27 @@ with col1:
                     industry_term_counter[term] = industry_term_counter.get(term, 0) + 1    
         
         # 7) Mindestscore
-        if only_focus:
-            items_now = [it for it in items_now if int(it.get("_score", 0)) >= int(min_score)]
-     
+        #if only_focus:
+        #    items_now = [it for it in items_now if int(it.get("_score", 0)) >= int(min_score)]
+
+        if filter_mode == "Relevante Treffer":
+            items_now = [
+                it for it in items_now
+                if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)
+            ]
+        
+        elif filter_mode == "Streng (Top-Treffer)":
+            # Erst Müll raus
+            items_now = [
+                it for it in items_now
+                if not is_probably_irrelevant(it, NEGATIVE_KEYWORDS)
+            ]
+            # Dann Score
+            items_now = [
+                it for it in items_now
+                if int(it.get("_score", 0)) >= int(min_score)
+            ]
+        
         prev_items = snap.get("items", [])
         prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items if isinstance(x, dict)}
         now_keys: Set[str] = {x.get("_key") or item_key(x) for x in items_now}
