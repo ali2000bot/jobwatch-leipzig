@@ -3079,7 +3079,7 @@ with col1:
         )
 
         st.markdown(
-            f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:12px;">'
+            f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:22px;">'
             f'📋 Ergebnisse ({len(items_sorted)})'
             f'</div>',
             unsafe_allow_html=True,
