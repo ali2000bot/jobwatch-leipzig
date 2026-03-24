@@ -3053,7 +3053,7 @@ with col1:
         # status_top.caption(" | ".join(status_parts))
 
         # Ergebnisse 
-        st.divider()        
+        st.divider()
 
         st.markdown(
             f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:2px;">'
@@ -3065,43 +3065,46 @@ with col1:
             unsafe_allow_html=True,
         )
 
+        cSort, cFilter = st.columns([1.2, 1.0], gap="medium")
+
+        with cSort:
+            st.radio(
+                "Sortierung",
+                ["Mix", "Score", "Entfernung"],
+                horizontal=True,
+                key="sort_mode",
+            )
+
         if "result_filter" not in st.session_state:
             st.session_state["result_filter"] = "Alle"
-      
+
         fav_count_visible = sum(
             1 for it in items_sorted
             if is_favorited(it.get("_key") or item_key(it), favorites)
         )
 
-        result_filter_label_to_value = {
-            f"Alle ({len(items_sorted)})": "Alle",
-            f"Neu ({len(new_keys)})": "Neu",
-            f"Favoriten ({fav_count_visible})": "Favoriten",
-        }
+        with cFilter:
+            selected_result_filter = st.radio(
+                "Ergebnisfilter",
+                ["Alle", "Neu", "Favoriten"],
+                horizontal=True,
+                label_visibility="visible",
+                key="result_filter_radio",
+                index=["Alle", "Neu", "Favoriten"].index(
+                    st.session_state.get("result_filter", "Alle")
+                ),
+            )
 
-        result_filter_value_to_label = {
-            v: k for k, v in result_filter_label_to_value.items()
-        }
-
-        current_filter_value = st.session_state.get("result_filter", "Alle")
-        current_filter_label = result_filter_value_to_label.get(
-            current_filter_value,
-            f"Alle ({len(items_sorted)})"
-        )
-
-        selected_filter_label = st.radio(
-            "Ergebnisfilter",
-            list(result_filter_label_to_value.keys()),
-            index=list(result_filter_label_to_value.keys()).index(current_filter_label),
-            horizontal=True,
-            label_visibility="collapsed",
-            key="result_filter_radio",
-        )
-
-        st.session_state["result_filter"] = result_filter_label_to_value[selected_filter_label]
+        st.session_state["result_filter"] = selected_result_filter
 
         current_filter = st.session_state.get("result_filter", "Alle")
-        st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")
+        current_sort = st.session_state.get("sort_mode", "Mix")
+
+        st.caption(
+            f"{len(items_sorted)} Treffer gesamt · "
+            f"Neu {len(new_keys)} · Favoriten {fav_count_visible} · "
+            f"Sortierung: {current_sort} · Filter: {current_filter}"
+        )
 
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
@@ -3118,7 +3121,7 @@ with col1:
                 it for it in items_sorted
                 if is_favorited(it.get("_key") or item_key(it), favorites)
             ]
-
+        
         for it in filtered_results:
             idx = int(it.get("_idx", 0) or 0)
             k = it.get("_key") or item_key(it)
