@@ -1755,6 +1755,19 @@ section[data-testid="stSidebar"] div[data-baseweb="select"] {
     font-size: 0.82rem !important;
 }
 
+/* Radios kompakter */
+div[role="radiogroup"] {
+    gap: 0.2rem !important;
+}
+
+div[role="radiogroup"] label {
+    margin-right: 0.15rem !important;
+}
+
+div[role="radiogroup"] p {
+    font-size: 0.83rem !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
