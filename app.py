@@ -2037,7 +2037,7 @@ with st.sidebar:
     hide_marked = st.checkbox("Bereits ausgeblendete Jobs verbergen", value=True)
     show_hidden_manage = st.checkbox("Ausblend-Liste verwalten", value=False)
 
-    st.divider()
+    #st.divider()
 
     with st.expander("Erweitert", expanded=False):
         st.caption("Nur wenn du feintunen oder debuggen willst.")
