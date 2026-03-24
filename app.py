@@ -1857,7 +1857,7 @@ with st.sidebar:
     st.subheader("Suche")
 
     max_distance_filter = st.slider("Maximale Entfernung (km)", 10, 200, 50, 5)
-    st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
+    #st.caption("Dieser Radius bestimmt sowohl die BA-Suche als auch die angezeigten Jobs.")
     umkreis = int(max_distance_filter)
 
     aktualitaet_option = st.selectbox(
