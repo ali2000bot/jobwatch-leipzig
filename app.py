@@ -3083,7 +3083,7 @@ with col1:
             f'📋 Ergebnisse ({len(items_sorted)})'
             f'</div>'
             f'<div style="font-size:0.9rem;opacity:0.75;margin-bottom:8px;">'
-            f' '
+            f'- '
             f'</div>',
             unsafe_allow_html=True,
         )
