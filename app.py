@@ -2957,7 +2957,8 @@ with col1:
         <div style="
         font-size:1.1rem;
         font-weight:700;
-        margin-bottom:20px;">
+        margin-top:20px;
+        margin-bottom:2px;">
         🔥 High-Priority Treffer
         </div>
         <div style="
