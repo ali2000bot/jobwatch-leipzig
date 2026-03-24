@@ -296,6 +296,11 @@ INDUSTRY_TERMS_TO_TRACK = [
     "analytical", "messtechnik", "prüftechnik", "materialprüfung", "werkstoff",
 ]
 
+default_open_groups = [
+    "Laborleitung / Führung",
+    "Thermal / Thermoanalyse / Thermophysik",
+]
+
 TARGET_ORGS: List[Dict[str, Any]] = [
     {"name": "InfraLeuna", "match": ["infraleuna"], "url": "https://www.infraleuna.de/career"},
     {"name": "TotalEnergies / Raffinerie Leuna", "match": ["totalenergies", "raffinerie", "leuna"], "url": "https://jobs.totalenergies.com/de_DE/careers/Home"},
@@ -1998,9 +2003,13 @@ with st.sidebar:
         selected_count = len(st.session_state[key])
         total_count = len(group_items)
         icon = group_state(selected_count, total_count)
-    
-        with st.expander(f"{icon} {group_name} · {selected_count}/{total_count}", expanded=False):
-            c1, c2 = st.columns([1, 1], gap="small")
+                   
+        is_open = group_name in default_open_groups
+        
+        with st.expander(
+            f"{icon} {group_name} · {selected_count}/{total_count}",
+            expanded=is_open
+        ):
     
             with c1:
                 if st.button("Alle", key=f"all_{group_name}", use_container_width=True):
