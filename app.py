@@ -1915,24 +1915,18 @@ with st.sidebar:
     
     # --- Anzeige ---
     st.markdown("### Jobarten")
-    
+
+    # --- Zustand / Auswahl ---
     mode = detect_mode(st.session_state["selected_profiles_ui"])
     total_selected = len(st.session_state["selected_profiles_ui"])
-            
-    # --- Buttons ---
-    # --- Modus bestimmen ---
-    mode = detect_mode(st.session_state["selected_profiles_ui"])
     
-    # Optionen (inkl. Eigene Auswahl)
     radio_options = ["Alles", "Standard", "Eigene Auswahl", "Reset"]
     
-    # Fallback (sollte selten nötig sein)
     if mode not in radio_options:
         mode_for_ui = "Eigene Auswahl"
     else:
         mode_for_ui = mode
     
-    # --- UI ---
     selected_mode = st.radio(
         f"Schnellauswahl · {total_selected}/{len(all_profiles)}",
         radio_options,
@@ -1957,9 +1951,7 @@ with st.sidebar:
             set_profile_selection([])
             st.rerun()
     
-    # 👉 Wichtig:
-    # Bei "Eigene Auswahl" passiert absichtlich nichts!
-    
+    # Bei "Eigene Auswahl" absichtlich keine automatische Aktion
     
     # --- Gruppen ---
     for group_name, group_items in query_groups.items():
@@ -1976,16 +1968,15 @@ with st.sidebar:
         icon = group_state(selected_count, total_count)
     
         with st.expander(f"{icon} {group_name} · {selected_count}/{total_count}", expanded=False):
+            c1, c2 = st.columns([1, 1], gap="small")
     
-            col_a, col_b = st.columns(2)
-    
-            with col_a:
-                if st.button(f"Alle ({group_name})", key=f"all_{group_name}"):
+            with c1:
+                if st.button("Alle", key=f"all_{group_name}", use_container_width=True):
                     st.session_state[key] = group_items.copy()
                     st.rerun()
     
-            with col_b:
-                if st.button(f"Keine ({group_name})", key=f"none_{group_name}"):
+            with c2:
+                if st.button("Keine", key=f"none_{group_name}", use_container_width=True):
                     st.session_state[key] = []
                     st.rerun()
     
@@ -1995,7 +1986,6 @@ with st.sidebar:
                 key=key,
                 label_visibility="collapsed",
             )
-    
     
     # --- Gesamtauswahl zusammenbauen ---
     selected_set = set()
