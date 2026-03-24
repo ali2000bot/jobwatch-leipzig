@@ -3017,14 +3017,16 @@ with col1:
         
         # status_top.caption(" | ".join(status_parts))
 
-        # Ergebnisse 
+                # Ergebnisse 
         st.divider()
-            sort_mode = st.radio(
+
+        sort_mode = st.radio(
             "Sortierung",
             ["Mix", "Score", "Entfernung"],
             horizontal=True,
             index=0
         )
+
         st.markdown(
             f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:2px;">'
             f'📋 Ergebnisse ({len(items_sorted)})'
@@ -3036,10 +3038,11 @@ with col1:
         )
 
         current_filter = st.session_state.get("result_filter", "Alle")
-        st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")        
+        st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")
+
         if "result_filter" not in st.session_state:
             st.session_state["result_filter"] = "Alle"
-        
+
         fav_count_visible = sum(
             1 for it in items_sorted
             if is_favorited(it.get("_key") or item_key(it), favorites)
