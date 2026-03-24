@@ -1951,14 +1951,19 @@ with st.sidebar:
         mode_for_ui = mode
     
     # --- UI ---
-    st.markdown("<div style='margin-top:6px;'></div>", unsafe_allow_html=True)
-    selected_mode = st.radio(
-        "Schnellauswahl",
-        radio_options,
-        index=radio_options.index(mode_for_ui),
-        horizontal=True,
-        label_visibility="collapsed",
-    )
+    c_mode, c_radio = st.columns([2, 5])
+
+    with c_mode:
+        st.markdown(chip_html, unsafe_allow_html=True)
+    
+    with c_radio:
+        selected_mode = st.radio(
+            "Schnellauswahl",
+            radio_options,
+            index=radio_options.index(mode_for_ui),
+            horizontal=True,
+            label_visibility="collapsed",
+        )
     
     # --- Reaktion auf Auswahl ---
     if selected_mode == "Alles":
