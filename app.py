@@ -165,7 +165,7 @@ GLOBAL_BAD_TITLE_HINTS = [
     "laborantin",
     "kristallzucht",
     "sharepoint",
-    "chemisch-technischer",
+    "chemisch technischer",
     "cta",
     "elektrotechnik",
     "betriebskosten",
