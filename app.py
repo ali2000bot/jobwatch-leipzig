@@ -2492,6 +2492,45 @@ with col1:
             if dist <= float(max_distance_filter):
                 items_now_filtered.append(it)
 
+        # Sortierung
+        sort_mode = st.radio(
+            "Sortierung",
+            ["Mix", "Score", "Entfernung"],
+            horizontal=True,
+            index=0
+        )
+
+        if sort_mode == "Score":
+            items_sorted = sorted(
+                items_now_filtered,
+                key=lambda it: (
+                    -int(it.get("_score", 0)),
+                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999.0,
+                    str(it.get("_title", "")).lower()
+                )
+            )
+
+        elif sort_mode == "Entfernung":
+            items_sorted = sorted(
+                items_now_filtered,
+                key=lambda it: (
+                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999.0,
+                    -int(it.get("_score", 0)),
+                    str(it.get("_title", "")).lower()
+                )
+            )
+
+        else:  # Mix
+            items_sorted = sorted(items_now_filtered, key=sort_key)
+        items_now_filtered = []
+        for it in items_now:
+            dist = it.get("_distance_km")
+            if dist is None:
+                items_now_filtered.append(it)
+                continue
+            if dist <= float(max_distance_filter):
+                items_now_filtered.append(it)
+
         if sort_mode == "Score":
             items_sorted = sorted(
                 items_now_filtered,
@@ -3017,15 +3056,8 @@ with col1:
         
         # status_top.caption(" | ".join(status_parts))
 
-                # Ergebnisse 
-        st.divider()
-
-        sort_mode = st.radio(
-            "Sortierung",
-            ["Mix", "Score", "Entfernung"],
-            horizontal=True,
-            index=0
-        )
+        # Ergebnisse 
+        st.divider()        
 
         st.markdown(
             f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:2px;">'
