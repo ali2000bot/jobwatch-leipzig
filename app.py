@@ -2492,13 +2492,8 @@ with col1:
             if dist <= float(max_distance_filter):
                 items_now_filtered.append(it)
 
-        # Sortierung
-        sort_mode = st.radio(
-            "Sortierung",
-            ["Mix", "Score", "Entfernung"],
-            horizontal=True,
-            index=0
-        )
+        # Sortierung aus Session State lesen
+        sort_mode = st.session_state.get("sort_mode", "Mix")
 
         if sort_mode == "Score":
             items_sorted = sorted(
