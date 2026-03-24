@@ -2033,7 +2033,7 @@ with st.sidebar:
     st.subheader("Filter")
     min_score = st.slider("Mindest-Relevanz", 0, 80, 6, 1)
     only_focus = st.checkbox("Nur passende Treffer anzeigen", value=True)
-    hide_irrelevant = st.checkbox("Offensichtlich unpassende Treffer ausblenden", value=True)
+    hide_irrelevant = st.checkbox("Unpassende Treffer ausblenden", value=True)
     hide_marked = st.checkbox("Bereits ausgeblendete Jobs verbergen", value=True)
     show_hidden_manage = st.checkbox("Ausblend-Liste verwalten", value=False)
 
