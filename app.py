@@ -177,6 +177,7 @@ GLOBAL_BAD_TITLE_HINTS = [
     "data protection",
     "discipline expert",
     "kathodischer",
+    "butcher",
 ]
 
 # Beruf und Titel werden beim BA unterschieden
