@@ -2005,22 +2005,23 @@ with st.sidebar:
         icon = group_state(selected_count, total_count)
                    
         is_open = group_name in default_open_groups
-        
+
         with st.expander(
             f"{icon} {group_name} · {selected_count}/{total_count}",
             expanded=is_open
         ):
-    
+            c1, c2 = st.columns([1, 1], gap="small")
+        
             with c1:
                 if st.button("Alle", key=f"all_{group_name}", use_container_width=True):
                     st.session_state[key] = group_items.copy()
                     st.rerun()
-    
+        
             with c2:
                 if st.button("Keine", key=f"none_{group_name}", use_container_width=True):
                     st.session_state[key] = []
                     st.rerun()
-    
+        
             st.multiselect(
                 group_name,
                 group_items,
