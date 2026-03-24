@@ -3065,20 +3065,31 @@ with col1:
         
         # status_top.caption(" | ".join(status_parts))
 
-        # Ergebnisse 
+        # Ergebnisse
         st.divider()
+
+        current_sort = st.session_state.get("sort_mode", "Mix")
+
+        if "result_filter" not in st.session_state:
+            st.session_state["result_filter"] = "Alle"
+
+        fav_count_visible = sum(
+            1 for it in items_sorted
+            if is_favorited(it.get("_key") or item_key(it), favorites)
+        )
 
         st.markdown(
             f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:2px;">'
             f'📋 Ergebnisse ({len(items_sorted)})'
             f'</div>'
-            f'<div style="font-size:0.9rem;opacity:0.75;margin-bottom:10px;">'
-            #f'Sortiert nach Priorität, Entfernung und Score'
+            f'<div style="font-size:0.9rem;opacity:0.75;margin-bottom:8px;">'
+            f'Sortiert nach Priorität, Entfernung und Score'
             f'</div>',
             unsafe_allow_html=True,
         )
 
         cSort, cFilter = st.columns([1.1, 0.9], gap="small")
+
         with cSort:
             st.radio(
                 "",
@@ -3087,7 +3098,7 @@ with col1:
                 key="sort_mode",
                 label_visibility="collapsed",
             )
-        
+
         with cFilter:
             selected_result_filter = st.radio(
                 "",
@@ -3106,7 +3117,7 @@ with col1:
         current_sort = st.session_state.get("sort_mode", "Mix")
 
         st.caption(
-            f"{len(items_sorted)} Treffer gesamt · "
+            f"{len(items_sorted)} Treffer · "
             f"Neu {len(new_keys)} · Favoriten {fav_count_visible} · "
             f"Sortierung: {current_sort} · Filter: {current_filter}"
         )
