@@ -3067,10 +3067,7 @@ with col1:
 
         if "result_filter" not in st.session_state:
             st.session_state["result_filter"] = "Alle"
-        
-                if "result_filter" not in st.session_state:
-            st.session_state["result_filter"] = "Alle"
-
+      
         fav_count_visible = sum(
             1 for it in items_sorted
             if is_favorited(it.get("_key") or item_key(it), favorites)
