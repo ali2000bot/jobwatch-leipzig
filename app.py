@@ -1933,19 +1933,13 @@ with st.sidebar:
         mode_for_ui = mode
     
     # --- UI ---
-    c_mode, c_radio = st.columns([2, 5])
-
-    with c_mode:
-        st.markdown(chip_html, unsafe_allow_html=True)
-    
-    with c_radio:
-        selected_mode = st.radio(
-            f"Schnellauswahl · {total_selected}/{len(all_profiles)}",
-            radio_options,
-            index=radio_options.index(mode_for_ui),
-            horizontal=True,
-            label_visibility="visible",
-        )
+    selected_mode = st.radio(
+        f"Schnellauswahl · {total_selected}/{len(all_profiles)}",
+        radio_options,
+        index=radio_options.index(mode_for_ui),
+        horizontal=True,
+        label_visibility="visible",
+    )
     
     # --- Reaktion auf Auswahl ---
     if selected_mode == "Alles":
