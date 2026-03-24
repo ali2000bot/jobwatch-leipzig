@@ -1918,25 +1918,7 @@ with st.sidebar:
     
     mode = detect_mode(st.session_state["selected_profiles_ui"])
     total_selected = len(st.session_state["selected_profiles_ui"])
-    
-    chip_html = f"""
-    <div style="
-        display:inline-flex;
-        align-items:center;
-        padding:5px 12px;
-        border-radius:999px;
-        background:#e0e0e0;
-        color:#333;
-        font-size:0.85rem;
-        font-weight:600;
-        margin-bottom:8px;
-    ">
-        Modus: {mode} · {total_selected}/{len(all_profiles)}
-    </div>
-    """
-    
-    st.markdown(chip_html, unsafe_allow_html=True)
-        
+            
     # --- Buttons ---
     # --- Modus bestimmen ---
     mode = detect_mode(st.session_state["selected_profiles_ui"])
@@ -1958,11 +1940,11 @@ with st.sidebar:
     
     with c_radio:
         selected_mode = st.radio(
-            "Schnellauswahl",
+            f"Schnellauswahl · {total_selected}/{len(all_profiles)}",
             radio_options,
             index=radio_options.index(mode_for_ui),
             horizontal=True,
-            label_visibility="collapsed",
+            label_visibility="visible",
         )
     
     # --- Reaktion auf Auswahl ---
