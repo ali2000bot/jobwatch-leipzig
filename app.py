@@ -2037,7 +2037,8 @@ with st.sidebar:
         index=1,
         horizontal=True
     )
-    
+
+       
     # Slider NUR bei streng anzeigen
     if filter_mode == "Streng (Top-Treffer)":
         min_score = st.slider("Mindest-Relevanz", 0, 80, 6, 1)
@@ -3067,71 +3068,30 @@ with col1:
         if "result_filter" not in st.session_state:
             st.session_state["result_filter"] = "Alle"
         
-        current_filter = st.session_state.get("result_filter", "Alle")
-        st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")
+                if "result_filter" not in st.session_state:
+            st.session_state["result_filter"] = "Alle"
 
         fav_count_visible = sum(
             1 for it in items_sorted
             if is_favorited(it.get("_key") or item_key(it), favorites)
         )
-        
-        st.markdown(
-            """
-            <style>
-            div[data-testid="stButton"] > button[kind="secondary"],
-            div[data-testid="stButton"] > button[kind="primary"] {
-                border-radius: 999px;
-                padding: 0.14rem 0.62rem;
-                font-size: 0.83rem;
-                min-height: 0px;
-                font-size: 0.85rem;
-                line-height: 1.2;
-                border: 1px solid rgba(128,128,128,0.22);
-                background: rgba(255,255,255,0.03);
-                box-shadow: none;
-            }
-        
-            div[data-testid="stButton"] > button[kind="secondary"] {
-                color: inherit;
-                background: rgba(255,255,255,0.03);
-                border: 1px solid rgba(128,128,128,0.22);
-            }
-        
-            div[data-testid="stButton"] > button[kind="secondary"]:hover {
-                background: rgba(255,255,255,0.08);
-                border-color: rgba(128,128,128,0.40);
-            }
-        
-            div[data-testid="stButton"] > button[kind="primary"] {
-                color: inherit;
-                background: rgba(46,125,50,0.14);
-                border: 1px solid rgba(46,125,50,0.28);
-                font-weight: 600;
-            }
-        
-            div[data-testid="stButton"] > button[kind="primary"]:hover {
-                background: rgba(46,125,50,0.20);
-                border-color: rgba(46,125,50,0.42);
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-        
-        if "result_filter" not in st.session_state:
-            st.session_state["result_filter"] = "Alle"
-        
+
         result_filter_label_to_value = {
             f"Alle ({len(items_sorted)})": "Alle",
             f"Neu ({len(new_keys)})": "Neu",
             f"Favoriten ({fav_count_visible})": "Favoriten",
         }
-        
-        result_filter_value_to_label = {v: k for k, v in result_filter_label_to_value.items()}
-        
+
+        result_filter_value_to_label = {
+            v: k for k, v in result_filter_label_to_value.items()
+        }
+
         current_filter_value = st.session_state.get("result_filter", "Alle")
-        current_filter_label = result_filter_value_to_label.get(current_filter_value, f"Alle ({len(items_sorted)})")
-        
+        current_filter_label = result_filter_value_to_label.get(
+            current_filter_value,
+            f"Alle ({len(items_sorted)})"
+        )
+
         selected_filter_label = st.radio(
             "Ergebnisfilter",
             list(result_filter_label_to_value.keys()),
@@ -3140,13 +3100,15 @@ with col1:
             label_visibility="collapsed",
             key="result_filter_radio",
         )
-        
+
         st.session_state["result_filter"] = result_filter_label_to_value[selected_filter_label]
-        
+
+        current_filter = st.session_state.get("result_filter", "Alle")
+        st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")
+
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
 
-        #for it in items_sorted:
         filtered_results = items_sorted
 
         if st.session_state.get("result_filter") == "Neu":
