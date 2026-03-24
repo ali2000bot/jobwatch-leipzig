@@ -3065,31 +3065,23 @@ with col1:
             unsafe_allow_html=True,
         )
 
-        cSort, cFilter = st.columns([1.2, 1.0], gap="medium")
-
+        cSort, cFilter = st.columns([1.1, 0.9], gap="small")
         with cSort:
             st.radio(
-                "Sortierung",
+                "",
                 ["Mix", "Score", "Entfernung"],
                 horizontal=True,
                 key="sort_mode",
+                label_visibility="collapsed",
             )
-
-        if "result_filter" not in st.session_state:
-            st.session_state["result_filter"] = "Alle"
-
-        fav_count_visible = sum(
-            1 for it in items_sorted
-            if is_favorited(it.get("_key") or item_key(it), favorites)
-        )
-
+        
         with cFilter:
             selected_result_filter = st.radio(
-                "Ergebnisfilter",
+                "",
                 ["Alle", "Neu", "Favoriten"],
                 horizontal=True,
-                label_visibility="visible",
                 key="result_filter_radio",
+                label_visibility="collapsed",
                 index=["Alle", "Neu", "Favoriten"].index(
                     st.session_state.get("result_filter", "Alle")
                 ),
