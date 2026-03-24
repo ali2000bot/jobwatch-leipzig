@@ -3069,11 +3069,11 @@ with col1:
             unsafe_allow_html=True,
         )
 
-        current_filter = st.session_state.get("result_filter", "Alle")
-        st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")
-
         if "result_filter" not in st.session_state:
             st.session_state["result_filter"] = "Alle"
+        
+        current_filter = st.session_state.get("result_filter", "Alle")
+        st.caption(f"{len(items_sorted)} Treffer gesamt · Filter: {current_filter}")
 
         fav_count_visible = sum(
             1 for it in items_sorted
@@ -3123,37 +3123,31 @@ with col1:
             unsafe_allow_html=True,
         )
         
-        cF1, cF2, cF3, cF4 = st.columns([1, 1, 1.2, 6])
+        if "result_filter" not in st.session_state:
+            st.session_state["result_filter"] = "Alle"
         
-        with cF1:
-            if st.button(
-                "Alle",
-                key="filter_all",
-                type="primary" if st.session_state["result_filter"] == "Alle" else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state["result_filter"] = "Alle"
-                st.rerun()
+        result_filter_label_to_value = {
+            f"Alle ({len(items_sorted)})": "Alle",
+            f"Neu ({len(new_keys)})": "Neu",
+            f"Favoriten ({fav_count_visible})": "Favoriten",
+        }
         
-        with cF2:
-            if st.button(
-                f"Neu {len(new_keys)}",
-                key="filter_new",
-                type="primary" if st.session_state["result_filter"] == "Neu" else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state["result_filter"] = "Neu"
-                st.rerun()
+        result_filter_value_to_label = {v: k for k, v in result_filter_label_to_value.items()}
         
-        with cF3:
-            if st.button(
-                f"Favoriten {fav_count_visible}",
-                key="filter_fav",
-                type="primary" if st.session_state["result_filter"] == "Favoriten" else "secondary",
-                use_container_width=True,
-            ):
-                st.session_state["result_filter"] = "Favoriten"
-                st.rerun()
+        current_filter_value = st.session_state.get("result_filter", "Alle")
+        current_filter_label = result_filter_value_to_label.get(current_filter_value, f"Alle ({len(items_sorted)})")
+        
+        selected_filter_label = st.radio(
+            "Ergebnisfilter",
+            list(result_filter_label_to_value.keys()),
+            index=list(result_filter_label_to_value.keys()).index(current_filter_label),
+            horizontal=True,
+            label_visibility="collapsed",
+            key="result_filter_radio",
+        )
+        
+        st.session_state["result_filter"] = result_filter_label_to_value[selected_filter_label]
+        
         jump_target = st.session_state.get("jump_to_job")
         focus_company = st.session_state.get("focus_company")
 
