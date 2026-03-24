@@ -2492,7 +2492,26 @@ with col1:
             if dist <= float(max_distance_filter):
                 items_now_filtered.append(it)
 
-        items_sorted = sorted(items_now_filtered, key=sort_key)
+        if sort_mode == "Score":
+            items_sorted = sorted(
+                items_now_filtered,
+                key=lambda it: (
+                    -int(it.get("_score", 0)),
+                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999
+                )
+            )
+        
+        elif sort_mode == "Entfernung":
+            items_sorted = sorted(
+                items_now_filtered,
+                key=lambda it: (
+                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999,
+                    -int(it.get("_score", 0))
+                )
+            )
+        
+        else:  # Mix (dein aktuelles Verhalten)
+            items_sorted = sorted(items_now_filtered, key=sort_key)
        
         location_counter = {}
         location_distance = {}
@@ -3000,6 +3019,12 @@ with col1:
 
         # Ergebnisse 
         st.divider()
+            sort_mode = st.radio(
+            "Sortierung",
+            ["Mix", "Score", "Entfernung"],
+            horizontal=True,
+            index=0
+        )
         st.markdown(
             f'<div style="font-size:1.1rem;font-weight:700;margin-top:6px;margin-bottom:2px;">'
             f'📋 Ergebnisse ({len(items_sorted)})'
