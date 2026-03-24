@@ -3066,7 +3066,7 @@ with col1:
         # status_top.caption(" | ".join(status_parts))
 
         # Ergebnisse
-        st.divider()
+        #st.divider()
 
         current_sort = st.session_state.get("sort_mode", "Mix")
 
