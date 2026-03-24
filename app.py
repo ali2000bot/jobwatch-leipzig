@@ -2192,27 +2192,54 @@ with col1:
 
         if show_hidden_manage:
             st.subheader("🙈 Ausblend-Liste")
-
+        
             st.markdown("**Ausgeblendete Jobs**")
             st.caption(f"{len(hidden_keys)} Jobs ausgeblendet (Stand: {_hidden_data.get('updated_at') or '—'})")
-
+        
+            hidden_items = _hidden_data.get("items", {}) if isinstance(_hidden_data, dict) else {}
+        
             cHM1, cHM2 = st.columns([1.2, 3.8])
             with cHM1:
                 if st.button("🧹 Jobs leeren", key="clear_hidden_jobs"):
-                    save_hidden_jobs(set())
+                    save_hidden_jobs(set(), items={})
                     st.success("Ausblend-Liste für Jobs geleert.")
                     st.rerun()
+        
             with cHM2:
                 if hidden_keys:
-                    st.code("\n".join(sorted(hidden_keys)))
+                    for hk in sorted(hidden_keys):
+                        meta = hidden_items.get(hk, {})
+        
+                        title = meta.get("title", "Unbekannter Job")
+                        company = meta.get("company", "—")
+                        location = meta.get("location", "—")
+        
+                        c1, c2 = st.columns([6, 1])
+        
+                        with c1:
+                            st.markdown(
+                                f"**{title}**  \n"
+                                f"{company} · {location}  \n"
+                                f"<span style='font-size:0.8rem;opacity:0.6;'>{hk}</span>",
+                                unsafe_allow_html=True,
+                            )
+        
+                        with c2:
+                            if st.button("👁️", key=f"unhide_manage_{hk}", use_container_width=True):
+                                hidden_keys.discard(hk)
+                                hidden_items.pop(hk, None)
+                                save_hidden_jobs(set(hidden_keys), items=hidden_items)
+                                st.rerun()
+        
+                        st.divider()
                 else:
                     st.caption("Keine Jobs ausgeblendet.")
-
+        
             st.divider()
-
+        
             st.markdown("**Blockierte Firmen**")
             st.caption(f"{len(hidden_companies)} Firmen blockiert")
-
+        
             cHC1, cHC2 = st.columns([1.2, 3.8])
             with cHC1:
                 if st.button("🧹 Firmen leeren", key="clear_hidden_companies"):
@@ -3183,13 +3210,28 @@ with col1:
                 with c_action2:
                     if not is_hidden:
                         if st.button("🙈", key=f"hide_{k}", use_container_width=True):
+                            hidden_data = load_hidden_jobs()
+                            hidden_map = hidden_data.get("items", {}) if isinstance(hidden_data, dict) else {}
+                
+                            hidden_map[k] = {
+                                "title": item_title(it),
+                                "company": item_company(it),
+                                "location": pretty_location(it),
+                                "hidden_at": datetime.now().isoformat(timespec="seconds"),
+                            }
+                
                             hidden_keys.add(k)
-                            save_hidden_jobs(hidden_keys)
+                            save_hidden_jobs(set(hidden_keys), items=hidden_map)
                             st.rerun()
                     else:
                         if st.button("👁️", key=f"unhide_{k}", use_container_width=True):
+                            hidden_data = load_hidden_jobs()
+                            hidden_map = hidden_data.get("items", {}) if isinstance(hidden_data, dict) else {}
+                
                             hidden_keys.discard(k)
-                            save_hidden_jobs(hidden_keys)
+                            hidden_map.pop(k, None)
+                
+                            save_hidden_jobs(set(hidden_keys), items=hidden_map)
                             st.rerun()
                 
                 with c_action3:
