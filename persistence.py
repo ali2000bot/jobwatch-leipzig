@@ -1,6 +1,6 @@
 import streamlit as st
 from datetime import datetime
-from typing import Any, Dict, Set
+from typing import Any, Dict, Optional, Set
 from supabase import create_client, Client
 
 
@@ -58,21 +58,16 @@ def save_favorites(favs: Dict[str, Any]):
 
 
 def load_hidden_jobs() -> Dict[str, Any]:
-    if not os.path.exists(HIDDEN_JOBS_FILE):
+    data = _load_json("hidden_jobs", {"hidden": [], "items": {}, "updated_at": None})
+
+    if not isinstance(data, dict):
         return {"hidden": [], "items": {}, "updated_at": None}
 
-    try:
-        with open(HIDDEN_JOBS_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if not isinstance(data, dict):
-            return {"hidden": [], "items": {}, "updated_at": None}
+    data.setdefault("hidden", [])
+    data.setdefault("items", {})
+    data.setdefault("updated_at", None)
+    return data
 
-        data.setdefault("hidden", [])
-        data.setdefault("items", {})
-        data.setdefault("updated_at", None)
-        return data
-    except Exception:
-        return {"hidden": [], "items": {}, "updated_at": None}
 
 def save_hidden_jobs(hidden_keys: Set[str], items: Optional[Dict[str, Any]] = None):
     payload = {
@@ -80,8 +75,7 @@ def save_hidden_jobs(hidden_keys: Set[str], items: Optional[Dict[str, Any]] = No
         "hidden": sorted(hidden_keys),
         "items": items or {},
     }
-    with open(HIDDEN_JOBS_FILE, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+    _save_json("hidden_jobs", payload)
 
 
 def load_hidden_companies():
