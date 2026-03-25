@@ -1071,6 +1071,7 @@ def build_queries():
             "was": "Field Application Scientist",
             "berufsfeld": ""
         },
+        # --- Verwaltung / Technik / Immobilien ---
         "Verwaltung_Technik": {
             "was": "Technischer Sachbearbeiter",
             "berufsfeld": ""
@@ -1079,14 +1080,19 @@ def build_queries():
             "was": "Facility Manager",
             "berufsfeld": ""
         },
-        "Ingenieur öffentlicher Dienst": {
-            "was": "Ingenieur öffentlicher Dienst",
-            "berufsfeld": ""
-        },
         "Gebäudemanagement": {
             "was": "Gebäudemanagement",
             "berufsfeld": ""
         },
+        "Technischer Referent": {
+            "was": "Technischer Referent",
+            "berufsfeld": ""
+        },
+        "Immobilienmanager": {
+            "was": "Immobilienmanager",
+            "berufsfeld": ""
+        }, 
+        # --- Forschung / Lehre / Thermo ---
         "Thermo_Forschung": {
             "was": "Wissenschaftlicher Mitarbeiter Thermodynamik",
             "berufsfeld": ""
@@ -1101,6 +1107,10 @@ def build_queries():
         },
         "Thermal Analysis Research": {
             "was": "Thermal Analysis Research",
+            "berufsfeld": ""
+        },
+        "Thermodynamik Ingenieur": {
+            "was": "Ingenieur Thermodynamik",
             "berufsfeld": ""
         },
     }
@@ -1159,10 +1169,18 @@ def build_query_groups():
         ],
         "Verwaltung / Technik / Immobilien": [
             "Verwaltung_Technik",
-        ],
+            "Facility Manager",
+            "Gebäudemanagement",
+            "Technischer Referent",
+            "Immobilienmanager",
+        ],      
         "Forschung / Lehre / Thermodynamik": [
             "Thermo_Forschung",
-        ],
+            "Wissenschaftlicher Mitarbeiter Wärmeübertragung",
+            "Research Associate Heat Transfer",
+            "Thermal Analysis Research",
+            "Thermodynamik Ingenieur",
+        ],    
         "Breite Suche": [
             "Breit",
         ],
