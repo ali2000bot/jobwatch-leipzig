@@ -2752,7 +2752,10 @@ with col1:
             if dist <= float(max_distance_filter):
                 items_now_filtered.append(it)
 
-        # Sortierung aus Session State lesen
+        # Standard-Sortierung
+        if "sort_mode" not in st.session_state:
+            st.session_state["sort_mode"] = "Entfernung"
+
         sort_mode = st.session_state.get("sort_mode", "Entfernung")
 
         if sort_mode == "Score":
@@ -2764,8 +2767,7 @@ with col1:
                     str(it.get("_title", "")).lower()
                 )
             )
-
-        elif sort_mode == "Entfernung":
+        else:  # Entfernung
             items_sorted = sorted(
                 items_now_filtered,
                 key=lambda it: (
@@ -2774,38 +2776,6 @@ with col1:
                     str(it.get("_title", "")).lower()
                 )
             )
-
-        else:  # Mix
-            items_sorted = sorted(items_now_filtered, key=sort_key)
-        items_now_filtered = []
-        for it in items_now:
-            dist = it.get("_distance_km")
-            if dist is None:
-                items_now_filtered.append(it)
-                continue
-            if dist <= float(max_distance_filter):
-                items_now_filtered.append(it)
-
-        if sort_mode == "Score":
-            items_sorted = sorted(
-                items_now_filtered,
-                key=lambda it: (
-                    -int(it.get("_score", 0)),
-                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999
-                )
-            )
-        
-        elif sort_mode == "Entfernung":
-            items_sorted = sorted(
-                items_now_filtered,
-                key=lambda it: (
-                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999,
-                    -int(it.get("_score", 0))
-                )
-            )
-        
-        else:  # Mix (dein aktuelles Verhalten)
-            items_sorted = sorted(items_now_filtered, key=sort_key)
        
         location_counter = {}
         location_distance = {}
@@ -3349,10 +3319,9 @@ with col1:
         cSort, cFilter = st.columns([1.1, 0.9], gap="small")
 
         with cSort:
-            #st.markdown(
-            #    '<div style="font-size:0.82rem;opacity:0.7;margin-bottom:2px;">Sortierung</div>',
-            #    unsafe_allow_html=True
-            #)
+            if st.session_state.get("sort_mode") not in ["Score", "Entfernung"]:
+                st.session_state["sort_mode"] = "Entfernung"
+
             st.radio(
                 "",
                 ["Score", "Entfernung"],
