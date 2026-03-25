@@ -3355,7 +3355,7 @@ with col1:
             #)
             st.radio(
                 "",
-                ["Mix", "Score", "Entfernung"],
+                ["Score", "Entfernung"],
                 horizontal=True,
                 key="sort_mode",
                 label_visibility="collapsed",
