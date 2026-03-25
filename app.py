@@ -190,6 +190,19 @@ GLOBAL_BAD_TITLE_HINTS = [
     "discipline expert",
     "kathodischer",
     "butcher",
+    "reinigung",
+    "reinigungskraft",
+    "reiniger",
+    "gebäudereiniger",
+    "glasreiniger",
+    "hausmeister",
+    "haustechniker",
+    "helfer",
+    "springer",
+    "materialfahrer",
+    "fahrer",
+    "aushilfe",
+    "minijob",
 ]
 
 # Beruf und Titel werden beim BA unterschieden
