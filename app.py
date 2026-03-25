@@ -3405,271 +3405,323 @@ with col1:
             ]
         
         for it in filtered_results:
-            idx = int(it.get("_idx", 0) or 0)
-            k = it.get("_key") or item_key(it)
-            is_new = (k in new_keys)
-            is_hidden = (k in hidden_keys)
-            fav = is_favorited(k, favorites)
-            is_focused_company = item_company(it).strip().lower() == focus_company if focus_company else False
-
-            score = int(it.get("_score", 0))
-            parts = it.get("_score_parts", [])
-            dist = it.get("_distance_km")
-            t_min = it.get("_travel_min")
-            bucket = distance_bucket(dist, int(near_km), int(mid_km))
-            emo = distance_emoji(bucket)
-
-            star = "⭐ " if it.get("_is_leadership") else ""
-
-            org = it.get("_org")
-            target_tag = ""
-            if org:
-                target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
-
-            num_txt = f"{idx:02d}" if idx > 0 else "??"
-            dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
-
-            pin = "📌 " if fav else ""
-            focus_tag = " 🏢" if is_focused_company else ""
-
-            safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
-            company_name = it.get("_company", item_company(it))
-            location_name = it.get("_location", pretty_location(it))
-
-            badges = []
-
-            # Neu / Favorit
-            if is_new:
-                badges.append("🆕")
-            if fav:
-                badges.append("📌")
-            
-            # Score
-            if score >= 70:
-                badges.insert(0, "🔥")  # immer ganz vorne
-            
-            # Führung (statt ⭐)
-            if it.get("_is_leadership"):
-                badges.append("👔")
-            
-            # Profil-basierte Kennzeichnung
-            profile_name = str(it.get("_profile", "")).strip().lower()
-            
-            # Verwaltung / öffentlicher Bereich
-            if (
-                "verwaltung" in profile_name
-                or "gebäude" in profile_name
-                or "facility" in profile_name
-            ):
-                badges.append("🏛️")
-            
-            # Forschung / Lehre
-            if (
-                "thermo" in profile_name
-                or "forschung" in profile_name
-                or "research" in profile_name
-            ):
-                badges.append("🎓")
-            
-            # Fokus-Firma (bestehende Logik behalten!)
-            if is_focused_company:
-                badges.append("🏢")
-            
-            # Zielunternehmen
-            if org:
-                badges.append("🎯")
-            
-            badge_prefix = " ".join(badges)
-            badge_prefix = f"{badge_prefix} " if badge_prefix else ""
-            
-            label = f"{emo} {num_txt} · {dist_txt} · S{score} · {badge_prefix}{safe_title}"
-            
-            meta_text = " · ".join(
-                [
-                    f"Score {score}",
-                    it.get("_profile", ""),
-                    it.get("_bucket", ""),
-                    company_name,
-                    location_name,
-                ]
-            )
-
-            expanded = (jump_target == k)
-
-            with st.expander(label, expanded=expanded):
-                if is_focused_company:
-                    st.caption(f"🏢 Fokusfirma: {company_name}")
-            
-                badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
+        if sort_mode == "Jobart":
+            from collections import defaultdict
+        
+            grouped = defaultdict(list)
+            for it in filtered_results:
+                profile = str(it.get("_profile", "Sonstiges"))
+                grouped[profile].append(it)
+        
+            for profile, group_items in grouped.items():
+                profile_lower = profile.lower()
+        
+                # Icon je Gruppe
+                if "verwaltung" in profile_lower or "gebäude" in profile_lower or "facility" in profile_lower:
+                    icon = "🏛️"
+                    color = "#ffd6a5"
+                elif "messtechnik" in profile_lower:
+                    icon = "🧪"
+                    color = "#caffbf"
+                elif "thermo" in profile_lower or "forschung" in profile_lower:
+                    icon = "🎓"
+                    color = "#bdb2ff"
+                else:
+                    icon = "📂"
+                    color = "#e0e0e0"
+        
+                # Gruppenüberschrift
                 st.markdown(
                     f"""
-                    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;">
-                        {badge}
-                        <span style="font-size:0.86rem;opacity:0.82;">{meta_text}</span>
+                    <div style="
+                        background:{color};
+                        padding:4px 10px;
+                        border-radius:10px;
+                        font-size:0.85rem;
+                        font-weight:600;
+                        margin-top:10px;
+                        margin-bottom:4px;
+                    ">
+                        {icon} {profile} ({len(group_items)})
                     </div>
                     """,
                     unsafe_allow_html=True,
                 )
-            
-                st.markdown("<div class='result-action-row'>", unsafe_allow_html=True)
-
-                c_action1, c_action2, c_action3, c_action4, c_action5, c_action6 = st.columns(
-                    [0.72, 0.72, 0.72, 0.72, 0.72, 2.2], gap="small"
-                )
-                
-                with c_action1:
-                    if not fav:
-                        if st.button("📌", key=f"fav_add_{k}", use_container_width=True):
-                            favorites[k] = {
-                                "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                                "note": favorites.get(k, {}).get("note", ""),
-                            }
-                            save_favorites(favorites)
-                            st.rerun()
-                    else:
-                        if st.button("🗑️", key=f"fav_del_{k}", use_container_width=True):
-                            favorites.pop(k, None)
-                            save_favorites(favorites)
-                            st.rerun()
-                
-                with c_action2:
-                    if not is_hidden:
-                        if st.button("🙈", key=f"hide_{k}", use_container_width=True):
-                            hidden_data = load_hidden_jobs()
-                            hidden_map = hidden_data.get("items", {}) if isinstance(hidden_data, dict) else {}
-                
-                            hidden_map[k] = {
-                                "title": item_title(it),
-                                "company": item_company(it),
-                                "location": pretty_location(it),
-                                "hidden_at": datetime.now().isoformat(timespec="seconds"),
-                            }
-                
-                            hidden_keys.add(k)
-                            save_hidden_jobs(set(hidden_keys), items=hidden_map)
-                            st.rerun()
-                    else:
-                        if st.button("👁️", key=f"unhide_{k}", use_container_width=True):
-                            hidden_data = load_hidden_jobs()
-                            hidden_map = hidden_data.get("items", {}) if isinstance(hidden_data, dict) else {}
-                
-                            hidden_keys.discard(k)
-                            hidden_map.pop(k, None)
-                
-                            save_hidden_jobs(set(hidden_keys), items=hidden_map)
-                            st.rerun()
-                
-                with c_action3:
-                    if company_name:
-                        if st.button("🚫", key=f"hide_company_{k}", use_container_width=True):
-                            hidden_companies.add(company_name.lower())
-                            save_hidden_companies(hidden_companies)
-                            st.rerun()
-                    else:
-                        st.caption(" ")
-                
-                with c_action4:
-                    web_url = jobsuche_web_url(it)
-                    if web_url:
-                        st.link_button("🔗", web_url, use_container_width=True)
-                    else:
-                        st.caption(" ")
-                
-                with c_action5:
-                    ll = extract_latlon_from_item(it)
-                    if ll:
-                        gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
-                        st.link_button("🚗", gdir, use_container_width=True)
-                    else:
-                        st.caption(" ")
-                
-                with c_action6:
-                    if fav:
-                        note_key = f"fav_note_{k}"
-                        note_val = (favorites.get(k, {}) or {}).get("note", "")
-                        new_note = st.text_input(
-                            "Notiz",
-                            value=note_val,
-                            key=note_key,
-                            label_visibility="collapsed",
-                            placeholder="Notiz..."
-                        )
-                        if new_note != note_val:
-                            favorites[k]["note"] = new_note
-                            save_favorites(favorites)
-                    else:
-                        st.caption(" ")
-                
-                st.markdown("</div>", unsafe_allow_html=True)
-                
-                rid = item_id_raw(it) or "—"
-                facts = [
-                    ("Nr.", num_txt),
-                    ("Distanz", dist_txt),
-                    ("Fahrzeit", f"~{t_min} min" if t_min is not None else "—"),
-                    ("Score", str(score)),
-                    ("Profil", it.get("_profile", "")),
-                    ("Arbeitgeber", company_name or "—"),
-                    ("Ort", location_name),
-                    ("Quelle", it.get("_bucket", "")),
-                    ("RefNr/BA-ID", rid),
-                    ("Ziel-Organisation", org["name"] if org else "—"),
-                ]
-                render_fact_grid(facts)
-                
+        
+                # Jobs innerhalb der Gruppe
+                for it in group_items:
+                    # 👉 hier kommt dein bestehender Rendering-Code rein
+                    render_job_item(it)
+        
+        else:
+           
+                render_job_item(it)
+        
+                idx = int(it.get("_idx", 0) or 0)
+                k = it.get("_key") or item_key(it)
+                is_new = (k in new_keys)
+                is_hidden = (k in hidden_keys)
+                fav = is_favorited(k, favorites)
+                is_focused_company = item_company(it).strip().lower() == focus_company if focus_company else False
+    
+                score = int(it.get("_score", 0))
+                parts = it.get("_score_parts", [])
+                dist = it.get("_distance_km")
+                t_min = it.get("_travel_min")
+                bucket = distance_bucket(dist, int(near_km), int(mid_km))
+                emo = distance_emoji(bucket)
+    
+                star = "⭐ " if it.get("_is_leadership") else ""
+    
+                org = it.get("_org")
+                target_tag = ""
                 if org:
+                    target_tag = " 🔥🎯" if org.get("priority") == "high" else " 🎯"
+    
+                num_txt = f"{idx:02d}" if idx > 0 else "??"
+                dist_txt = f"{dist:.1f} km" if dist is not None else "— km"
+    
+                pin = "📌 " if fav else ""
+                focus_tag = " 🏢" if is_focused_company else ""
+    
+                safe_title = it.get("_title_safe", sanitize_md_text(item_title(it)))
+                company_name = it.get("_company", item_company(it))
+                location_name = it.get("_location", pretty_location(it))
+    
+                badges = []
+    
+                # Neu / Favorit
+                if is_new:
+                    badges.append("🆕")
+                if fav:
+                    badges.append("📌")
+                
+                # Score
+                if score >= 70:
+                    badges.insert(0, "🔥")  # immer ganz vorne
+                
+                # Führung (statt ⭐)
+                if it.get("_is_leadership"):
+                    badges.append("👔")
+                
+                # Profil-basierte Kennzeichnung
+                profile_name = str(it.get("_profile", "")).strip().lower()
+                
+                # Verwaltung / öffentlicher Bereich
+                if (
+                    "verwaltung" in profile_name
+                    or "gebäude" in profile_name
+                    or "facility" in profile_name
+                ):
+                    badges.append("🏛️")
+                
+                # Forschung / Lehre
+                if (
+                    "thermo" in profile_name
+                    or "forschung" in profile_name
+                    or "research" in profile_name
+                ):
+                    badges.append("🎓")
+                
+                # Fokus-Firma (bestehende Logik behalten!)
+                if is_focused_company:
+                    badges.append("🏢")
+                
+                # Zielunternehmen
+                if org:
+                    badges.append("🎯")
+                
+                badge_prefix = " ".join(badges)
+                badge_prefix = f"{badge_prefix} " if badge_prefix else ""
+                
+                label = f"{emo} {num_txt} · {dist_txt} · S{score} · {badge_prefix}{safe_title}"
+                
+                meta_text = " · ".join(
+                    [
+                        f"Score {score}",
+                        it.get("_profile", ""),
+                        it.get("_bucket", ""),
+                        company_name,
+                        location_name,
+                    ]
+                )
+    
+                expanded = (jump_target == k)
+    
+                with st.expander(label, expanded=expanded):
+                    if is_focused_company:
+                        st.caption(f"🏢 Fokusfirma: {company_name}")
+                
+                    badge = distance_badge_html(dist, t_min, int(near_km), int(mid_km))
                     st.markdown(
-                        '<div style="font-weight:600;margin-top:4px;margin-bottom:3px;font-size:0.92rem;">Karriereseite</div>',
+                        f"""
+                        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;">
+                            {badge}
+                            <span style="font-size:0.86rem;opacity:0.82;">{meta_text}</span>
+                        </div>
+                        """,
                         unsafe_allow_html=True,
                     )
-                    try:
-                        st.link_button("🏢 Karriereseite öffnen", org["url"])
-                    except Exception:
-                        st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
                 
-                if parts:
-                    st.markdown(
-                        '<div style="font-weight:600;margin-top:6px;margin-bottom:2px;font-size:0.92rem;">Score-Aufschlüsselung</div>',
-                        unsafe_allow_html=True,
+                    st.markdown("<div class='result-action-row'>", unsafe_allow_html=True)
+    
+                    c_action1, c_action2, c_action3, c_action4, c_action5, c_action6 = st.columns(
+                        [0.72, 0.72, 0.72, 0.72, 0.72, 2.2], gap="small"
                     )
-                    st.caption(" · ".join(parts))
-                
-                api_url = details_url_api(it)
-                if not api_url:
-                    kurz = short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext")
-                    if kurz:
+                    
+                    with c_action1:
+                        if not fav:
+                            if st.button("📌", key=f"fav_add_{k}", use_container_width=True):
+                                favorites[k] = {
+                                    "added_at": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                                    "note": favorites.get(k, {}).get("note", ""),
+                                }
+                                save_favorites(favorites)
+                                st.rerun()
+                        else:
+                            if st.button("🗑️", key=f"fav_del_{k}", use_container_width=True):
+                                favorites.pop(k, None)
+                                save_favorites(favorites)
+                                st.rerun()
+                    
+                    with c_action2:
+                        if not is_hidden:
+                            if st.button("🙈", key=f"hide_{k}", use_container_width=True):
+                                hidden_data = load_hidden_jobs()
+                                hidden_map = hidden_data.get("items", {}) if isinstance(hidden_data, dict) else {}
+                    
+                                hidden_map[k] = {
+                                    "title": item_title(it),
+                                    "company": item_company(it),
+                                    "location": pretty_location(it),
+                                    "hidden_at": datetime.now().isoformat(timespec="seconds"),
+                                }
+                    
+                                hidden_keys.add(k)
+                                save_hidden_jobs(set(hidden_keys), items=hidden_map)
+                                st.rerun()
+                        else:
+                            if st.button("👁️", key=f"unhide_{k}", use_container_width=True):
+                                hidden_data = load_hidden_jobs()
+                                hidden_map = hidden_data.get("items", {}) if isinstance(hidden_data, dict) else {}
+                    
+                                hidden_keys.discard(k)
+                                hidden_map.pop(k, None)
+                    
+                                save_hidden_jobs(set(hidden_keys), items=hidden_map)
+                                st.rerun()
+                    
+                    with c_action3:
+                        if company_name:
+                            if st.button("🚫", key=f"hide_company_{k}", use_container_width=True):
+                                hidden_companies.add(company_name.lower())
+                                save_hidden_companies(hidden_companies)
+                                st.rerun()
+                        else:
+                            st.caption(" ")
+                    
+                    with c_action4:
+                        web_url = jobsuche_web_url(it)
+                        if web_url:
+                            st.link_button("🔗", web_url, use_container_width=True)
+                        else:
+                            st.caption(" ")
+                    
+                    with c_action5:
+                        ll = extract_latlon_from_item(it)
+                        if ll:
+                            gdir = google_directions_url(float(home_lat), float(home_lon), float(ll[0]), float(ll[1]))
+                            st.link_button("🚗", gdir, use_container_width=True)
+                        else:
+                            st.caption(" ")
+                    
+                    with c_action6:
+                        if fav:
+                            note_key = f"fav_note_{k}"
+                            note_val = (favorites.get(k, {}) or {}).get("note", "")
+                            new_note = st.text_input(
+                                "Notiz",
+                                value=note_val,
+                                key=note_key,
+                                label_visibility="collapsed",
+                                placeholder="Notiz..."
+                            )
+                            if new_note != note_val:
+                                favorites[k]["note"] = new_note
+                                save_favorites(favorites)
+                        else:
+                            st.caption(" ")
+                    
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    
+                    rid = item_id_raw(it) or "—"
+                    facts = [
+                        ("Nr.", num_txt),
+                        ("Distanz", dist_txt),
+                        ("Fahrzeit", f"~{t_min} min" if t_min is not None else "—"),
+                        ("Score", str(score)),
+                        ("Profil", it.get("_profile", "")),
+                        ("Arbeitgeber", company_name or "—"),
+                        ("Ort", location_name),
+                        ("Quelle", it.get("_bucket", "")),
+                        ("RefNr/BA-ID", rid),
+                        ("Ziel-Organisation", org["name"] if org else "—"),
+                    ]
+                    render_fact_grid(facts)
+                    
+                    if org:
                         st.markdown(
-                            '<div style="font-weight:600;margin-top:6px;margin-bottom:2px;font-size:0.92rem;">Kurzbeschreibung</div>',
+                            '<div style="font-weight:600;margin-top:4px;margin-bottom:3px;font-size:0.92rem;">Karriereseite</div>',
                             unsafe_allow_html=True,
                         )
-                        st.write(kurz)
+                        try:
+                            st.link_button("🏢 Karriereseite öffnen", org["url"])
+                        except Exception:
+                            st.markdown(f"[🏢 Karriereseite öffnen]({org['url']})")
+                    
+                    if parts:
+                        st.markdown(
+                            '<div style="font-weight:600;margin-top:6px;margin-bottom:2px;font-size:0.92rem;">Score-Aufschlüsselung</div>',
+                            unsafe_allow_html=True,
+                        )
+                        st.caption(" · ".join(parts))
+                    
+                    api_url = details_url_api(it)
+                    if not api_url:
+                        kurz = short_field(it, "kurzbeschreibung", "beschreibungKurz", "kurztext")
+                        if kurz:
+                            st.markdown(
+                                '<div style="font-weight:600;margin-top:6px;margin-bottom:2px;font-size:0.92rem;">Kurzbeschreibung</div>',
+                                unsafe_allow_html=True,
+                            )
+                            st.write(kurz)
+                        else:
+                            st.caption("Keine weiteren Details im Suchtreffer.")
+                        continue
+                    
+                    details, derr = fetch_details(api_key, api_url)
+                    if derr:
+                        st.error(derr)
+                        st.caption("Nutze ggf. den BA-Link oben.")
+                        continue
+                    
+                    if not details:
+                        st.caption("Keine Details erhalten.")
+                        continue
+                    
+                    desc = (
+                        details.get("stellenbeschreibung")
+                        or details.get("beschreibung")
+                        or details.get("jobbeschreibung")
+                        or details.get("aufgaben")
+                        or details.get("anforderungen")
+                    )
+                    
+                    if isinstance(desc, str) and desc.strip():
+                        with st.expander("Beschreibung / Aufgaben / Anforderungen", expanded=False):
+                            st.write(desc)
                     else:
-                        st.caption("Keine weiteren Details im Suchtreffer.")
-                    continue
-                
-                details, derr = fetch_details(api_key, api_url)
-                if derr:
-                    st.error(derr)
-                    st.caption("Nutze ggf. den BA-Link oben.")
-                    continue
-                
-                if not details:
-                    st.caption("Keine Details erhalten.")
-                    continue
-                
-                desc = (
-                    details.get("stellenbeschreibung")
-                    or details.get("beschreibung")
-                    or details.get("jobbeschreibung")
-                    or details.get("aufgaben")
-                    or details.get("anforderungen")
-                )
-                
-                if isinstance(desc, str) and desc.strip():
-                    with st.expander("Beschreibung / Aufgaben / Anforderungen", expanded=False):
-                        st.write(desc)
-                else:
-                    st.caption("Keine ausführliche Beschreibung im Detail-Response gefunden.")
+                        st.caption("Keine ausführliche Beschreibung im Detail-Response gefunden.")
 
     with tab_company:
         st.subheader("Firmencheck (manuell, pro Firma)")
