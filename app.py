@@ -196,7 +196,7 @@ GLOBAL_BAD_TITLE_HINTS = [
     "gebäudereiniger",
     "glasreiniger",
     "hausmeister",
-    "haustechniker",
+    #"haustechniker",
     "helfer",
     "springer",
     "materialfahrer",
