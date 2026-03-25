@@ -2873,12 +2873,7 @@ with col1:
                     for p, c in sorted(final_profile_counter.items(), key=lambda x: x[1], reverse=True)
                 ]
                 st.caption("Finale Treffer pro Jobart: " + " | ".join(final_parts))
-        if final_profile_counter:
-            final_parts = [
-                f"{p} {c}"
-                for p, c in sorted(final_profile_counter.items(), key=lambda x: x[1], reverse=True)
-            ]
-            st.caption("Finale Treffer pro Jobart: " + " | ".join(final_parts))
+        
         if title_counter:
             top_titles = sorted(title_counter.items(), key=lambda x: x[1], reverse=True)[:10]
         
