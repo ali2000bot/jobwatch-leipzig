@@ -46,6 +46,18 @@ DEFAULT_FOCUS_KEYWORDS = [
     "thermische simulation", "physik", "physics",
     "laborleitung", "laboratory", "testing", "measurement systems", "characterization",
     "heat transfer", "materials science", "materials testing",
+    "gebäudetechnik", "gebaeudetechnik",
+    "versorgungstechnik",
+    "technische gebäudeausrüstung", "technische gebaeudeausruestung",
+    "tga", "hkls", "hks", "hls",
+    "heizung", "heizungs",
+    "klima", "klimatechnik",
+    "lüftung", "lueftung", "lüftungstechnik", "lueftungstechnik",
+    "sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
+    "facility", "facility management",
+    "gebäudemanagement", "gebaeudemanagement",
+    "immobilienmanagement", "liegenschaft",
+    "baumanagement", "amt", "öffentlicher dienst", "oeffentlicher dienst",
 ]
 
 DEFAULT_LEADERSHIP_KEYWORDS = [
