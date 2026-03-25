@@ -260,8 +260,8 @@ MESSTECHNIK_HINTS = {
         "application scientist",
     ],
     "title_hybrid": [
-        "messtechniker",
-        "vertriebstechniker",
+        #"messtechniker",
+        #"vertriebstechniker",
         "vertriebsingenieur",
         "application",
         "product specialist",
