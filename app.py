@@ -2753,7 +2753,7 @@ with col1:
                 items_now_filtered.append(it)
 
         # Sortierung aus Session State lesen
-        sort_mode = st.session_state.get("sort_mode", "Mix")
+        sort_mode = st.session_state.get("sort_mode", "Entfernung")
 
         if sort_mode == "Score":
             items_sorted = sorted(
