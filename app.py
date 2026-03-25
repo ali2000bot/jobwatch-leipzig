@@ -356,11 +356,15 @@ VERWALTUNG_TECHNIK_HINTS = {
 
 VERWALTUNG_TECHNIK_BOOST_KEYWORDS = [
     "gebäudetechnik", "gebaeudetechnik",
-    "versorgungstechnik",
-    "tga", "hls", "hkls",
-    "heizung", "klima", "lüftung", "lueftung", "sanitär", "sanitaer",
     "gebäudemanagement", "gebaeudemanagement",
-    "facility", "immobilien", "liegenschaft", "baumanagement",
+    "versorgungstechnik",
+    "technische gebäudeausrüstung", "technische gebaeudeausruestung",
+    "tga", "hkls", "hls", "hks",
+    "heizung", "heizungs",
+    "klima", "klimatechnik",
+    "lüftung", "lueftung", "lüftungstechnik", "lueftungstechnik",
+    "sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
+    "facility", "liegenschaft", "baumanagement", "infrastruktur",
 ]
 
 THERMO_FORSCHUNG_HINTS = {
