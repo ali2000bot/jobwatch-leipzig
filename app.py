@@ -203,6 +203,13 @@ GLOBAL_BAD_TITLE_HINTS = [
     "fahrer",
     "aushilfe",
     "minijob",
+    "servicemechaniker",
+    "servicemonteur",
+    "elektrotechnikmeister",
+    "meister",
+    "elektroniker",
+    "teamleiter elektrotechnik",
+    "betriebskoordinator",
 ]
 
 # Beruf und Titel werden beim BA unterschieden
