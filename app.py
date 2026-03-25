@@ -2845,7 +2845,7 @@ with col1:
                 f"{p} {c}"
                 for p, c in sorted(profile_counter.items(), key=lambda x: x[1], reverse=True)
             ]
-            st.caption("Treffer pro Jobart: " + " | ".join(parts))
+            st.caption("Roh-Treffer pro Jobart: " + " | ".join(parts))
         if title_counter:
             top_titles = sorted(title_counter.items(), key=lambda x: x[1], reverse=True)[:10]
         
