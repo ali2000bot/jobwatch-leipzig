@@ -260,8 +260,8 @@ MESSTECHNIK_HINTS = {
         "application scientist",
     ],
     "title_hybrid": [
-        #"messtechniker",
-        #"vertriebstechniker",
+        "messtechniker", # für ITEMA
+        "vertriebstechniker", # für ITEMA
         "vertriebsingenieur",
         "application",
         "product specialist",
