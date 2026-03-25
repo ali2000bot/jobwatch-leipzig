@@ -3463,9 +3463,6 @@ with col1:
             # Zielunternehmen
             if org:
                 badges.append("🎯")
-
-            if score >= 70:
-                badges.insert(0, "🔥")  # immer ganz vorne
             
             badge_prefix = " ".join(badges)
             badge_prefix = f"{badge_prefix} " if badge_prefix else ""
