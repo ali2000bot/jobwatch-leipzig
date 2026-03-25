@@ -3431,7 +3431,7 @@ with col1:
             
             # Score
             if score >= 70:
-                badges.append("🔥")
+                badges.insert(0, "🔥")  # immer ganz vorne
             
             # Führung (statt ⭐)
             if it.get("_is_leadership"):
