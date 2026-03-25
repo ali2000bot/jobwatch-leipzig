@@ -2847,13 +2847,32 @@ with col1:
             if profile_name:
                 final_profile_counter[profile_name] = final_profile_counter.get(profile_name, 0) + 1
         
-        if profile_counter:
-            parts = [
-                f"{p} {c}"
-                for p, c in sorted(profile_counter.items(), key=lambda x: x[1], reverse=True)
-            ]
-            st.caption("Treffer pro Jobart (roh): " + " | ".join(parts))
+        # Kompakte Anzeige oben: nur Jobarten mit finalen Treffern
+        funnel_parts = []
+        for p in sorted(profile_counter, key=lambda x: profile_counter[x], reverse=True):
+            raw = profile_counter.get(p, 0)
+            final = final_profile_counter.get(p, 0)
+            if final > 0:
+                funnel_parts.append(f"{p} {raw}→{final}")
 
+        if funnel_parts:
+            st.caption("Jobarten: " + " | ".join(funnel_parts))
+
+        # Vollständige Übersicht ausklappbar
+        with st.expander("Alle Jobarten anzeigen", expanded=False):
+            if profile_counter:
+                raw_parts = [
+                    f"{p} {c}"
+                    for p, c in sorted(profile_counter.items(), key=lambda x: x[1], reverse=True)
+                ]
+                st.caption("Treffer pro Jobart (roh): " + " | ".join(raw_parts))
+
+            if final_profile_counter:
+                final_parts = [
+                    f"{p} {c}"
+                    for p, c in sorted(final_profile_counter.items(), key=lambda x: x[1], reverse=True)
+                ]
+                st.caption("Finale Treffer pro Jobart: " + " | ".join(final_parts))
         if final_profile_counter:
             final_parts = [
                 f"{p} {c}"
