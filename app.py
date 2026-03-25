@@ -3349,10 +3349,10 @@ with col1:
         cSort, cFilter = st.columns([1.1, 0.9], gap="small")
 
         with cSort:
-            st.markdown(
-                '<div style="font-size:0.82rem;opacity:0.7;margin-bottom:2px;">Sortierung</div>',
-                unsafe_allow_html=True
-            )
+            #st.markdown(
+            #    '<div style="font-size:0.82rem;opacity:0.7;margin-bottom:2px;">Sortierung</div>',
+            #    unsafe_allow_html=True
+            #)
             st.radio(
                 "",
                 ["Mix", "Score", "Entfernung"],
