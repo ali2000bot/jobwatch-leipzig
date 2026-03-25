@@ -3404,7 +3404,7 @@ with col1:
                 if is_favorited(it.get("_key") or item_key(it), favorites)
             ]
         
-        for it in filtered_results:
+        
         if sort_mode == "Jobart":
             from collections import defaultdict
         
