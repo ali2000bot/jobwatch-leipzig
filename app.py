@@ -3331,6 +3331,21 @@ with col1:
             f'</div>',
             unsafe_allow_html=True,
         )
+        st.markdown(
+            """
+            <div style="
+                font-size:0.82rem;
+                opacity:0.75;
+                margin-top:2px;
+                margin-bottom:8px;
+                line-height:1.4;
+            ">
+                🔥 Top-Match · 👔 Führung · 🏛️ Verwaltung · 🎓 Forschung · 🏢 Fokus · 🎯 Ziel
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        
         cSort, cFilter = st.columns([1.1, 0.9], gap="small")
 
         with cSort:
