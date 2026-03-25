@@ -3380,7 +3380,7 @@ with col1:
         st.session_state["result_filter"] = selected_result_filter
 
         current_filter = st.session_state.get("result_filter", "Alle")
-        current_sort = st.session_state.get("sort_mode", "Mix")
+        current_sort = st.session_state.get("sort_mode", "Entfernung")
 
         st.caption(
             f"{len(items_sorted)} Treffer · "
