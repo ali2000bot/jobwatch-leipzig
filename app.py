@@ -2755,7 +2755,17 @@ with col1:
         # Sortierung aus Session State lesen
         sort_mode = st.session_state.get("sort_mode", "Entfernung")
 
-        if sort_mode == "Score":
+        if sort_mode == "Entfernung":
+            items_sorted = sorted(
+                items_now_filtered,
+                key=lambda it: (
+                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999.0,
+                    -int(it.get("_score", 0)),
+                    str(it.get("_title", "")).lower()
+                )
+            )
+        
+        elif sort_mode == "Score":
             items_sorted = sorted(
                 items_now_filtered,
                 key=lambda it: (
@@ -2765,19 +2775,6 @@ with col1:
                 )
             )
 
-        elif sort_mode == "Entfernung":
-            items_sorted = sorted(
-                items_now_filtered,
-                key=lambda it: (
-                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999.0,
-                    -int(it.get("_score", 0)),
-                    str(it.get("_title", "")).lower()
-                )
-            )
-
-        else:  # Mix
-            items_sorted = sorted(items_now_filtered, key=sort_key)
-        items_now_filtered = []
         for it in items_now:
             dist = it.get("_distance_km")
             if dist is None:
