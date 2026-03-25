@@ -334,6 +334,15 @@ VERWALTUNG_TECHNIK_HINTS = {
     ]
 }
 
+VERWALTUNG_TECHNIK_BOOST_KEYWORDS = [
+    "gebäudetechnik", "gebaeudetechnik",
+    "versorgungstechnik",
+    "tga", "hls", "hkls",
+    "heizung", "klima", "lüftung", "lueftung", "sanitär", "sanitaer",
+    "gebäudemanagement", "gebaeudemanagement",
+    "facility", "immobilien", "liegenschaft", "baumanagement",
+]
+
 THERMO_FORSCHUNG_HINTS = {
     "required": [
         "thermodynamik",
@@ -1395,6 +1404,12 @@ def enrich_item(
     
     if title_boost > 0:
         parts.append(f"+{title_boost} titel")
+
+    verwaltung_boost = title_score_boost(it, VERWALTUNG_TECHNIK_BOOST_KEYWORDS)
+    score += verwaltung_boost
+
+    if verwaltung_boost > 0:
+        parts.append(f"+{verwaltung_boost} verwaltung/technik")
 
     lab_title_boost = lab_leadership_title_boost(it, LAB_LEADERSHIP_TITLE_KEYWORDS)
     score += lab_title_boost
