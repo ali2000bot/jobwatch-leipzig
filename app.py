@@ -179,7 +179,7 @@ GLOBAL_BAD_TITLE_HINTS = [
     "sharepoint",
     "chemisch technischer",
     "cta",
-    "elektrotechnik",
+    #"elektrotechnik",
     "betriebskosten",
     "emv",
     "biotech",
