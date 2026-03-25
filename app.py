@@ -2840,6 +2840,13 @@ with col1:
         for i, it in enumerate(items_sorted, start=1):
             it["_idx"] = i
 
+        final_profile_counter: Dict[str, int] = {}
+
+        for it in items_sorted:
+            profile_name = str(it.get("_profile", "")).strip()
+            if profile_name:
+                final_profile_counter[profile_name] = final_profile_counter.get(profile_name, 0) + 1
+        
         if profile_counter:
             parts = [
                 f"{p} {c}"
@@ -3646,16 +3653,7 @@ with col1:
                         st.write(desc)
                 else:
                     st.caption("Keine ausführliche Beschreibung im Detail-Response gefunden.")
-
-    #-----------
-    final_profile_counter: Dict[str, int] = {}
-
-    for it in items_sorted:
-        profile_name = str(it.get("_profile", "")).strip()
-        if profile_name:
-            final_profile_counter[profile_name] = final_profile_counter.get(profile_name, 0) + 1
-    #-----------
-    
+       
     with tab_company:
         st.subheader("Firmencheck (manuell, pro Firma)")
         st.caption("Öffne die Karriereseite, trage Anzahl + Notizen ein und speichere 'Heute geprüft'.")
