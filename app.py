@@ -2753,7 +2753,7 @@ with col1:
                 items_now_filtered.append(it)
 
         # Sortierung aus Session State lesen
-        sort_mode = st.session_state.get("sort_mode", "Entfernung")
+        sort_mode = st.session_state.get("sort_mode", "Mix")
 
         if sort_mode == "Score":
             items_sorted = sorted(
@@ -2764,7 +2764,7 @@ with col1:
                     str(it.get("_title", "")).lower()
                 )
             )
-        
+
         elif sort_mode == "Entfernung":
             items_sorted = sorted(
                 items_now_filtered,
@@ -2774,6 +2774,38 @@ with col1:
                     str(it.get("_title", "")).lower()
                 )
             )
+
+        else:  # Mix
+            items_sorted = sorted(items_now_filtered, key=sort_key)
+        items_now_filtered = []
+        for it in items_now:
+            dist = it.get("_distance_km")
+            if dist is None:
+                items_now_filtered.append(it)
+                continue
+            if dist <= float(max_distance_filter):
+                items_now_filtered.append(it)
+
+        if sort_mode == "Score":
+            items_sorted = sorted(
+                items_now_filtered,
+                key=lambda it: (
+                    -int(it.get("_score", 0)),
+                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999
+                )
+            )
+        
+        elif sort_mode == "Entfernung":
+            items_sorted = sorted(
+                items_now_filtered,
+                key=lambda it: (
+                    it.get("_distance_km") if it.get("_distance_km") is not None else 999999,
+                    -int(it.get("_score", 0))
+                )
+            )
+        
+        else:  # Mix (dein aktuelles Verhalten)
+            items_sorted = sorted(items_now_filtered, key=sort_key)
        
         location_counter = {}
         location_distance = {}
@@ -3323,11 +3355,11 @@ with col1:
             #)
             st.radio(
                 "",
-                ["Score", "Entfernung"],
+                ["Mix", "Score", "Entfernung"],
                 horizontal=True,
                 key="sort_mode",
                 label_visibility="collapsed",
-            )    
+            )
         
         with cFilter:
             st.markdown(
