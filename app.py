@@ -3422,16 +3422,50 @@ with col1:
             location_name = it.get("_location", pretty_location(it))
 
             badges = []
+
+            # Neu / Favorit
             if is_new:
                 badges.append("🆕")
             if fav:
                 badges.append("📌")
+            
+            # Score
+            if score >= 70:
+                badges.append("🔥")
+            
+            # Führung (statt ⭐)
             if it.get("_is_leadership"):
-                badges.append("⭐")
+                badges.append("👔")
+            
+            # Profil-basierte Kennzeichnung
+            profile_name = str(it.get("_profile", "")).strip().lower()
+            
+            # Verwaltung / öffentlicher Bereich
+            if (
+                "verwaltung" in profile_name
+                or "gebäude" in profile_name
+                or "facility" in profile_name
+            ):
+                badges.append("🏛️")
+            
+            # Forschung / Lehre
+            if (
+                "thermo" in profile_name
+                or "forschung" in profile_name
+                or "research" in profile_name
+            ):
+                badges.append("🎓")
+            
+            # Fokus-Firma (bestehende Logik behalten!)
             if is_focused_company:
                 badges.append("🏢")
+            
+            # Zielunternehmen
             if org:
-                badges.append("🔥🎯" if org.get("priority") == "high" else "🎯")
+                badges.append("🎯")
+
+            if score >= 70:
+                badges.insert(0, "🔥")  # immer ganz vorne
             
             badge_prefix = " ".join(badges)
             badge_prefix = f"{badge_prefix} " if badge_prefix else ""
