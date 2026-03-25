@@ -237,6 +237,88 @@ MESSTECHNIK_HINTS = {
     ]
 }
 
+VERWALTUNG_TECHNIK_HINTS = {
+    "required": [
+        "technik",
+        "ingenieur",
+        "engineering",
+        "facility",
+        "gebäude",
+        "immobilien",
+        "infrastruktur",
+        "betrieb",
+        "verwaltung",
+        "management",
+        "planung",
+        "koordinator",
+        "sachbearbeiter",
+        "öffentlicher dienst",
+        "kommune",
+        "stadt",
+        "landkreis",
+        "bund",
+    ],
+    "title_good": [
+        "ingenieur",
+        "techniker",
+        "projektleiter",
+        "projektmanager",
+        "facility manager",
+        "technical manager",
+        "sachbearbeiter technik",
+        "referent technik",
+        "gebäudemanager",
+        "immobilienmanager",
+    ],
+    "title_hybrid": [
+        "koordination",
+        "betrieb",
+        "wartung",
+        "instandhaltung",
+        "property manager",
+        "asset manager",
+    ]
+}
+
+THERMO_FORSCHUNG_HINTS = {
+    "required": [
+        "thermodynamik",
+        "wärmeübertragung",
+        "heat transfer",
+        "thermisch",
+        "thermal",
+        "thermoanalyse",
+        "thermophysical",
+        "material",
+        "werkstoff",
+        "physik",
+        "physics",
+        "forschung",
+        "research",
+        "universität",
+        "hochschule",
+        "institut",
+    ],
+    "title_good": [
+        "wissenschaftlicher mitarbeiter",
+        "research scientist",
+        "research associate",
+        "postdoc",
+        "doktorand",
+        "phd",
+        "lecturer",
+        "professor",
+        "dozent",
+    ],
+    "title_hybrid": [
+        "ingenieur thermodynamik",
+        "thermal engineer",
+        "application scientist",
+        "laborleiter",
+    ]
+}
+
+
 # ============================================================
 # Firmen / Industrie / Boosts
 # ============================================================
@@ -465,13 +547,25 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
             ]
         )
     )
-
+   
     title = normalize_text(str(item_title(it)))
 
     if profile == "messtechnik":
         has_content_hint = any(h in text for h in MESSTECHNIK_HINTS["required"])
         has_title_hint = any(h in title for h in MESSTECHNIK_HINTS["title_good"])
         has_hybrid_title_hint = any(h in title for h in MESSTECHNIK_HINTS["title_hybrid"])
+        return (has_content_hint and has_title_hint) or has_hybrid_title_hint
+
+    if profile == "verwaltung_technik":
+        has_content_hint = any(h in text for h in VERWALTUNG_TECHNIK_HINTS["required"])
+        has_title_hint = any(h in title for h in VERWALTUNG_TECHNIK_HINTS["title_good"])
+        has_hybrid_title_hint = any(h in title for h in VERWALTUNG_TECHNIK_HINTS["title_hybrid"])
+        return (has_content_hint and has_title_hint) or has_hybrid_title_hint
+
+    if profile == "thermo_forschung":
+        has_content_hint = any(h in text for h in THERMO_FORSCHUNG_HINTS["required"])
+        has_title_hint = any(h in title for h in THERMO_FORSCHUNG_HINTS["title_good"])
+        has_hybrid_title_hint = any(h in title for h in THERMO_FORSCHUNG_HINTS["title_hybrid"])
         return (has_content_hint and has_title_hint) or has_hybrid_title_hint
 
     return True
@@ -976,7 +1070,39 @@ def build_queries():
         "Field Application Scientist": {
             "was": "Field Application Scientist",
             "berufsfeld": ""
-        }
+        },
+        "Verwaltung_Technik": {
+            "was": "Technischer Sachbearbeiter",
+            "berufsfeld": ""
+        },
+        "Facility Manager": {
+            "was": "Facility Manager",
+            "berufsfeld": ""
+        },
+        "Ingenieur öffentlicher Dienst": {
+            "was": "Ingenieur öffentlicher Dienst",
+            "berufsfeld": ""
+        },
+        "Gebäudemanagement": {
+            "was": "Gebäudemanagement",
+            "berufsfeld": ""
+        },
+        "Thermo_Forschung": {
+            "was": "Wissenschaftlicher Mitarbeiter Thermodynamik",
+            "berufsfeld": ""
+        },
+        "Wissenschaftlicher Mitarbeiter Wärmeübertragung": {
+            "was": "Wissenschaftlicher Mitarbeiter Wärmeübertragung",
+            "berufsfeld": ""
+        },
+        "Research Associate Heat Transfer": {
+            "was": "Research Associate Heat Transfer",
+            "berufsfeld": ""
+        },
+        "Thermal Analysis Research": {
+            "was": "Thermal Analysis Research",
+            "berufsfeld": ""
+        },
     }
 
 def build_query_groups():
@@ -1030,6 +1156,12 @@ def build_query_groups():
         "Forschung / Entwicklung": [
             "Research Engineer",
             "Scientist Materials",
+        ],
+        "Verwaltung / Technik / Immobilien": [
+            "Verwaltung_Technik",
+        ],
+        "Forschung / Lehre / Thermodynamik": [
+            "Thermo_Forschung",
         ],
         "Breite Suche": [
             "Breit",
