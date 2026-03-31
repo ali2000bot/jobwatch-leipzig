@@ -110,6 +110,7 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "ai ",
     "solution architect", "schichtsystem", 
     "heizungsinstalateur", "heizungsinstallateure",
+    "sanitärinstallateur", "sanitärinstallateure",
 ]
 
 GLOBAL_BAD_TEXT_HINTS = [
