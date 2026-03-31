@@ -2021,6 +2021,38 @@ div[role="radiogroup"] p {
 """, unsafe_allow_html=True)
 
 st.markdown("""
+<style>
+html, body, .stApp {
+    color-scheme: light;
+}
+
+div[data-baseweb="input"] > div,
+div[data-baseweb="select"] > div,
+div[data-baseweb="textarea"] > div {
+    background: #ffffff !important;
+    color: #1d1d1f !important;
+    border: 1px solid rgba(0,0,0,0.15) !important;
+}
+
+div[data-baseweb="input"] input,
+div[data-baseweb="textarea"] textarea,
+div[data-baseweb="select"] input {
+    color: #1d1d1f !important;
+    -webkit-text-fill-color: #1d1d1f !important;
+    opacity: 1 !important;
+    background: transparent !important;
+}
+
+div[data-baseweb="input"] input::placeholder,
+div[data-baseweb="textarea"] textarea::placeholder {
+    color: #6e6e73 !important;
+    -webkit-text-fill-color: #6e6e73 !important;
+    opacity: 1 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
 <div class="hero-wrap">
     <div class="hero-topline">Messtechnik · Forschung · Scientific Instruments · Zielorganisationen</div>
     <div class="hero-title">🧭 JobWatch Leipzig</div>
