@@ -131,6 +131,7 @@ GLOBAL_BAD_TEXT_HINTS = [
 GLOBAL_BAD_TITLE_HINTS = [
     #"techniker",
     #"messtechniker",
+    "anlagenmechaniker",
     "servicetechniker",
     "schweißtechniker",
     "welding",
