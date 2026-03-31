@@ -108,7 +108,8 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "plattform",
     "ki ",
     "ai ",
-    "solution architect", "schichtsystem",   
+    "solution architect", "schichtsystem", 
+    "heizungsinstalateur", "heizungsinstallateure",
 ]
 
 GLOBAL_BAD_TEXT_HINTS = [
