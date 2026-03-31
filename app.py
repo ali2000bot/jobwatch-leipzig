@@ -53,7 +53,7 @@ DEFAULT_FOCUS_KEYWORDS = [
     "heizung", "heizungs",
     "klima", "klimatechnik",
     "lüftung", "lueftung", "lüftungstechnik", "lueftungstechnik",
-    "sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
+    #"sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
     "facility management",
     "gebäudemanagement", "gebaeudemanagement",
     "immobilienmanagement", "liegenschaft",
@@ -303,7 +303,7 @@ VERWALTUNG_TECHNIK_HINTS = {
         "heizung", "heizungs",
         "klima", "klimatechnik",
         "lüftung", "lueftung", "lüftungstechnik", "lueftungstechnik",
-        "sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
+        #"sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
         "hkls", "hls", "hks", "tga",
     ],
     "title_good": [
@@ -333,8 +333,8 @@ VERWALTUNG_TECHNIK_HINTS = {
         "ingenieur klima",
         "ingenieur lüftung",
         "ingenieur lueftung",
-        "ingenieur sanitär",
-        "ingenieur sanitaer",
+        #"ingenieur sanitär",
+        #"ingenieur sanitaer",
     ],
     "title_hybrid": [
         "koordination",
@@ -353,7 +353,7 @@ VERWALTUNG_TECHNIK_HINTS = {
         "heizung",
         "klima",
         "lüftung", "lueftung",
-        "sanitär", "sanitaer",
+        #"sanitär", "sanitaer",
     ]
 }
 
@@ -366,7 +366,7 @@ VERWALTUNG_TECHNIK_BOOST_KEYWORDS = [
     "heizung", "heizungs",
     "klima", "klimatechnik",
     "lüftung", "lueftung", "lüftungstechnik", "lueftungstechnik",
-    "sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
+    #"sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
     "liegenschaft", "baumanagement", "infrastruktur",
 ]
 
