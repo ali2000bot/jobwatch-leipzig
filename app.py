@@ -1313,15 +1313,6 @@ def looks_leadership_strict(it: Dict[str, Any]) -> bool:
         return True
     return any(term in text for term in strict_terms)
 
-
-def is_homeoffice_item(it: Dict[str, Any]) -> bool:
-    b = str(it.get("_bucket", "")).lower()
-    if "homeoffice" in b:
-        return True
-    az = str(it.get("arbeitszeit", "")).lower()
-    return az == "ho"
-
-
 def score_breakdown(
     it: Dict[str, Any],
     focus_keywords: List[str],
@@ -1355,10 +1346,6 @@ def score_breakdown(
         if keyword_match(text, k):
             score -= 4
             parts.append(f"−4 {k}")
-
-    if is_homeoffice_item(it) and ho_bonus_val > 0:
-        score += int(ho_bonus_val)
-        parts.append(f"+{int(ho_bonus_val)} homeoffice")
 
     if not parts:
         parts = ["(keine Keyword-Treffer)"]
