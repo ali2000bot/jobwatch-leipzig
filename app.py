@@ -1940,13 +1940,6 @@ div[data-baseweb="input"] > div {
     text-decoration: none;
 }
 
-.mini-action-link:hover {
-    background: rgba(255,255,255,0.08);
-    border-color: rgba(128,128,128,0.40);
-    color: inherit;
-    text-decoration: none;
-}
-
 /* ===== Abstand zwischen Distanz-Chip und Aktionszeile ===== */
 .result-action-row {
     margin-top: 10px;
@@ -2757,16 +2750,7 @@ with col1:
         prev_keys: Set[str] = {x.get("_key") or item_key(x) for x in prev_items if isinstance(x, dict)}
         now_keys: Set[str] = {x.get("_key") or item_key(x) for x in items_now}
         new_keys = now_keys - prev_keys
-
-        def sort_key(it: Dict[str, Any]):
-            org = it.get("_org")
-            priority_rank = -1 if (org and org.get("priority") == "high") else 0
-            dist = it.get("_distance_km")
-            dist_rank = dist if dist is not None else 999999.0
-            is_new_rank = 0 if (it.get("_key") in new_keys) else 1
-            score = int(it.get("_score", 0))
-            return (priority_rank, dist_rank, is_new_rank, -score, str(it.get("_title", "")).lower())
-
+        
         # Radiusfilter
         items_now_filtered = []
         for it in items_now:
