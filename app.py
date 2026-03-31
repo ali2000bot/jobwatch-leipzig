@@ -63,7 +63,7 @@ DEFAULT_FOCUS_KEYWORDS = [
 DEFAULT_LEADERSHIP_KEYWORDS = [
     "laborleiter", "teamleiter", "gruppenleiter", "abteilungsleiter", "bereichsleiter",
     "leiter", "head", "lead", "director", "manager", "principal",
-    "sektionsleiter", "section manager", "supervisor",
+    "sektionsleiter", "section manager", "supervisor", "objektleiter",
 ]
 
 DEFAULT_NEGATIVE_KEYWORDS = [
