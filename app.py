@@ -708,6 +708,22 @@ def blocked_by_bad_beruf_global(it: Dict[str, Any]) -> bool:
     beruf = normalize_text(str(it.get("beruf", "")))
     return any(bad in beruf for bad in GLOBAL_BAD_BERUF_HINTS)
 
+def distance_score_penalty(dist_km: float) -> int:
+    if dist_km is None:
+        return 0
+
+    if dist_km <= 50:
+        return 0
+
+    if dist_km >= 200:
+        return -40
+
+    # linear von -5 (50 km) bis -40 (200 km)
+    slope = (-40 - (-5)) / (200 - 50)  # = -35 / 150
+    penalty = -5 + slope * (dist_km - 50)
+
+    return int(round(penalty))
+
 # ============================================================
 # API / Jobfelder
 # ============================================================
@@ -1443,6 +1459,11 @@ def enrich_item(
         parts.append(f"+{lab_title_boost} labor-leitung")
     
     dist = distance_from_home_km(it, float(home_lat), float(home_lon))
+    dist_penalty = distance_score_penalty(dist)
+    score += dist_penalty
+    
+    if dist_penalty < 0:
+        parts.append(f"{dist_penalty} dist")
     t_min = travel_time_minutes(dist, float(speed_kmh))
     org = match_target_org(company)
     
