@@ -213,7 +213,7 @@ GLOBAL_BAD_TITLE_HINTS = [
     "betriebskoordinator",
     "heizungsinstalateur", "heizungsinstallateure",
     "sanitärinstallateur", "sanitärinstallateure",
-    "bodenleger",
+    "bodenleger", "geringfügiger Beschäftigung",
 ]
 
 # Beruf und Titel werden beim BA unterschieden
