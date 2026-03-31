@@ -109,8 +109,6 @@ DEFAULT_NEGATIVE_KEYWORDS = [
     "ki ",
     "ai ",
     "solution architect", "schichtsystem", 
-    "heizungsinstalateur", "heizungsinstallateure",
-    "sanitärinstallateur", "sanitärinstallateure",
 ]
 
 GLOBAL_BAD_TEXT_HINTS = [
@@ -213,6 +211,8 @@ GLOBAL_BAD_TITLE_HINTS = [
     "elektroniker",
     "teamleiter elektrotechnik",
     "betriebskoordinator",
+    "heizungsinstalateur", "heizungsinstallateure",
+    "sanitärinstallateur", "sanitärinstallateure",
 ]
 
 # Beruf und Titel werden beim BA unterschieden
