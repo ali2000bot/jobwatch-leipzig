@@ -54,7 +54,7 @@ DEFAULT_FOCUS_KEYWORDS = [
     "klima", "klimatechnik",
     "lüftung", "lueftung", "lüftungstechnik", "lueftungstechnik",
     "sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
-    "facility", "facility management",
+    "facility management",
     "gebäudemanagement", "gebaeudemanagement",
     "immobilienmanagement", "liegenschaft",
     "baumanagement", "amt", "öffentlicher dienst", "oeffentlicher dienst",
