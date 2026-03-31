@@ -340,8 +340,8 @@ VERWALTUNG_TECHNIK_HINTS = {
         "instandhaltung",
         "verwaltung",
         "immobilien",
-        "gebäude", "gebaeude",
-        "facility",
+        #"gebäude", "gebaeude",
+        #"facility",
         "property",
         "baumanagement",
         "gebäudemanagement", "gebaeudemanagement",
@@ -365,7 +365,7 @@ VERWALTUNG_TECHNIK_BOOST_KEYWORDS = [
     "klima", "klimatechnik",
     "lüftung", "lueftung", "lüftungstechnik", "lueftungstechnik",
     "sanitär", "sanitaer", "sanitärtechnik", "sanitaertechnik",
-    "facility", "liegenschaft", "baumanagement", "infrastruktur",
+    "liegenschaft", "baumanagement", "infrastruktur",
 ]
 
 THERMO_FORSCHUNG_HINTS = {
