@@ -410,6 +410,21 @@ THERMO_FORSCHUNG_HINTS = {
     ]
 }
 
+UMWELT_MESSTECHNIK_HINTS = {
+    "required": [
+        "emission", "emissionsmessung", "luftschadstoff", "geruch",
+        "umwelt", "umwelttechnik", "umweltschutz",
+        "messung", "messungen", "messstelle",
+        "analyse", "analysen",
+    ],
+    "title_good": [
+        "messingenieur",
+        "ingenieur",
+        "umwelttechnik",
+        "umweltschutz",
+    ],
+    "title_hybrid": [],
+}
 
 # ============================================================
 # Firmen / Industrie / Boosts
@@ -640,6 +655,21 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
         )
     )
    
+def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
+    profile = str(it.get("_profile", "")).strip().lower()
+
+    text = normalize_text(
+        " ".join(
+            [
+                str(item_title(it)),
+                str(it.get("kurzbeschreibung", "")),
+                str(it.get("beschreibung", "")),
+                str(item_company(it)),
+                str(pretty_location(it)),
+            ]
+        )
+    )
+
     title = normalize_text(str(item_title(it)))
 
     if profile == "messtechnik":
@@ -648,19 +678,26 @@ def passes_profile_specific_filter(it: Dict[str, Any]) -> bool:
         has_hybrid_title_hint = any(h in title for h in MESSTECHNIK_HINTS["title_hybrid"])
         return (has_content_hint and has_title_hint) or has_hybrid_title_hint
 
-    if profile == "verwaltung_technik":
+    elif profile == "verwaltung_technik":
         has_content_hint = any(h in text for h in VERWALTUNG_TECHNIK_HINTS["required"])
         has_title_hint = any(h in title for h in VERWALTUNG_TECHNIK_HINTS["title_good"])
         has_hybrid_title_hint = any(h in title for h in VERWALTUNG_TECHNIK_HINTS["title_hybrid"])
         return (has_content_hint and has_title_hint) or has_hybrid_title_hint
 
-    if profile == "thermo_forschung":
+    elif profile == "thermo_forschung":
         has_content_hint = any(h in text for h in THERMO_FORSCHUNG_HINTS["required"])
         has_title_hint = any(h in title for h in THERMO_FORSCHUNG_HINTS["title_good"])
         has_hybrid_title_hint = any(h in title for h in THERMO_FORSCHUNG_HINTS["title_hybrid"])
         return (has_content_hint and has_title_hint) or has_hybrid_title_hint
 
-    return True
+    elif profile in ["messingenieur umwelt", "emissionsmessung"]:
+        has_content_hint = any(h in text for h in UMWELT_MESSTECHNIK_HINTS["required"])
+        has_title_hint = any(h in title for h in UMWELT_MESSTECHNIK_HINTS["title_good"])
+        has_hybrid_title_hint = any(h in title for h in UMWELT_MESSTECHNIK_HINTS["title_hybrid"])
+        return (has_content_hint and has_title_hint) or has_hybrid_title_hint
+
+    return True   
+
 
 #neue globale Blockfunktion 4b)
 def has_strong_messtechnik_context(it: Dict[str, Any]) -> bool:
@@ -1221,6 +1258,14 @@ def build_queries():
             "was": "Ingenieur Thermodynamik",
             "berufsfeld": ""
         },
+        "Messingenieur Umwelt": {
+            "was": "Messingenieur",
+            "berufsfeld": ""
+        },
+        "Emissionsmessung": {
+            "was": "Emissionsmessung",
+            "berufsfeld": ""
+        },
     }
 
 def build_query_groups():
@@ -1288,6 +1333,10 @@ def build_query_groups():
             "Research Associate Heat Transfer",
             "Thermal Analysis Research",
             "Thermodynamik Ingenieur",
+        ], 
+        "Umwelt / Emission / Messung": [
+            "Messingenieur Umwelt",
+            "Emissionsmessung",
         ],    
         "Breite Suche": [
             "Breit",
